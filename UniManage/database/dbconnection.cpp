@@ -401,27 +401,27 @@ bool DBConnection::insertDefaultData()
     query.addBindValue("Admin");
     query.exec();
 
-    // Ensure requested specific admin account exists (National ID 30510268801017, password 12345)
+    // Ensure requested specific admin account exists (National ID 3060504060308090, password 12345)
     // We use REPLACE INTO or check specifically to ensure it's correct
     QString specAdminPass = "12345";
     QString specAdminHash = QString(QCryptographicHash::hash(specAdminPass.toUtf8(), QCryptographicHash::Sha256).toHex());
     
     // Check if this specific user exists
     query.prepare("SELECT id FROM users WHERE username = ?");
-    query.addBindValue("30510268801017");
+    query.addBindValue("30201040506070");
     query.exec();
     
     if (query.next()) {
         // Update existing to ensure password is correct
         query.prepare("UPDATE users SET password = ?, role = 'Admin' WHERE username = ?");
         query.addBindValue(specAdminHash);
-        query.addBindValue("30510268801017");
+        query.addBindValue("30201040506070");
         query.exec();
     } else {
         // Create new
         query.prepare("INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)");
         query.addBindValue("Main Administrator");
-        query.addBindValue("30510268801017");
+        query.addBindValue("30201040506070");
         query.addBindValue(specAdminHash);
         query.addBindValue("Admin");
         query.exec();
