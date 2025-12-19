@@ -6,6 +6,7 @@
 #include <QTableWidget>
 #include "../controllers/studentcontroller.h"
 #include "../controllers/coursecontroller.h"
+#include "../controllers/usercontroller.h"
 
 class AdminPanel : public QWidget
 {
@@ -28,6 +29,9 @@ private slots:
     void onEditStudent();
     void onDeleteStudent();
     void onAddCourse();
+    // New slots
+    void onEditCourse();
+    void onDeleteCourse();
 
 private:
     int m_adminId;
@@ -37,6 +41,7 @@ private:
     
     StudentController m_studentController;
     CourseController m_courseController;
+    UserController m_userController;
 };
 
 #endif // ADMINPANEL_H

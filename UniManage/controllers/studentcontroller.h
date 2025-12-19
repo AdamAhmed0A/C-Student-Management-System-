@@ -10,7 +10,7 @@ class StudentController
 public:
     StudentController();
     
-    bool addStudent(const StudentData& student);
+    bool addStudent(const StudentData& student, QString* error = nullptr);
     bool updateStudent(const StudentData& student);
     bool deleteStudent(int id);
     

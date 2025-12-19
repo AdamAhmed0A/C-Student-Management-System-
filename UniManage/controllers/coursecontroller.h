@@ -15,6 +15,7 @@ public:
 
     QList<Course> getAllCourses();
     QList<Course> getCoursesBySemester(int semesterId);
+    Course getCourseById(int id);
 };
 
 #endif // COURSECONTROLLER_H

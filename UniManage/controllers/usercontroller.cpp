@@ -99,6 +99,29 @@ User UserController::getUserByUsername(const QString& username)
 	return user;
 }
 
+//function to get user by id
+User UserController::getUserById(int id)
+{
+    User user;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_USER_BY_ID);
+    query.addBindValue(id);
+    if (!query.exec()) {
+        qDebug() << "Error retrieving user by id:" << query.lastError().text();
+        return user;
+    }
+    if (query.next()) {
+        user.setId(query.value("id").toInt());
+        user.setFullName(query.value("full_name").toString());
+        user.setUsername(query.value("username").toString());
+        user.setPassword(query.value("password").toString());
+        user.setRole(query.value("role").toString());
+        user.setCreatedAt(query.value("created_at").toDateTime());
+        user.setUpdatedAt(query.value("updated_at").toDateTime());
+    }
+    return user;
+}
+
 //function to authenticate user using username and password
 User UserController::authenticateUsingUsername(const QString& username, const QString& password)
 {

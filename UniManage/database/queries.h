@@ -7,6 +7,7 @@ namespace Queries {
     // User queries
     const QString INSERT_USER = "INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)";
     const QString SELECT_USER_BY_USERNAME = "SELECT * FROM users WHERE username = ?";
+    const QString SELECT_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
     const QString SELECT_ALL_USERS = "SELECT * FROM users ORDER BY created_at DESC";
     const QString UPDATE_USER = "UPDATE users SET full_name = ?, password = ?, role = ? WHERE id = ?";
     const QString DELETE_USER = "DELETE FROM users WHERE id = ?";
@@ -39,6 +40,8 @@ namespace Queries {
     const QString SELECT_ALL_COURSES = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "
                                        "LEFT JOIN semester s ON c.semester_id = s.id ORDER BY c.name";
     const QString SELECT_COURSES_BY_SEMESTER = "SELECT * FROM courses WHERE semester_id = ?";
+    const QString SELECT_COURSE_BY_ID = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "
+                                        "LEFT JOIN semester s ON c.semester_id = s.id WHERE c.id = ?";
 
     // Section queries
     const QString INSERT_SECTION = "INSERT INTO sections (course_id, capacity, semester_id) VALUES (?, ?, ?)";

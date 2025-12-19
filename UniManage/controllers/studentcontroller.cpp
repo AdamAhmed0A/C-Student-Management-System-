@@ -9,7 +9,7 @@
 StudentController::StudentController() {}
 
 //function to add student data
-bool StudentController::addStudent(const StudentData& student)
+bool StudentController::addStudent(const StudentData& student, QString* error)
 {
 	QSqlQuery query(DBConnection::instance().database());
 	query.prepare(Queries::INSERT_STUDENT_DATA);
@@ -19,19 +19,20 @@ bool StudentController::addStudent(const StudentData& student)
     query.addBindValue(student.dob());
     query.addBindValue(student.year());
     query.addBindValue(student.department());
-    query.addBindValue(student.sectionId());
+    
+    // Handle nullable section_id
+    if (student.sectionId() <= 0) {
+        query.addBindValue(QVariant()); // Bind NULL
+    } else {
+        query.addBindValue(student.sectionId());
+    }
+    
     query.addBindValue(student.seatNumber());
     query.addBindValue(student.status());
-    if (!query.exec()) {
-        qDebug() << "Error adding student data:" << query.lastError().text();
-        return false;
-	}
-	QSqlQuery UpdateUserPassword(DBConnection::instance().database());
-	UpdateUserPassword.prepare(Queries::Update_User_Password);
-    UpdateUserPassword.addBindValue(student.studentNumber()); // Set password to student number
-    UpdateUserPassword.addBindValue(student.userId());
-    if (!UpdateUserPassword.exec()) {
-        qDebug() << "Error updating user password for student:" << UpdateUserPassword.lastError().text();
+	if (!query.exec()) {
+        QString errText = query.lastError().text();
+        qDebug() << "Error adding student data:" << errText;
+        if (error) *error = errText;
         return false;
 	}
 	return true;

@@ -143,3 +143,46 @@ QList<Course> CourseController::getCoursesBySemester(int semesterId)
     }
     return list;
 }
+
+Course CourseController::getCourseById(int id)
+{
+    Course c;
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
+    query.prepare(Queries::SELECT_COURSE_BY_ID);
+    query.addBindValue(id);
+
+    if (!query.exec()) {
+        qDebug() << "getCourseById failed:" << query.lastError().text();
+        return c;
+    }
+
+    if (query.next()) {
+        c.setId(query.value("id").toInt());
+        c.setName(query.value("name").toString());
+        c.setDescription(query.value("description").toString());
+        c.setYearLevel(query.value("year_level").toInt());
+        c.setCreditHours(query.value("credit_hours").toInt());
+        c.setSemesterId(query.value("semester_id").toInt());
+
+        QString createdStr = query.value("created_at").toString();
+        if (!createdStr.isEmpty()) {
+            QDateTime dt = QDateTime::fromString(createdStr, Qt::ISODate);
+            if (dt.isValid()) c.setCreatedAt(dt);
+        }
+
+        QString updatedStr = query.value("updated_at").toString();
+        if (!updatedStr.isEmpty()) {
+            QDateTime dt = QDateTime::fromString(updatedStr, Qt::ISODate);
+            if (dt.isValid()) c.setUpdatedAt(dt);
+        }
+
+        QString semesterYear = query.value("semester_year").toString();
+        QString semesterNumber = query.value("semester_number").toString();
+        if (!semesterYear.isEmpty() || !semesterNumber.isEmpty()) {
+            QString semName = QString("%1 - Sem %2").arg(semesterYear).arg(semesterNumber);
+            c.setSemesterName(semName);
+        }
+    }
+    return c;
+}

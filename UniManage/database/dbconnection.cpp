@@ -183,16 +183,15 @@ bool DBConnection::createTables()
                     "user_id INT,"
                     "student_number VARCHAR(100) UNIQUE NOT NULL,"
                     "id_number VARCHAR(100) NOT NULL,"
-                    "dob DATETIME,"
-                    "year INT,"
-                    "department VARCHAR(255),"
-                    "section_id INT,"
-                    "seat_number VARCHAR(50),"
+                    "dob DATETIME NULL,"
+                    "year INT NULL,"
+                    "department VARCHAR(255) NULL,"
+                    "section_id INT NULL,"
+                    "seat_number VARCHAR(50) NULL,"
                     "status VARCHAR(50) DEFAULT 'active',"
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
-                    "FOREIGN KEY (user_id) REFERENCES users(id),"
-                    "FOREIGN KEY (section_id) REFERENCES sections(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "FOREIGN KEY (user_id) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating students_data table:" << query.lastError().text();
         return false;
     }

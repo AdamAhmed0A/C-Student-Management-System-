@@ -16,6 +16,7 @@ public:
     
     QList<User> getAllUsers();
     User getUserByUsername(const QString& username);
+    User getUserById(int id);
     User authenticateUsingUsername(const QString& username, const QString& password);
 };
 
