@@ -18,6 +18,7 @@ public:
 private slots:
     void onUserTypeChanged(int index);
     void onLoginClicked();
+    void onTestConnectionClicked();
 
 private:
     void setupUI();
@@ -30,6 +31,7 @@ private:
     QLabel* m_passwordLabel;
     QLineEdit* m_passwordEdit;
     QPushButton* m_loginButton;
+    QPushButton* m_testConnButton;
 
     int m_currentAdminId;
     int m_currentStudentId;

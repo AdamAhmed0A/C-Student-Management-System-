@@ -67,10 +67,18 @@ void LoginWindow::setupUI()
     connect(m_passwordEdit, &QLineEdit::returnPressed, this, &LoginWindow::onLoginClicked);
     loginLayout->addWidget(m_passwordEdit);
     
+    QHBoxLayout* btnLayout = new QHBoxLayout();
+    m_testConnButton = new QPushButton("Test Connection", this);
+    m_testConnButton->setMinimumHeight(35);
+    connect(m_testConnButton, &QPushButton::clicked, this, &LoginWindow::onTestConnectionClicked);
+    btnLayout->addWidget(m_testConnButton);
+
     m_loginButton = new QPushButton("Login", this);
     m_loginButton->setMinimumHeight(35);
     connect(m_loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
-    loginLayout->addWidget(m_loginButton);
+    btnLayout->addWidget(m_loginButton);
+
+    loginLayout->addLayout(btnLayout);
     
     mainLayout->addWidget(loginGroup);
     mainLayout->addStretch();
@@ -170,4 +178,26 @@ bool LoginWindow::loginStudent(const QString& studentNumber)
     }
     
     return false;
+}
+
+void LoginWindow::onTestConnectionClicked()
+{
+    // If DB is open, run a simple query to validate full connectivity
+    QSqlDatabase& db = DBConnection::instance().database();
+    if (db.isOpen()) {
+        QSqlQuery test(db);
+        if (test.exec("SELECT 1")) {
+            QMessageBox::information(this, "Connection Test", "MySQL connection is open and query executed successfully.");
+        } else {
+            QMessageBox::warning(this, "Connection Test", QString("Connected but test query failed: %1").arg(test.lastError().text()));
+        }
+        return;
+    }
+
+    // Try to initialize (will attempt to create DB if missing)
+    if (DBConnection::instance().initialize()) {
+        QMessageBox::information(this, "Connection Test", "Connection established and database initialized.");
+    } else {
+        QMessageBox::critical(this, "Connection Test", "Failed to initialize database connection. Check application logs for details.");
+    }
 }
