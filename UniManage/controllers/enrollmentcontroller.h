@@ -3,6 +3,7 @@
 
 #include "../models/enrollment.h"
 #include <QList>
+#include <QString>
 
 class EnrollmentController
 {
@@ -14,6 +15,9 @@ public:
     bool deleteEnrollment(int id);
 
     QList<Enrollment> getEnrollmentsByStudent(int studentId);
+    QList<Enrollment> getEnrollmentsByCourse(int courseId);
+
+    void calculateTotalAndGrade(Enrollment& e, const QString& courseType, int maxMarks);
 };
 
 #endif // ENROLLMENTCONTROLLER_H

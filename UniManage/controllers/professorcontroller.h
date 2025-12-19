@@ -12,6 +12,7 @@ public:
     bool updateProfessor(const Professor& prof);
     bool deleteProfessor(int id);
     QList<Professor> getAllProfessors();
+    Professor getProfessorByUserId(int userId);
 };
 
 #endif // PROFESSORCONTROLLER_H

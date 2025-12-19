@@ -34,6 +34,12 @@ public:
     QDateTime updatedAt() const;
     void setUpdatedAt(const QDateTime& updatedAt);
 
+    int maxGrade() const;
+    void setMaxGrade(int maxGrade);
+
+    QString courseType() const;
+    void setCourseType(const QString& courseType);
+
     // Helper fields
     QString semesterName() const; // e.g. "2024 - Sem 1"
     void setSemesterName(const QString& name);
@@ -48,6 +54,8 @@ private:
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
     QString m_semesterName;
+    int m_maxGrade;
+    QString m_courseType;
 };
 
 #endif // COURSE_H

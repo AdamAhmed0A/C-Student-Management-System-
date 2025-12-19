@@ -142,7 +142,7 @@ bool DBConnection::createTables()
         return false;
     }
 
-    // Courses table
+    // Courses table (expanded with Name, Description, Degrees, Type)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `courses` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "name VARCHAR(255) NOT NULL,"
@@ -150,6 +150,8 @@ bool DBConnection::createTables()
                     "year_level INT,"
                     "credit_hours INT,"
                     "semester_id INT,"
+                    "max_grade INT DEFAULT 100," // 100 or 150
+                    "course_type VARCHAR(50) DEFAULT 'Theoretical'," // 'Theoretical' or 'Practical'
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
                     "FOREIGN KEY (semester_id) REFERENCES semester(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
@@ -178,8 +180,7 @@ bool DBConnection::createTables()
                     "student_number VARCHAR(100) UNIQUE NOT NULL,"
                     "id_number VARCHAR(100) NOT NULL,"
                     "dob DATETIME NULL,"
-                    "dob DATETIME NULL,"
-                    "department VARCHAR(255) NULL," // Keep for backward compatibility
+                    "department VARCHAR(255) NULL,"
                     "department_id INT NULL,"
                     "academic_level_id INT NULL,"
                     "section_id INT NULL,"
@@ -194,20 +195,24 @@ bool DBConnection::createTables()
         return false;
     }
 
-    // Enrollments table
+    // Enrollments table (expanded with Grade Distribution)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `enrollments` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "student_id INT,"
+                    "course_id INT,"
                     "status VARCHAR(50) DEFAULT 'active',"
-                    "assessments_grades TEXT,"
-                    "Assignment_1 TEXT,"
-                    "Assignment_2 TEXT,"
-                    "final TEXT,"
-                    "total_marks INT,"
-                    "is_rafaa_applied TINYINT(1),"
+                    "attendance_count INT DEFAULT 0,"
+                    "absence_count INT DEFAULT 0,"
+                    "assignment_1_grade DOUBLE DEFAULT 0,"
+                    "assignment_2_grade DOUBLE DEFAULT 0,"
+                    "coursework_grade DOUBLE DEFAULT 0,"
+                    "final_exam_grade DOUBLE DEFAULT 0,"
+                    "total_grade DOUBLE DEFAULT 0,"
+                    "letter_grade VARCHAR(10)," // Excellent, Very Good, etc.
+                    "is_rafaa_applied TINYINT(1) DEFAULT 0,"
                     "enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                    "created_at DATETIME NULL,"
-                    "FOREIGN KEY (student_id) REFERENCES students_data(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "FOREIGN KEY (student_id) REFERENCES students_data(id),"
+                    "FOREIGN KEY (course_id) REFERENCES courses(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating enrollments table:" << query.lastError().text();
         return false;
     }
@@ -222,13 +227,12 @@ bool DBConnection::createTables()
                     "method VARCHAR(100),"
                     "status VARCHAR(50) DEFAULT 'unpaid',"
                     "notes TEXT,"
-                    "created_at DATETIME NULL,"
                     "FOREIGN KEY (student_id) REFERENCES students_data(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating payments table:" << query.lastError().text();
         return false;
     }
 
-    // Colleges table
+    // Colleges (Faculty) table
     if (!query.exec("CREATE TABLE IF NOT EXISTS `colleges` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "name VARCHAR(255) NOT NULL,"
@@ -252,18 +256,36 @@ bool DBConnection::createTables()
     if (!query.exec("CREATE TABLE IF NOT EXISTS `academic_levels` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "name VARCHAR(100) NOT NULL,"
-                    "level_number INT UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "level_number INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating academic_levels table:" << query.lastError().text();
         return false;
     }
 
-    // Rooms (Halls & Labs) table
+    // Rooms (Halls & Labs) table expanded
     if (!query.exec("CREATE TABLE IF NOT EXISTS `rooms` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "name VARCHAR(100) NOT NULL,"
                     "type VARCHAR(50)," // 'Hall' or 'Lab'
-                    "capacity INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "capacity INT,"
+                    "ac_units INT DEFAULT 0,"
+                    "fans_count INT DEFAULT 0,"
+                    "lighting_points INT DEFAULT 0,"
+                    "computers_count INT DEFAULT 0," // For Labs
+                    "seating_description TEXT,"
+                    "code VARCHAR(50) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating rooms table:" << query.lastError().text();
+        return false;
+    }
+
+    // Detailed List Specification Table for Hall/Lab Equipment
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `room_specs` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "room_id INT,"
+                    "product_id VARCHAR(100),"
+                    "product_name VARCHAR(255),"
+                    "product_description TEXT,"
+                    "FOREIGN KEY (room_id) REFERENCES rooms(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating room_specs table:" << query.lastError().text();
         return false;
     }
 
@@ -272,13 +294,30 @@ bool DBConnection::createTables()
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "user_id INT,"
                     "specialization VARCHAR(255),"
-                    "title VARCHAR(100)," // Professor, Associate Professor, etc.
+                    "title VARCHAR(100),"
+                    "personal_info TEXT,"
                     "FOREIGN KEY (user_id) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating professors table:" << query.lastError().text();
         return false;
     }
 
-    // News table
+    // Academic Schedules table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `schedules` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "course_id INT,"
+                    "room_id INT,"
+                    "professor_id INT,"
+                    "day_of_week VARCHAR(20),"
+                    "start_time TIME,"
+                    "end_time TIME,"
+                    "FOREIGN KEY (course_id) REFERENCES courses(id),"
+                    "FOREIGN KEY (room_id) REFERENCES rooms(id),"
+                    "FOREIGN KEY (professor_id) REFERENCES professors(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating schedules table:" << query.lastError().text();
+        return false;
+    }
+
+    // News table (Academic Calendar/Updates)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `news` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "title VARCHAR(255),"
@@ -289,7 +328,7 @@ bool DBConnection::createTables()
         return false;
     }
 
-    qDebug() << "All tables created successfully (New Schema)";
+    qDebug() << "All tables created/updated successfully for expanded SIS";
     return true;
 }
 

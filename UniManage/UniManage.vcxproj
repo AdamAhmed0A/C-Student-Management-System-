@@ -124,6 +124,7 @@
     <ClCompile Include="models\academic_level.cpp" />
     <ClCompile Include="models\room.cpp" />
     <ClCompile Include="models\professor.cpp" />
+    <ClCompile Include="gui\professorpanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="gui\studentPortal.h" />
@@ -157,6 +158,8 @@
     <ClInclude Include="models\academic_level.h" />
     <ClInclude Include="models\room.h" />
     <ClInclude Include="models\professor.h" />
+    <QtMoc Include="gui\professorpanel.h" />
+    <ClInclude Include="gui\stylehelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

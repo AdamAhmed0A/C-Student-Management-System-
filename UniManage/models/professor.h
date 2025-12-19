@@ -21,6 +21,9 @@ public:
     QString title() const;
     void setTitle(const QString& title);
 
+    QString personalInfo() const;
+    void setPersonalInfo(const QString& info);
+
     // Join helper
     QString fullName() const;
     void setFullName(const QString& name);
@@ -30,6 +33,7 @@ private:
     int m_userId;
     QString m_specialization;
     QString m_title;
+    QString m_personalInfo;
     QString m_fullName;
 };
 

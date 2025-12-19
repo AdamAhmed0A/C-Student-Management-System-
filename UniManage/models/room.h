@@ -21,11 +21,35 @@ public:
     int capacity() const;
     void setCapacity(int capacity);
 
+    int acUnits() const;
+    void setAcUnits(int count);
+
+    int fansCount() const;
+    void setFansCount(int count);
+
+    int lightingPoints() const;
+    void setLightingPoints(int count);
+
+    int computersCount() const;
+    void setComputersCount(int count);
+
+    QString seatingDescription() const;
+    void setSeatingDescription(const QString& desc);
+
+    QString code() const;
+    void setCode(const QString& code);
+
 private:
     int m_id;
     QString m_name;
     QString m_type;
     int m_capacity;
+    int m_acUnits;
+    int m_fansCount;
+    int m_lightingPoints;
+    int m_computersCount;
+    QString m_seatingDescription;
+    QString m_code;
 };
 
 #endif // ROOM_H

@@ -27,7 +27,12 @@ private:
     void setupUI();
     QWidget* createStudentsTab();
     QWidget* createCoursesTab();
-    QWidget* createSetupTab();
+    QWidget* createFacultiesTab();
+    QWidget* createDepartmentsTab();
+    QWidget* createRoomsTab();
+    QWidget* createProfessorsTab();
+    QWidget* createSchedulesTab();
+    QWidget* createAcademicSetupTab();
     
     void refreshStudentsTable();
     void refreshCoursesTable();
@@ -36,8 +41,10 @@ private:
     void refreshLevelsTable();
     void refreshRoomsTable();
     void refreshProfessorsTable();
+    void refreshSchedulesTable();
 
 private slots:
+    void onLogout();
     void onAddStudent();
     void onEditStudent();
     void onDeleteStudent();
@@ -51,6 +58,8 @@ private slots:
     void onAddLevel();
     void onAddRoom();
     void onAddProfessor();
+    void onAddSchedule();
+    void onManageRoomSpecs();
 
 private:
     int m_adminId;
@@ -62,6 +71,7 @@ private:
     QTableWidget* m_levelsTable;
     QTableWidget* m_roomsTable;
     QTableWidget* m_professorsTable;
+    QTableWidget* m_schedulesTable;
     
     StudentController m_studentController;
     CourseController m_courseController;

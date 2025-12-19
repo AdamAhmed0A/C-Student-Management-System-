@@ -8,9 +8,6 @@ class Enrollment
 {
 public:
     Enrollment();
-    Enrollment(int id, int studentId, const QString& status, const QString& assessmentsGrades,
-               const QString& assignment1, const QString& assignment2, const QString& finalGrade,
-               int totalMarks, bool isRafaaApplied, const QDateTime& enrolledAt, const QDateTime& createdAt);
 
     int id() const;
     void setId(int id);
@@ -18,23 +15,35 @@ public:
     int studentId() const;
     void setStudentId(int studentId);
 
+    int courseId() const;
+    void setCourseId(int courseId);
+
     QString status() const;
     void setStatus(const QString& status);
 
-    QString assessmentsGrades() const;
-    void setAssessmentsGrades(const QString& grades);
+    int attendanceCount() const;
+    void setAttendanceCount(int count);
 
-    QString assignment1() const;
-    void setAssignment1(const QString& val);
+    int absenceCount() const;
+    void setAbsenceCount(int count);
 
-    QString assignment2() const;
-    void setAssignment2(const QString& val);
+    double assignment1Grade() const;
+    void setAssignment1Grade(double grade);
 
-    QString finalGrade() const;
-    void setFinalGrade(const QString& val);
+    double assignment2Grade() const;
+    void setAssignment2Grade(double grade);
 
-    int totalMarks() const;
-    void setTotalMarks(int totalMarks);
+    double courseworkGrade() const;
+    void setCourseworkGrade(double grade);
+
+    double finalExamGrade() const;
+    void setFinalExamGrade(double grade);
+
+    double totalGrade() const;
+    void setTotalGrade(double grade);
+
+    QString letterGrade() const;
+    void setLetterGrade(const QString& grade);
 
     bool isRafaaApplied() const;
     void setIsRafaaApplied(bool applied);
@@ -42,21 +51,31 @@ public:
     QDateTime enrolledAt() const;
     void setEnrolledAt(const QDateTime& enrolledAt);
 
-    QDateTime createdAt() const;
-    void setCreatedAt(const QDateTime& createdAt);
+    // Helper fields for UI
+    QString studentName() const;
+    void setStudentName(const QString& name);
+    
+    QString courseName() const;
+    void setCourseName(const QString& name);
 
 private:
     int m_id;
     int m_studentId;
+    int m_courseId;
     QString m_status;
-    QString m_assessmentsGrades;
-    QString m_assignment1;
-    QString m_assignment2;
-    QString m_final;
-    int m_totalMarks;
+    int m_attendanceCount;
+    int m_absenceCount;
+    double m_assignment1Grade;
+    double m_assignment2Grade;
+    double m_courseworkGrade;
+    double m_finalExamGrade;
+    double m_totalGrade;
+    QString m_letterGrade;
     bool m_isRafaaApplied;
     QDateTime m_enrolledAt;
-    QDateTime m_createdAt;
+    
+    QString m_studentName;
+    QString m_courseName;
 };
 
 #endif // ENROLLMENT_H

@@ -23,7 +23,8 @@ namespace Queries {
                                              "JOIN users u ON sd.user_id = u.id ORDER BY sd.student_number";
     const QString SELECT_STUDENT_DATA_BY_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
                                               "JOIN users u ON sd.user_id = u.id WHERE sd.id = ?";
-    const QString SELECT_STUDENT_DATA_BY_USER_ID = "SELECT * FROM students_data WHERE user_id = ?";
+    const QString SELECT_STUDENT_DATA_BY_USER_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
+                                                   "JOIN users u ON sd.user_id = u.id WHERE sd.user_id = ?";
     const QString SELECT_STUDENT_DATA_BY_STUDENT_NUMBER = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
 		"JOIN users u ON sd.user_id = u.id WHERE sd.student_number = ?";
 
@@ -34,8 +35,8 @@ namespace Queries {
     const QString SELECT_ALL_SEMESTERS = "SELECT * FROM semester ORDER BY year DESC, semester DESC";
 
     // Course queries
-    const QString INSERT_COURSE = "INSERT INTO courses (name, description, year_level, credit_hours, semester_id) VALUES (?, ?, ?, ?, ?)";
-    const QString UPDATE_COURSE = "UPDATE courses SET name = ?, description = ?, year_level = ?, credit_hours = ?, semester_id = ? WHERE id = ?";
+    const QString INSERT_COURSE = "INSERT INTO courses (name, description, year_level, credit_hours, semester_id, max_grade, course_type) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const QString UPDATE_COURSE = "UPDATE courses SET name = ?, description = ?, year_level = ?, credit_hours = ?, semester_id = ?, max_grade = ?, course_type = ? WHERE id = ?";
     const QString DELETE_COURSE = "DELETE FROM courses WHERE id = ?";
     const QString SELECT_ALL_COURSES = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "
                                        "LEFT JOIN semester s ON c.semester_id = s.id ORDER BY c.name";
@@ -52,12 +53,16 @@ namespace Queries {
     const QString SELECT_SECTIONS_BY_COURSE = "SELECT * FROM sections WHERE course_id = ?";
 
     // Enrollment queries
-    const QString INSERT_ENROLLMENT = "INSERT INTO enrollments (student_id, status, assessments_grades, Assignment_1, Assignment_2, final, total_marks, is_rafaa_applied) "
-                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    const QString UPDATE_ENROLLMENT = "UPDATE enrollments SET status = ?, assessments_grades = ?, Assignment_1 = ?, Assignment_2 = ?, final = ?, total_marks = ?, is_rafaa_applied = ? "
+    const QString INSERT_ENROLLMENT = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, total_grade, letter_grade) "
+                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const QString UPDATE_ENROLLMENT = "UPDATE enrollments SET status = ?, attendance_count = ?, absence_count = ?, assignment_1_grade = ?, assignment_2_grade = ?, coursework_grade = ?, final_exam_grade = ?, total_grade = ?, letter_grade = ? "
                                       "WHERE id = ?";
     const QString DELETE_ENROLLMENT = "DELETE FROM enrollments WHERE id = ?";
-    const QString SELECT_ENROLLMENTS_BY_STUDENT = "SELECT * FROM enrollments WHERE student_id = ?";
+    const QString SELECT_ENROLLMENTS_BY_STUDENT = "SELECT e.*, c.name as course_name, c.course_type, c.max_grade FROM enrollments e "
+                                                 "JOIN courses c ON e.course_id = c.id WHERE e.student_id = ?";
+    const QString SELECT_ENROLLMENTS_BY_COURSE = "SELECT e.*, sd.student_number, u.full_name FROM enrollments e "
+                                                "JOIN students_data sd ON e.student_id = sd.id "
+                                                "JOIN users u ON sd.user_id = u.id WHERE e.course_id = ?";
 
     // Payment queries
     const QString INSERT_PAYMENT = "INSERT INTO payments (student_id, amount, date, year, method, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -91,25 +96,33 @@ namespace Queries {
     const QString SELECT_ALL_ACADEMIC_LEVELS = "SELECT * FROM academic_levels ORDER BY level_number";
 
     // Room queries
-    const QString INSERT_ROOM = "INSERT INTO rooms (name, type, capacity) VALUES (?, ?, ?)";
-    const QString UPDATE_ROOM = "UPDATE rooms SET name = ?, type = ?, capacity = ? WHERE id = ?";
+    const QString INSERT_ROOM = "INSERT INTO rooms (name, type, capacity, ac_units, fans_count, lighting_points, computers_count, seating_description, code) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const QString UPDATE_ROOM = "UPDATE rooms SET name = ?, type = ?, capacity = ?, ac_units = ?, fans_count = ?, lighting_points = ?, computers_count = ?, seating_description = ?, code = ? "
+                                "WHERE id = ?";
     const QString DELETE_ROOM = "DELETE FROM rooms WHERE id = ?";
     const QString SELECT_ALL_ROOMS = "SELECT * FROM rooms ORDER BY name";
 
+    // Room Specs (Equipment)
+    const QString INSERT_ROOM_SPEC = "INSERT INTO room_specs (room_id, product_id, product_name, product_description) VALUES (?, ?, ?, ?)";
+    const QString DELETE_ROOM_SPECS = "DELETE FROM room_specs WHERE room_id = ?";
+    const QString SELECT_ROOM_SPECS = "SELECT * FROM room_specs WHERE room_id = ?";
+
     // Professor queries
-    const QString INSERT_PROFESSOR = "INSERT INTO professors (user_id, specialization, title) VALUES (?, ?, ?)";
-    const QString UPDATE_PROFESSOR = "UPDATE professors SET specialization = ?, title = ? WHERE id = ?";
+    const QString INSERT_PROFESSOR = "INSERT INTO professors (user_id, specialization, title, personal_info) VALUES (?, ?, ?, ?)";
+    const QString UPDATE_PROFESSOR = "UPDATE professors SET specialization = ?, title = ?, personal_info = ? WHERE id = ?";
     const QString DELETE_PROFESSOR = "DELETE FROM professors WHERE id = ?";
     const QString SELECT_ALL_PROFESSORS = "SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id ORDER BY u.full_name";
+    const QString SELECT_PROFESSOR_BY_USER_ID = "SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id WHERE p.user_id = ?";
 
-    // Helper / Advanced Queries
-    const QString SELECT_ENROLLMENTS_BY_SECTION = "SELECT e.* FROM enrollments e "
-                                                  "JOIN students_data s ON e.student_id = s.id "
-                                                  "WHERE s.section_id = ?";
-    const QString SELECT_USERS_BY_ROLE = "SELECT * FROM users WHERE role = ?";
-    const QString SELECT_STUDENTS_BY_SEARCH = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
-                                              "JOIN users u ON sd.user_id = u.id "
-                                              "WHERE u.full_name LIKE ? OR sd.student_number LIKE ?";
+    // Schedule queries
+    const QString INSERT_SCHEDULE = "INSERT INTO schedules (course_id, room_id, professor_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)";
+    const QString DELETE_SCHEDULE = "DELETE FROM schedules WHERE id = ?";
+    const QString SELECT_ALL_SCHEDULES = "SELECT s.*, c.name as course_name, r.name as room_name, u.full_name as professor_name "
+                                         "FROM schedules s JOIN courses c ON s.course_id = c.id "
+                                         "JOIN rooms r ON s.room_id = r.id "
+                                         "JOIN professors p ON s.professor_id = p.id "
+                                         "JOIN users u ON p.user_id = u.id";
 }
 
 #endif // QUERIES_H

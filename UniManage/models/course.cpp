@@ -1,7 +1,7 @@
 #include "course.h"
 
 Course::Course()
-    : m_id(0), m_yearLevel(1), m_creditHours(3), m_semesterId(0)
+    : m_id(0), m_yearLevel(1), m_creditHours(3), m_semesterId(0), m_maxGrade(100), m_courseType("Theoretical")
 {
 }
 
@@ -106,3 +106,9 @@ void Course::setSemesterName(const QString &name)
 {
     m_semesterName = name;
 }
+
+int Course::maxGrade() const { return m_maxGrade; }
+void Course::setMaxGrade(int maxGrade) { m_maxGrade = maxGrade; }
+
+QString Course::courseType() const { return m_courseType; }
+void Course::setCourseType(const QString& courseType) { m_courseType = courseType; }

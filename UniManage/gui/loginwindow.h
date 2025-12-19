@@ -22,8 +22,7 @@ private slots:
 
 private:
     void setupUI();
-    bool loginAdmin(const QString& username, const QString& password);
-    bool loginStudent(const QString& studentNumber);
+    bool tryLogin(const QString& username, const QString& password, const QString& role);
 
     QComboBox* m_userTypeCombo;
     QLabel* m_usernameLabel;
@@ -33,8 +32,7 @@ private:
     QPushButton* m_loginButton;
     QPushButton* m_testConnButton;
 
-    int m_currentAdminId;
-    int m_currentStudentId;
+    int m_currentUserId;
 };
 
 #endif // LOGINWINDOW_H

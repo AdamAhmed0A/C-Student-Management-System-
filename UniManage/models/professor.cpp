@@ -17,5 +17,8 @@ void Professor::setSpecialization(const QString& specialization) { m_specializat
 QString Professor::title() const { return m_title; }
 void Professor::setTitle(const QString& title) { m_title = title; }
 
+QString Professor::personalInfo() const { return m_personalInfo; }
+void Professor::setPersonalInfo(const QString& info) { m_personalInfo = info; }
+
 QString Professor::fullName() const { return m_fullName; }
 void Professor::setFullName(const QString& name) { m_fullName = name; }
