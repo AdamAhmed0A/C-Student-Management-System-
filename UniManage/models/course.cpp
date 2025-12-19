@@ -1,0 +1,108 @@
+#include "course.h"
+
+Course::Course()
+    : m_id(0), m_yearLevel(1), m_creditHours(3), m_semesterId(0)
+{
+}
+
+Course::Course(int id, const QString &name, const QString &description, int yearLevel, int creditHours, int semesterId)
+{
+    m_id = id;
+    m_name = name;
+    m_description = description;
+    m_yearLevel = yearLevel;
+    m_creditHours = creditHours;
+    m_semesterId = semesterId;
+    m_createdAt = QDateTime::currentDateTime();
+    m_updatedAt = QDateTime::currentDateTime();
+}
+
+int Course::id() const
+{
+    return m_id;
+}
+
+void Course::setId(int id)
+{
+    m_id = id;
+}
+
+QString Course::name() const
+{
+    return m_name;
+}
+
+void Course::setName(const QString &name)
+{
+    m_name = name;
+}
+
+QString Course::description() const
+{
+    return m_description;
+}
+
+void Course::setDescription(const QString &description)
+{
+    m_description = description;
+}
+
+int Course::yearLevel() const
+{
+    return m_yearLevel;
+}
+
+void Course::setYearLevel(int yearLevel)
+{
+    m_yearLevel = yearLevel;
+}
+
+int Course::creditHours() const
+{
+    return m_creditHours;
+}
+
+void Course::setCreditHours(int creditHours)
+{
+    m_creditHours = creditHours;
+}
+
+int Course::semesterId() const
+{
+    return m_semesterId;
+}
+
+void Course::setSemesterId(int semesterId)
+{
+    m_semesterId = semesterId;
+}
+
+QDateTime Course::createdAt() const
+{
+    return m_createdAt;
+}
+
+void Course::setCreatedAt(const QDateTime &createdAt)
+{
+    m_createdAt = createdAt;
+}
+
+QDateTime Course::updatedAt() const
+{
+    return m_updatedAt;
+}
+
+void Course::setUpdatedAt(const QDateTime &updatedAt)
+{
+    m_updatedAt = updatedAt;
+}
+
+QString Course::semesterName() const
+{
+    return m_semesterName;
+}
+
+void Course::setSemesterName(const QString &name)
+{
+    m_semesterName = name;
+}
