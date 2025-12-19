@@ -121,24 +121,21 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
 
 void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& courseType, int maxMarks)
 {
-    double total = 0;
-    if (courseType == "Practical") {
-        // Practical courses: Ass1 (20%), Ass2 (30%), CW (20%), Final (30%)
-        total = (e.assignment1Grade() * 0.20) + 
-                (e.assignment2Grade() * 0.30) + 
-                (e.courseworkGrade() * 0.20) + 
-                (e.finalExamGrade() * 0.30);
-    } else {
-        // Theoretical courses: Ass1 (20%), Ass2 (20%), CW (60%), Final (0%)
-        total = (e.assignment1Grade() * 0.20) + 
-                (e.assignment2Grade() * 0.20) + 
-                (e.courseworkGrade() * 0.60);
-    }
+    // Total is simply the sum of all components
+    // The inputs (Assignment 1, 2, CW, Final) are expected to be raw marks out of their respective component max
+    double total = e.assignment1Grade() + 
+                   e.assignment2Grade() + 
+                   e.courseworkGrade() + 
+                   e.finalExamGrade();
 
     e.setTotalGrade(total);
 
-    // Calculate Percentage
-    double percentage = (total / maxMarks) * 100.0;
+    // Calculate Percentage based on course Max Marks (100 or 150)
+    double percentage = 0.0;
+    if (maxMarks > 0) {
+        percentage = (total / maxMarks) * 100.0;
+    }
+
     QString grade;
     if (percentage >= 85) grade = "Excellent";
     else if (percentage >= 75) grade = "Very Good";

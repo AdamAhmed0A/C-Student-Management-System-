@@ -821,21 +821,50 @@ void AdminPanel::onAddRoom() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add Hall/Lab");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* name = new QLineEdit();
+    QLineEdit* code = new QLineEdit();
     QComboBox* type = new QComboBox(); type->addItems({"Hall", "Lab"});
-    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 500);
-    layout->addRow("Name:", name);
+    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 1000);
+    
+    QSpinBox* ac = new QSpinBox(); ac->setRange(0, 50);
+    QSpinBox* fans = new QSpinBox(); fans->setRange(0, 50);
+    QSpinBox* lights = new QSpinBox(); lights->setRange(0, 200);
+    QSpinBox* pcs = new QSpinBox(); pcs->setRange(0, 100);
+    
+    QTextEdit* desc = new QTextEdit();
+    desc->setMaximumHeight(60);
+
+    layout->addRow("Room Name:", name);
+    layout->addRow("Room Code (Unique):", code);
     layout->addRow("Type:", type);
     layout->addRow("Capacity:", cap);
+    layout->addRow("AC Units:", ac);
+    layout->addRow("Fans:", fans);
+    layout->addRow("Lighting Points:", lights);
+    layout->addRow("Computers (for Labs):", pcs);
+    layout->addRow("Seating Description:", desc);
+
     QPushButton* btn = new QPushButton("Save Room");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
-        if (name->text().isEmpty()) {
-            QMessageBox::warning(this, "Input Error", "Room name is required.");
+        if (name->text().isEmpty() || code->text().isEmpty()) {
+            QMessageBox::warning(this, "Input Error", "Room name and code are required.");
             return;
         }
-        Room r; r.setName(name->text()); r.setType(type->currentText()); r.setCapacity(cap->value());
+        Room r; 
+        r.setName(name->text()); 
+        r.setCode(code->text());
+        r.setType(type->currentText()); 
+        r.setCapacity(cap->value());
+        r.setAcUnits(ac->value());
+        r.setFansCount(fans->value());
+        r.setLightingPoints(lights->value());
+        r.setComputersCount(pcs->value());
+        r.setSeatingDescription(desc->toPlainText());
+
         if (m_roomController.addRoom(r)) {
             QMessageBox::information(this, "Success", "Physical room/lab registered.");
             refreshRoomsTable();
@@ -1067,4 +1096,66 @@ void AdminPanel::onDeleteProfessor() {
 }
 
 void AdminPanel::onAddSchedule() {}
-void AdminPanel::onManageRoomSpecs() {}
+void AdminPanel::onManageRoomSpecs() {
+    int row = m_roomsTable->currentRow();
+    if (row < 0) {
+        QMessageBox::warning(this, "Select Room", "Please select a room first.");
+        return;
+    }
+    int roomId = m_roomsTable->item(row, 0)->text().toInt();
+    QString roomName = m_roomsTable->item(row, 1)->text();
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Manage Specs for " + roomName);
+    dialog.resize(600, 400);
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    QTableWidget* table = new QTableWidget();
+    table->setColumnCount(3);
+    table->setHorizontalHeaderLabels({"Prod ID", "Product", "Description"});
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    
+    // Load specs
+    auto specs = m_roomController.getRoomSpecs(roomId);
+    for(const auto& s : specs) {
+        int r = table->rowCount();
+        table->insertRow(r);
+        table->setItem(r, 0, new QTableWidgetItem(s.productId));
+        table->setItem(r, 1, new QTableWidgetItem(s.productName));
+        table->setItem(r, 2, new QTableWidgetItem(s.description));
+    }
+    layout->addWidget(table);
+
+    // Inputs
+    QHBoxLayout* inputL = new QHBoxLayout();
+    QLineEdit* pId = new QLineEdit(); pId->setPlaceholderText("Product ID");
+    QLineEdit* pName = new QLineEdit(); pName->setPlaceholderText("Product Name");
+    QLineEdit* pDesc = new QLineEdit(); pDesc->setPlaceholderText("Description");
+    inputL->addWidget(pId);
+    inputL->addWidget(pName);
+    inputL->addWidget(pDesc);
+    layout->addLayout(inputL);
+
+    QPushButton* addBtn = new QPushButton("Add Item");
+    layout->addWidget(addBtn);
+
+    connect(addBtn, &QPushButton::clicked, [&]() {
+        if(pId->text().isEmpty() || pName->text().isEmpty()) return;
+        m_roomController.addRoomSpec(roomId, pId->text(), pName->text(), pDesc->text());
+        
+        // Refresh local table
+        int r = table->rowCount();
+        table->insertRow(r);
+        table->setItem(r, 0, new QTableWidgetItem(pId->text()));
+        table->setItem(r, 1, new QTableWidgetItem(pName->text()));
+        table->setItem(r, 2, new QTableWidgetItem(pDesc->text()));
+        
+        pId->clear(); pName->clear(); pDesc->clear();
+    });
+    
+    QPushButton* closeBtn = new QPushButton("Close");
+    connect(closeBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+    layout->addWidget(closeBtn);
+
+    dialog.exec();
+}

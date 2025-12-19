@@ -52,4 +52,12 @@ private:
     QString m_code;
 };
 
+struct RoomSpec {
+    int id;
+    int roomId;
+    QString productId;
+    QString productName;
+    QString description;
+};
+
 #endif // ROOM_H
