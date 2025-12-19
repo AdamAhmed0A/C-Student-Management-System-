@@ -14,9 +14,9 @@ namespace Queries {
 	const QString Update_User_Password = "UPDATE users SET password = ? WHERE id = ?";
 
     // Student Data queries
-    const QString INSERT_STUDENT_DATA = "INSERT INTO students_data (user_id, student_number, id_number, dob, year, department, section_id, seat_number, status) "
-                                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    const QString UPDATE_STUDENT_DATA = "UPDATE students_data SET id_number = ?, dob = ?, year = ?, department = ?, section_id = ?, seat_number = ?, status = ? "
+    const QString INSERT_STUDENT_DATA = "INSERT INTO students_data (user_id, student_number, id_number, dob, department, department_id, academic_level_id, section_id, seat_number, status) "
+                                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const QString UPDATE_STUDENT_DATA = "UPDATE students_data SET id_number = ?, dob = ?, department = ?, department_id = ?, academic_level_id = ?, section_id = ?, seat_number = ?, status = ? "
                                         "WHERE id = ?";
     const QString DELETE_STUDENT_DATA = "DELETE FROM students_data WHERE id = ?";
     const QString SELECT_ALL_STUDENTS_DATA = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
@@ -71,6 +71,36 @@ namespace Queries {
     const QString UPDATE_NEWS = "UPDATE news SET title = ?, body = ? WHERE id = ?";
     const QString DELETE_NEWS = "DELETE FROM news WHERE id = ?";
     const QString SELECT_ALL_NEWS = "SELECT * FROM news ORDER BY created_at DESC";
+
+    // College queries
+    const QString INSERT_COLLEGE = "INSERT INTO colleges (name, code) VALUES (?, ?)";
+    const QString UPDATE_COLLEGE = "UPDATE colleges SET name = ?, code = ? WHERE id = ?";
+    const QString DELETE_COLLEGE = "DELETE FROM colleges WHERE id = ?";
+    const QString SELECT_ALL_COLLEGES = "SELECT * FROM colleges ORDER BY name";
+
+    // Department queries
+    const QString INSERT_DEPARTMENT = "INSERT INTO departments (name, college_id, code) VALUES (?, ?, ?)";
+    const QString UPDATE_DEPARTMENT = "UPDATE departments SET name = ?, college_id = ?, code = ? WHERE id = ?";
+    const QString DELETE_DEPARTMENT = "DELETE FROM departments WHERE id = ?";
+    const QString SELECT_ALL_DEPARTMENTS = "SELECT d.*, c.name as college_name FROM departments d JOIN colleges c ON d.college_id = c.id ORDER BY d.name";
+
+    // Academic Level queries
+    const QString INSERT_ACADEMIC_LEVEL = "INSERT INTO academic_levels (name, level_number) VALUES (?, ?)";
+    const QString UPDATE_ACADEMIC_LEVEL = "UPDATE academic_levels SET name = ?, level_number = ? WHERE id = ?";
+    const QString DELETE_ACADEMIC_LEVEL = "DELETE FROM academic_levels WHERE id = ?";
+    const QString SELECT_ALL_ACADEMIC_LEVELS = "SELECT * FROM academic_levels ORDER BY level_number";
+
+    // Room queries
+    const QString INSERT_ROOM = "INSERT INTO rooms (name, type, capacity) VALUES (?, ?, ?)";
+    const QString UPDATE_ROOM = "UPDATE rooms SET name = ?, type = ?, capacity = ? WHERE id = ?";
+    const QString DELETE_ROOM = "DELETE FROM rooms WHERE id = ?";
+    const QString SELECT_ALL_ROOMS = "SELECT * FROM rooms ORDER BY name";
+
+    // Professor queries
+    const QString INSERT_PROFESSOR = "INSERT INTO professors (user_id, specialization, title) VALUES (?, ?, ?)";
+    const QString UPDATE_PROFESSOR = "UPDATE professors SET specialization = ?, title = ? WHERE id = ?";
+    const QString DELETE_PROFESSOR = "DELETE FROM professors WHERE id = ?";
+    const QString SELECT_ALL_PROFESSORS = "SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id ORDER BY u.full_name";
 
     // Helper / Advanced Queries
     const QString SELECT_ENROLLMENTS_BY_SECTION = "SELECT e.* FROM enrollments e "

@@ -4,7 +4,7 @@ StudentData::StudentData()
 {
 }
 
-StudentData::StudentData(int id, int userId, const QString &studentNumber, const QString &idNumber, const QString &phone, const QDateTime &dob, int year, const QString &department, int sectionId, const QString &seatNumber, const QString &status)
+StudentData::StudentData(int id, int userId, const QString &studentNumber, const QString &idNumber, const QString &phone, const QDateTime &dob, const QString &department, int sectionId, const QString &seatNumber, const QString &status)
 {
     m_id = id;
     m_userId = userId;
@@ -12,11 +12,12 @@ StudentData::StudentData(int id, int userId, const QString &studentNumber, const
     m_idNumber = idNumber;
     m_phone = phone;
     m_dob = dob;
-    m_year = year;
     m_department = department;
     m_sectionId = sectionId;
     m_seatNumber = seatNumber;
     m_status = status;
+    m_departmentId = 0;
+    m_academicLevelId = 0;
     m_createdAt = QDateTime::currentDateTime();
     m_updatedAt = QDateTime::currentDateTime();
 }
@@ -87,16 +88,6 @@ void StudentData::setDob(const QDateTime &dob)
     m_dob = dob;
 }
 
-// Year
-int StudentData::year() const
-{
-    return m_year;
-}
-
-void StudentData::setYear(int year)
-{
-    m_year = year;
-}
 
 // Department
 QString StudentData::department() const
@@ -141,6 +132,12 @@ void StudentData::setStatus(const QString &status)
 {
     m_status = status;
 }
+
+int StudentData::departmentId() const { return m_departmentId; }
+void StudentData::setDepartmentId(int id) { m_departmentId = id; }
+
+int StudentData::academicLevelId() const { return m_academicLevelId; }
+void StudentData::setAcademicLevelId(int id) { m_academicLevelId = id; }
 
 // Created At
 QDateTime StudentData::createdAt() const

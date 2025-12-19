@@ -49,11 +49,9 @@ QWidget* StudentPortal::createDashboardTab()
     
     m_studentNameLabel = new QLabel();
     m_studentNumberLabel = new QLabel();
-    m_yearLabel = new QLabel();
     
     formLayout->addRow("Name:", m_studentNameLabel);
     formLayout->addRow("Student Number:", m_studentNumberLabel);
-    formLayout->addRow("Year:", m_yearLabel);
     
     layout->addWidget(profileGroup);
     layout->addStretch();
@@ -88,7 +86,6 @@ void StudentPortal::loadDashboard()
 {
     m_studentNameLabel->setText(m_student.fullName());
     m_studentNumberLabel->setText(m_student.studentNumber());
-    m_yearLabel->setText(QString("Year %1").arg(m_student.year()));
 }
 
 void StudentPortal::loadCourses()

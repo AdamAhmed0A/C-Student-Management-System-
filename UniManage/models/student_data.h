@@ -8,7 +8,7 @@ class StudentData
 {
 public:
     StudentData();
-    StudentData(int id, int userId, const QString &studentNumber, const QString &idNumber, const QString &phone, const QDateTime &dob, int year, const QString &department, int sectionId, const QString &seatNumber, const QString &status);
+    StudentData(int id, int userId, const QString &studentNumber, const QString &idNumber, const QString &phone, const QDateTime &dob, const QString &department, int sectionId, const QString &seatNumber, const QString &status);
 
     int id() const;
     void setId(int id);
@@ -28,8 +28,6 @@ public:
     QDateTime dob() const;
     void setDob(const QDateTime &dob);
 
-    int year() const;
-    void setYear(int year);
 
     QString department() const;
     void setDepartment(const QString &department);
@@ -42,6 +40,12 @@ public:
 
     QString status() const;
     void setStatus(const QString &status);
+
+    int departmentId() const;
+    void setDepartmentId(int departmentId);
+
+    int academicLevelId() const;
+    void setAcademicLevelId(int academicLevelId);
 
     QDateTime createdAt() const;
     void setCreatedAt(const QDateTime &createdAt);
@@ -64,11 +68,12 @@ private:
     QString m_idNumber;
     QString m_phone;
     QDateTime m_dob;
-    int m_year;
     QString m_department;
     int m_sectionId;
     QString m_seatNumber;
     QString m_status;
+    int m_departmentId;
+    int m_academicLevelId;
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
     QString m_fullName; // Joined from User

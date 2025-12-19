@@ -33,7 +33,6 @@ private:
     QTabWidget* m_tabWidget;
     QLabel* m_studentNameLabel;
     QLabel* m_studentNumberLabel;
-    QLabel* m_yearLabel;
     QTableWidget* m_coursesTable;
     
     StudentController m_studentController;

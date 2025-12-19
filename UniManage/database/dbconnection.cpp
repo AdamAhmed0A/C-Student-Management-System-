@@ -118,12 +118,6 @@ bool DBConnection::createTables()
 {
     QSqlQuery query(m_database);
 
-    // Drop old tables to ensure fresh schema (order matters due to FKs)
-    QStringList tablesToDrop = {"enrollments", "payments", "students_data", "sections", "courses", "semester", "news", "users"};
-    for (const QString& table : tablesToDrop) {
-        query.exec("DROP TABLE IF EXISTS `" + table + "`");
-    }
-
     // Users table
     if (!query.exec("CREATE TABLE IF NOT EXISTS `users` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
@@ -184,14 +178,18 @@ bool DBConnection::createTables()
                     "student_number VARCHAR(100) UNIQUE NOT NULL,"
                     "id_number VARCHAR(100) NOT NULL,"
                     "dob DATETIME NULL,"
-                    "year INT NULL,"
-                    "department VARCHAR(255) NULL,"
+                    "dob DATETIME NULL,"
+                    "department VARCHAR(255) NULL," // Keep for backward compatibility
+                    "department_id INT NULL,"
+                    "academic_level_id INT NULL,"
                     "section_id INT NULL,"
                     "seat_number VARCHAR(50) NULL,"
                     "status VARCHAR(50) DEFAULT 'active',"
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
-                    "FOREIGN KEY (user_id) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "FOREIGN KEY (user_id) REFERENCES users(id),"
+                    "FOREIGN KEY (department_id) REFERENCES departments(id),"
+                    "FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating students_data table:" << query.lastError().text();
         return false;
     }
@@ -227,6 +225,56 @@ bool DBConnection::createTables()
                     "created_at DATETIME NULL,"
                     "FOREIGN KEY (student_id) REFERENCES students_data(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating payments table:" << query.lastError().text();
+        return false;
+    }
+
+    // Colleges table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `colleges` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(255) NOT NULL,"
+                    "code VARCHAR(50) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating colleges table:" << query.lastError().text();
+        return false;
+    }
+
+    // Departments table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `departments` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(255) NOT NULL,"
+                    "college_id INT,"
+                    "code VARCHAR(50) UNIQUE,"
+                    "FOREIGN KEY (college_id) REFERENCES colleges(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating departments table:" << query.lastError().text();
+        return false;
+    }
+
+    // Academic Levels table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `academic_levels` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(100) NOT NULL,"
+                    "level_number INT UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating academic_levels table:" << query.lastError().text();
+        return false;
+    }
+
+    // Rooms (Halls & Labs) table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `rooms` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(100) NOT NULL,"
+                    "type VARCHAR(50)," // 'Hall' or 'Lab'
+                    "capacity INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating rooms table:" << query.lastError().text();
+        return false;
+    }
+
+    // Professors (Doctors) table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `professors` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "user_id INT,"
+                    "specialization VARCHAR(255),"
+                    "title VARCHAR(100)," // Professor, Associate Professor, etc.
+                    "FOREIGN KEY (user_id) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating professors table:" << query.lastError().text();
         return false;
     }
 
@@ -272,5 +320,19 @@ bool DBConnection::insertDefaultData()
     }
 
     qDebug() << "Default admin created (username: admin, password: admin123)";
+
+    // Insert default semester if none exist
+    query.exec("SELECT COUNT(*) FROM semester");
+    if (query.next() && query.value(0).toInt() == 0) {
+        query.prepare("INSERT INTO semester (year, semester) VALUES (?, ?)");
+        query.addBindValue(QDateTime::currentDateTime());
+        query.addBindValue(1);
+        if (!query.exec()) {
+            qDebug() << "Error inserting default semester:" << query.lastError().text();
+        } else {
+            qDebug() << "Default semester created (Year: current, Sem: 1)";
+        }
+    }
+
     return true;
 }

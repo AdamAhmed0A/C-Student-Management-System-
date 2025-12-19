@@ -17,9 +17,16 @@ bool StudentController::addStudent(const StudentData& student, QString* error)
     query.addBindValue(student.studentNumber());
     query.addBindValue(student.idNumber());
     query.addBindValue(student.dob());
-    query.addBindValue(student.year());
     query.addBindValue(student.department());
     
+    // department_id
+    if (student.departmentId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.departmentId());
+
+    // academic_level_id
+    if (student.academicLevelId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.academicLevelId());
+
     // Handle nullable section_id
     if (student.sectionId() <= 0) {
         query.addBindValue(QVariant()); // Bind NULL
@@ -45,8 +52,14 @@ bool StudentController::updateStudent(const StudentData& student)
     query.prepare(Queries::UPDATE_STUDENT_DATA);
     query.addBindValue(student.idNumber());
     query.addBindValue(student.dob());
-    query.addBindValue(student.year());
     query.addBindValue(student.department());
+    
+    if (student.departmentId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.departmentId());
+
+    if (student.academicLevelId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.academicLevelId());
+
     query.addBindValue(student.sectionId());
     query.addBindValue(student.seatNumber());
     query.addBindValue(student.status());
@@ -88,7 +101,6 @@ QList<StudentData> StudentController::getAllStudents()
         student.setStudentNumber(query.value("student_number").toString());
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
-        student.setYear(query.value("year").toInt());
         student.setDepartment(query.value("department").toString());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
@@ -123,7 +135,6 @@ StudentData StudentController::getStudentById(int id)
         student.setStudentNumber(query.value("student_number").toString());
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
-        student.setYear(query.value("year").toInt());
         student.setDepartment(query.value("department").toString());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
@@ -155,7 +166,6 @@ StudentData StudentController::getStudentByUserId(int userId)
         student.setStudentNumber(query.value("student_number").toString());
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
-        student.setYear(query.value("year").toInt());
         student.setDepartment(query.value("department").toString());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
@@ -184,7 +194,6 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
         student.setStudentNumber(query.value("student_number").toString());
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
-        student.setYear(query.value("year").toInt());
         student.setDepartment(query.value("department").toString());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
