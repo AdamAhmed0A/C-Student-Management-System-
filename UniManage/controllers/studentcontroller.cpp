@@ -102,6 +102,8 @@ QList<StudentData> StudentController::getAllStudents()
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
         student.setDepartment(query.value("department").toString());
+        student.setDepartmentId(query.value("department_id").toInt());
+        student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
@@ -136,6 +138,8 @@ StudentData StudentController::getStudentById(int id)
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
         student.setDepartment(query.value("department").toString());
+        student.setDepartmentId(query.value("department_id").toInt());
+        student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
@@ -167,6 +171,8 @@ StudentData StudentController::getStudentByUserId(int userId)
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
         student.setDepartment(query.value("department").toString());
+        student.setDepartmentId(query.value("department_id").toInt());
+        student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
@@ -195,6 +201,8 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
         student.setIdNumber(query.value("id_number").toString());
         student.setDob(query.value("dob").toDateTime());
         student.setDepartment(query.value("department").toString());
+        student.setDepartmentId(query.value("department_id").toInt());
+        student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());

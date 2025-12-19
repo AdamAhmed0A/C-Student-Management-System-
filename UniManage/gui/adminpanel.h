@@ -31,13 +31,17 @@ private:
     
     void refreshStudentsTable();
     void refreshCoursesTable();
+    void refreshCollegesTable();
+    void refreshDepartmentsTable();
+    void refreshLevelsTable();
+    void refreshRoomsTable();
+    void refreshProfessorsTable();
 
 private slots:
     void onAddStudent();
     void onEditStudent();
     void onDeleteStudent();
     void onAddCourse();
-    // New slots
     void onEditCourse();
     void onDeleteCourse();
     

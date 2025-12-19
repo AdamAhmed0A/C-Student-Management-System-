@@ -114,6 +114,16 @@
     <ClCompile Include="models\semester.cpp" />
     <ClCompile Include="models\student_data.cpp" />
     <ClCompile Include="models\user.cpp" />
+    <ClCompile Include="controllers\collegecontroller.cpp" />
+    <ClCompile Include="controllers\departmentcontroller.cpp" />
+    <ClCompile Include="controllers\academic_level_controller.cpp" />
+    <ClCompile Include="controllers\roomcontroller.cpp" />
+    <ClCompile Include="controllers\professorcontroller.cpp" />
+    <ClCompile Include="models\college.cpp" />
+    <ClCompile Include="models\department.cpp" />
+    <ClCompile Include="models\academic_level.cpp" />
+    <ClCompile Include="models\room.cpp" />
+    <ClCompile Include="models\professor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="gui\studentPortal.h" />
@@ -137,6 +147,16 @@
     <ClInclude Include="models\semester.h" />
     <ClInclude Include="models\student_data.h" />
     <ClInclude Include="models\user.h" />
+    <ClInclude Include="controllers\collegecontroller.h" />
+    <ClInclude Include="controllers\departmentcontroller.h" />
+    <ClInclude Include="controllers\academic_level_controller.h" />
+    <ClInclude Include="controllers\roomcontroller.h" />
+    <ClInclude Include="controllers\professorcontroller.h" />
+    <ClInclude Include="models\college.h" />
+    <ClInclude Include="models\department.h" />
+    <ClInclude Include="models\academic_level.h" />
+    <ClInclude Include="models\room.h" />
+    <ClInclude Include="models\professor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

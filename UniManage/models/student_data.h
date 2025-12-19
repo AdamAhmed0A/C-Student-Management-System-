@@ -28,9 +28,14 @@ public:
     QDateTime dob() const;
     void setDob(const QDateTime &dob);
 
-
     QString department() const;
     void setDepartment(const QString &department);
+
+    int departmentId() const;
+    void setDepartmentId(int departmentId);
+
+    int academicLevelId() const;
+    void setAcademicLevelId(int academicLevelId);
 
     int sectionId() const;
     void setSectionId(int sectionId);
@@ -40,12 +45,6 @@ public:
 
     QString status() const;
     void setStatus(const QString &status);
-
-    int departmentId() const;
-    void setDepartmentId(int departmentId);
-
-    int academicLevelId() const;
-    void setAcademicLevelId(int academicLevelId);
 
     QDateTime createdAt() const;
     void setCreatedAt(const QDateTime &createdAt);
@@ -69,11 +68,11 @@ private:
     QString m_phone;
     QDateTime m_dob;
     QString m_department;
+    int m_departmentId;
+    int m_academicLevelId;
     int m_sectionId;
     QString m_seatNumber;
     QString m_status;
-    int m_departmentId;
-    int m_academicLevelId;
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
     QString m_fullName; // Joined from User
