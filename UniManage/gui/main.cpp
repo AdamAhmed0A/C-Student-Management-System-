@@ -25,8 +25,10 @@ int main(int argc, char *argv[])
 
     // Initialize database
     if (!DBConnection::instance().initialize()) {
-        QMessageBox::critical(nullptr, "Database Error", 
-            "Failed to initialize database. Please check the logs.");
+        QString error = DBConnection::instance().getLastError();
+        if (error.isEmpty()) error = "Failed to initialize database. Please check debug output.";
+        
+        QMessageBox::critical(nullptr, "Database Error", error);
         return 1;
     }
     

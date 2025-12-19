@@ -7,6 +7,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QMessageBox>
 
 StudentPortal::StudentPortal(int studentUserId, QWidget *parent)
     : QWidget(parent), m_userId(studentUserId)
@@ -14,7 +15,7 @@ StudentPortal::StudentPortal(int studentUserId, QWidget *parent)
     setStyleSheet(StyleHelper::getMainStyle());
     loadStudentData();
     setupUI();
-    setWindowTitle("Student Portal - University SIS");
+    setWindowTitle("Student Portal - University Management System");
     resize(1000, 700);
 }
 
@@ -40,6 +41,12 @@ void StudentPortal::setupUI() {
     m_gpaLabel->setStyleSheet("color: #059669; font-weight: bold; background: #ecfdf5; padding: 10px; border-radius: 8px;");
     header->addWidget(m_gpaLabel);
     
+    QPushButton* refreshBtn = new QPushButton("Refresh");
+    refreshBtn->setObjectName("secondaryBtn");
+    refreshBtn->setFixedWidth(100);
+    connect(refreshBtn, &QPushButton::clicked, this, &StudentPortal::onRefreshAll);
+    header->addWidget(refreshBtn);
+
     QPushButton* logoutBtn = new QPushButton("Logout");
     logoutBtn->setObjectName("dangerBtn");
     logoutBtn->setFixedWidth(100);
@@ -63,13 +70,21 @@ void StudentPortal::onLogout() {
     this->close();
 }
 
+void StudentPortal::onRefreshAll() {
+    loadStudentData();
+    refreshGrades();
+    refreshPayments();
+    QMessageBox::information(this, "Refreshed", "Your student profile and academic records have been updated.");
+}
+
 QWidget* StudentPortal::createDashboardTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
     
-    QGroupBox* profile = new QGroupBox("Student Profile Item");
+    QGroupBox* profile = new QGroupBox("Student Registration Details");
     QFormLayout* fl = new QFormLayout(profile);
     fl->addRow("Student Code:", new QLabel(m_student.studentNumber()));
+    fl->addRow("National ID:", new QLabel(m_student.idNumber()));
     fl->addRow("Faculty/Dept:", new QLabel(m_student.department()));
     fl->addRow("Academic Level:", new QLabel(QString::number(m_student.academicLevelId())));
     fl->addRow("Section Number:", new QLabel(QString::number(m_student.sectionId())));

@@ -51,10 +51,27 @@ bool DBConnection::initialize()
     m_database.setPassword(m_password);
     m_database.setDatabaseName(m_dbName);
 
+    qDebug() << "=== ATTEMPTING DATABASE CONNECTION ===";
+    qDebug() << "Host:" << m_host;
+    qDebug() << "Port:" << m_port;
+    qDebug() << "User:" << m_user;
+    qDebug() << "Database:" << m_dbName;
+    qDebug() << "Password:" << m_password;
+
     if (!m_database.open()) {
-        qDebug() << "Initial MySQL open failed:" << m_database.lastError().text();
+        m_lastError = QString("Connection Failed.\nError: %1\nDriver Error: %2\nDatabase Error: %3")
+                          .arg(m_database.lastError().text())
+                          .arg(m_database.lastError().driverText())
+                          .arg(m_database.lastError().databaseText());
+                          
+        qDebug() << "=== DATABASE CONNECTION FAILED ===";
+        qDebug() << "Error:" << m_database.lastError().text();
+        qDebug() << "Error Type:" << m_database.lastError().type();
+        qDebug() << "Driver Error:" << m_database.lastError().driverText();
+        qDebug() << "Database Error:" << m_database.lastError().databaseText();
 
         // Try to create the database if it doesn't exist by connecting without a DB
+        qDebug() << "Attempting to create database...";
         QString tempConnName = "__create_db_conn__";
         QSqlDatabase tmp = QSqlDatabase::addDatabase("QMYSQL", tempConnName);
         tmp.setHostName(m_host);
@@ -63,7 +80,23 @@ bool DBConnection::initialize()
         tmp.setPassword(m_password);
 
         if (!tmp.open()) {
-            qDebug() << "Error: unable to connect to MySQL server -" << tmp.lastError().text();
+            m_lastError = QString("Cannot connect to MySQL Server.\nError: %1\n\nIs MySQL running? Check username/password.")
+                              .arg(tmp.lastError().text());
+                              
+            qDebug() << "=== CANNOT CONNECT TO MYSQL SERVER ===";
+            qDebug() << "Error:" << tmp.lastError().text();
+            qDebug() << "";
+            qDebug() << "TROUBLESHOOTING:";
+            qDebug() << "1. Check if MySQL is running";
+            qDebug() << "2. Verify username and password";
+            qDebug() << "3. Check if MySQL is listening on" << m_host << ":" << m_port;
+            qDebug() << "";
+            qDebug() << "To set custom credentials, use environment variables:";
+            qDebug() << "  DB_HOST=127.0.0.1";
+            qDebug() << "  DB_PORT=3306";
+            qDebug() << "  DB_USER=root";
+            qDebug() << "  DB_PASSWORD=your_password";
+            qDebug() << "  DB_NAME=university";
             QSqlDatabase::removeDatabase(tempConnName);
             return false;
         }
@@ -71,12 +104,14 @@ bool DBConnection::initialize()
         QSqlQuery q(tmp);
         QString createdb = QString("CREATE DATABASE IF NOT EXISTS %1 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci").arg(m_dbName);
         if (!q.exec(createdb)) {
+            m_lastError = "Failed to create database: " + q.lastError().text();
             qDebug() << "Error creating database:" << q.lastError().text();
             tmp.close();
             QSqlDatabase::removeDatabase(tempConnName);
             return false;
         }
 
+        qDebug() << "Database created successfully!";
         tmp.close();
         QSqlDatabase::removeDatabase(tempConnName);
 
@@ -89,21 +124,28 @@ bool DBConnection::initialize()
         m_database.setDatabaseName(m_dbName);
 
         if (!m_database.open()) {
-            qDebug() << "Error: connection with database failed after creation -" << m_database.lastError().text();
+            m_lastError = "Connection failed after creating DB: " + m_database.lastError().text();
+            qDebug() << "=== ERROR: CONNECTION FAILED AFTER DATABASE CREATION ===";
+            qDebug() << "Error:" << m_database.lastError().text();
             return false;
         }
     }
 
-    qDebug() << "Database: MySQL connection ok, host:" << m_host << "db:" << m_dbName;
+    qDebug() << "=== DATABASE CONNECTION SUCCESSFUL ===";
+    qDebug() << "MySQL connection ok, host:" << m_host << "db:" << m_dbName;
 
     if (!createTables()) {
+        m_lastError = "Failed to create tables.";
         qDebug() << "Error: failed to create tables";
         return false;
     }
-
-    if (!insertDefaultData()) {
-        qDebug() << "Error: failed to insert default data";
-        return false;
+    
+    // Only insert default data if users table is empty
+    QSqlQuery checkUsers(m_database);
+    if (checkUsers.exec("SELECT COUNT(*) FROM users") && checkUsers.next()) {
+        if (checkUsers.value(0).toInt() == 0) {
+            insertDefaultData();
+        }
     }
 
     return true;
@@ -128,6 +170,38 @@ bool DBConnection::createTables()
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating users table:" << query.lastError().text();
+        return false;
+    }
+
+    // Migration: Ensure role column exists (for older database users)
+    query.exec("ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `role` VARCHAR(50) AFTER `password` ");
+
+    // Colleges (Faculty) table - MOVED UP
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `colleges` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(255) NOT NULL,"
+                    "code VARCHAR(50) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating colleges table:" << query.lastError().text();
+        return false;
+    }
+
+    // Departments table - MOVED UP
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `departments` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(255) NOT NULL,"
+                    "college_id INT,"
+                    "code VARCHAR(50) UNIQUE,"
+                    "FOREIGN KEY (college_id) REFERENCES colleges(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating departments table:" << query.lastError().text();
+        return false;
+    }
+
+    // Academic Levels table - MOVED UP
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `academic_levels` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(100) NOT NULL,"
+                    "level_number INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating academic_levels table:" << query.lastError().text();
         return false;
     }
 
@@ -189,11 +263,16 @@ bool DBConnection::createTables()
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users(id),"
-                    "FOREIGN KEY (department_id) REFERENCES departments(id),"
-                    "FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                     "FOREIGN KEY (department_id) REFERENCES departments(id)," // Now valid
+                     "FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) { // Now valid
         qDebug() << "Error creating students_data table:" << query.lastError().text();
         return false;
     }
+
+    // Migration: Ensure id_number exists in students_data
+    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `id_number` VARCHAR(100) AFTER `student_number` ");
+    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `department_id` INT NULL AFTER `department` ");
+    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `academic_level_id` INT NULL AFTER `department_id` ");
 
     // Enrollments table (expanded with Grade Distribution)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `enrollments` ("
@@ -231,36 +310,7 @@ bool DBConnection::createTables()
         qDebug() << "Error creating payments table:" << query.lastError().text();
         return false;
     }
-
-    // Colleges (Faculty) table
-    if (!query.exec("CREATE TABLE IF NOT EXISTS `colleges` ("
-                    "id INT PRIMARY KEY AUTO_INCREMENT,"
-                    "name VARCHAR(255) NOT NULL,"
-                    "code VARCHAR(50) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
-        qDebug() << "Error creating colleges table:" << query.lastError().text();
-        return false;
-    }
-
-    // Departments table
-    if (!query.exec("CREATE TABLE IF NOT EXISTS `departments` ("
-                    "id INT PRIMARY KEY AUTO_INCREMENT,"
-                    "name VARCHAR(255) NOT NULL,"
-                    "college_id INT,"
-                    "code VARCHAR(50) UNIQUE,"
-                    "FOREIGN KEY (college_id) REFERENCES colleges(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
-        qDebug() << "Error creating departments table:" << query.lastError().text();
-        return false;
-    }
-
-    // Academic Levels table
-    if (!query.exec("CREATE TABLE IF NOT EXISTS `academic_levels` ("
-                    "id INT PRIMARY KEY AUTO_INCREMENT,"
-                    "name VARCHAR(100) NOT NULL,"
-                    "level_number INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
-        qDebug() << "Error creating academic_levels table:" << query.lastError().text();
-        return false;
-    }
-
+    
     // Rooms (Halls & Labs) table expanded
     if (!query.exec("CREATE TABLE IF NOT EXISTS `rooms` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
@@ -288,7 +338,7 @@ bool DBConnection::createTables()
         qDebug() << "Error creating room_specs table:" << query.lastError().text();
         return false;
     }
-
+    
     // Professors (Doctors) table
     if (!query.exec("CREATE TABLE IF NOT EXISTS `professors` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
@@ -301,6 +351,9 @@ bool DBConnection::createTables()
         qDebug() << "Error creating professors table:" << query.lastError().text();
         return false;
     }
+
+    // Migration: Ensure id_number exists in professors
+    query.exec("ALTER TABLE `professors` ADD COLUMN IF NOT EXISTS `id_number` VARCHAR(100) UNIQUE AFTER `user_id` ");
 
     // Academic Schedules table
     if (!query.exec("CREATE TABLE IF NOT EXISTS `schedules` ("
@@ -337,29 +390,44 @@ bool DBConnection::insertDefaultData()
 {
     QSqlQuery query(m_database);
 
-    // Check if admin already exists
-    query.exec("SELECT COUNT(*) FROM users WHERE role = 'Admin'");
-    if (query.next() && query.value(0).toInt() > 0) {
-        qDebug() << "Default data already exists";
-        return true;
-    }
-
-    // Insert default admin (username: admin, password: admin123)
+    // Ensure default admin exists (username: admin, password: admin123)
     QString password = "admin123";
     QString passwordHash = QString(QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex());
 
-    query.prepare("INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)");
+    query.prepare("INSERT IGNORE INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)");
     query.addBindValue("System Administrator");
     query.addBindValue("admin");
     query.addBindValue(passwordHash);
     query.addBindValue("Admin");
+    query.exec();
 
-    if (!query.exec()) {
-        qDebug() << "Error inserting default admin:" << query.lastError().text();
-        return false;
+    // Ensure requested specific admin account exists (National ID 30510268801017, password 12345)
+    // We use REPLACE INTO or check specifically to ensure it's correct
+    QString specAdminPass = "12345";
+    QString specAdminHash = QString(QCryptographicHash::hash(specAdminPass.toUtf8(), QCryptographicHash::Sha256).toHex());
+    
+    // Check if this specific user exists
+    query.prepare("SELECT id FROM users WHERE username = ?");
+    query.addBindValue("30510268801017");
+    query.exec();
+    
+    if (query.next()) {
+        // Update existing to ensure password is correct
+        query.prepare("UPDATE users SET password = ?, role = 'Admin' WHERE username = ?");
+        query.addBindValue(specAdminHash);
+        query.addBindValue("30510268801017");
+        query.exec();
+    } else {
+        // Create new
+        query.prepare("INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)");
+        query.addBindValue("Main Administrator");
+        query.addBindValue("30510268801017");
+        query.addBindValue(specAdminHash);
+        query.addBindValue("Admin");
+        query.exec();
     }
 
-    qDebug() << "Default admin created (username: admin, password: admin123)";
+    qDebug() << "Admin accounts verified and synchronized.";
 
     // Insert default semester if none exist
     query.exec("SELECT COUNT(*) FROM semester");
@@ -367,12 +435,13 @@ bool DBConnection::insertDefaultData()
         query.prepare("INSERT INTO semester (year, semester) VALUES (?, ?)");
         query.addBindValue(QDateTime::currentDateTime());
         query.addBindValue(1);
-        if (!query.exec()) {
-            qDebug() << "Error inserting default semester:" << query.lastError().text();
-        } else {
-            qDebug() << "Default semester created (Year: current, Sem: 1)";
-        }
+        query.exec();
     }
 
     return true;
+}
+
+QString DBConnection::getLastError() const
+{
+    return m_lastError;
 }

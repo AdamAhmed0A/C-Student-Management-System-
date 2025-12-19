@@ -23,6 +23,7 @@ private slots:
     void onCourseSelected(int index);
     void onSaveGrades();
     void onRefreshStudents();
+    void onRefreshAll();
     void onLogout();
 
 private:

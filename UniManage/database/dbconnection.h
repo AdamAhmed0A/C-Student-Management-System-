@@ -12,6 +12,7 @@ public:
     QSqlDatabase& database();
     bool createTables();
     bool insertDefaultData();
+    QString getLastError() const;
 
 private:
     DBConnection();
@@ -19,6 +20,7 @@ private:
     DBConnection(const DBConnection&) = delete;
     DBConnection& operator=(const DBConnection&) = delete;
 
+    QString m_lastError;
     QSqlDatabase m_database;
         QString m_databasePath; // retained for possible sqlite fallback / logging
         QString m_host;

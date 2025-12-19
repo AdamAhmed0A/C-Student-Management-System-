@@ -76,3 +76,21 @@ Professor ProfessorController::getProfessorByUserId(int userId)
     }
     return p;
 }
+
+Professor ProfessorController::getProfessorById(int id)
+{
+    Professor p;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare("SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id WHERE p.id = ?");
+    query.addBindValue(id);
+    if (query.exec() && query.next()) {
+        p.setId(query.value("id").toInt());
+        p.setUserId(query.value("user_id").toInt());
+        p.setIdNumber(query.value("id_number").toString());
+        p.setSpecialization(query.value("specialization").toString());
+        p.setTitle(query.value("title").toString());
+        p.setPersonalInfo(query.value("personal_info").toString());
+        p.setFullName(query.value("full_name").toString());
+    }
+    return p;
+}

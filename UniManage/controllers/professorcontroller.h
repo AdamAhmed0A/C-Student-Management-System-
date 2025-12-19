@@ -13,6 +13,7 @@ public:
     bool deleteProfessor(int id);
     QList<Professor> getAllProfessors();
     Professor getProfessorByUserId(int userId);
+    Professor getProfessorById(int id);
 };
 
 #endif // PROFESSORCONTROLLER_H

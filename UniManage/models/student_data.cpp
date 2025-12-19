@@ -59,3 +59,9 @@ void StudentData::setFullName(const QString &fullName) { m_fullName = fullName; 
 
 QString StudentData::username() const { return m_username; }
 void StudentData::setUsername(const QString &username) { m_username = username; }
+
+QString StudentData::role() const { return m_role; }
+void StudentData::setRole(const QString &role) { m_role = role; }
+
+QString StudentData::levelName() const { return m_levelName; }
+void StudentData::setLevelName(const QString &levelName) { m_levelName = levelName; }

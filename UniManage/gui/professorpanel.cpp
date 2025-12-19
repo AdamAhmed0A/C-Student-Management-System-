@@ -35,6 +35,12 @@ void ProfessorPanel::setupUI() {
     header->addWidget(title);
     header->addStretch();
     
+    QPushButton* refreshBtn = new QPushButton("Refresh Data");
+    refreshBtn->setObjectName("secondaryBtn");
+    refreshBtn->setFixedWidth(130);
+    connect(refreshBtn, &QPushButton::clicked, this, &ProfessorPanel::onRefreshAll);
+    header->addWidget(refreshBtn);
+
     QPushButton* logoutBtn = new QPushButton("Logout");
     logoutBtn->setObjectName("dangerBtn");
     logoutBtn->setFixedWidth(120);
@@ -88,6 +94,12 @@ void ProfessorPanel::onLogout() {
     this->close();
 }
 
+void ProfessorPanel::onRefreshAll() {
+    loadCourses();
+    onRefreshStudents();
+    QMessageBox::information(this, "Refreshed", "Instructor data and student lists updated.");
+}
+
 void ProfessorPanel::loadCourses() {
     m_courseSelector->clear();
     for(const auto& c : m_courseController.getAllCourses()) {
@@ -133,6 +145,7 @@ void ProfessorPanel::onRefreshStudents() {
 void ProfessorPanel::onSaveGrades() {
     int cid = m_courseSelector->currentData().toInt();
     Course course = m_courseController.getCourseById(cid);
+    bool success = true;
     
     for(int i=0; i < m_studentsTable->rowCount(); ++i) {
         int eid = m_studentsTable->item(i, 0)->text().toInt();
@@ -146,9 +159,15 @@ void ProfessorPanel::onSaveGrades() {
         e.setFinalExamGrade(m_studentsTable->item(i, 7)->text().toDouble());
         
         m_enrollmentController.calculateTotalAndGrade(e, course.courseType(), course.maxGrade());
-        m_enrollmentController.updateEnrollment(e);
+        if (!m_enrollmentController.updateEnrollment(e)) {
+            success = false;
+        }
     }
     
-    QMessageBox::information(this, "Batch Update", "Successfully updated all student records for this course.");
+    if (success) {
+        QMessageBox::information(this, "Success", "All student grades and attendance records updated successfully.");
+    } else {
+        QMessageBox::warning(this, "Partial Success", "Some records could not be updated. Please try again.");
+    }
     onRefreshStudents();
 }

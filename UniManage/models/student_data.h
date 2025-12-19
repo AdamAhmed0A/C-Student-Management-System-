@@ -52,6 +52,10 @@ public:
     QDateTime updatedAt() const;
     void setUpdatedAt(const QDateTime &updatedAt);
 
+    // Help to store joined names
+    QString levelName() const;
+    void setLevelName(const QString &levelName);
+
     // Helper to store joined user name
     QString fullName() const;
     void setFullName(const QString &fullName);
@@ -59,6 +63,10 @@ public:
     // Helper to store joined user username
     QString username() const;
     void setUsername(const QString &username);
+
+    // Helper to store joined role
+    QString role() const;
+    void setRole(const QString &role);
 
 private:
     int m_id;
@@ -77,6 +85,8 @@ private:
     QDateTime m_updatedAt;
     QString m_fullName; // Joined from User
     QString m_username; // Joined from User
+    QString m_role;     // Joined from User
+    QString m_levelName; // Joined from Academic Levels
 };
 
 #endif // STUDENT_DATA_H

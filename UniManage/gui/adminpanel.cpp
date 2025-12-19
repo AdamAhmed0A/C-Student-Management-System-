@@ -1,6 +1,8 @@
 #include "adminpanel.h"
 #include "stylehelper.h"
 #include "loginwindow.h"
+#include "../database/dbconnection.h"
+#include "../database/queries.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -14,28 +16,25 @@
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
-#include <QTextEdit>
+#include <QTextEdit>    
 #include <QTabWidget>
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
+#include <QSqlQuery>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QFont>
 
 AdminPanel::AdminPanel(int adminId, QWidget *parent)
     : QWidget(parent), m_adminId(adminId)
 {
     setStyleSheet(StyleHelper::getMainStyle());
     setupUI();
-    setWindowTitle("Admin Panel - University Student Information System");
+    setWindowTitle("Admin Panel - University Management System");
     resize(1280, 850);
     
     // Initial data load
-    refreshCollegesTable();
-    refreshCoursesTable();
-    refreshDepartmentsTable();
-    refreshRoomsTable();
-    refreshLevelsTable();
-    refreshProfessorsTable();
-    refreshSchedulesTable();
-    refreshStudentsTable();
+    refreshAllData();
 }
 
 AdminPanel::~AdminPanel() {}
@@ -53,6 +52,18 @@ void AdminPanel::setupUI()
     header->addWidget(titleLabel);
     header->addStretch();
     
+    QPushButton* testDbBtn = new QPushButton("Test Database");
+    testDbBtn->setObjectName("primaryBtn");
+    testDbBtn->setFixedWidth(150);
+    connect(testDbBtn, &QPushButton::clicked, this, &AdminPanel::onTestDatabase);
+    header->addWidget(testDbBtn);
+    
+    QPushButton* refreshBtn = new QPushButton("Refresh System");
+    refreshBtn->setObjectName("secondaryBtn");
+    refreshBtn->setFixedWidth(150);
+    connect(refreshBtn, &QPushButton::clicked, this, &AdminPanel::onRefreshAll);
+    header->addWidget(refreshBtn);
+
     QPushButton* logoutBtn = new QPushButton("Logout System");
     logoutBtn->setObjectName("dangerBtn");
     logoutBtn->setFixedWidth(150);
@@ -64,6 +75,7 @@ void AdminPanel::setupUI()
     m_tabWidget = new QTabWidget(this);
     
     // Reorganized Tabs as requested
+    m_tabWidget->addTab(createStudentsTab(), "Students");
     m_tabWidget->addTab(createFacultiesTab(), "Faculties");
     m_tabWidget->addTab(createCoursesTab(), "Academic Courses");
     m_tabWidget->addTab(createDepartmentsTab(), "Departments");
@@ -71,9 +83,157 @@ void AdminPanel::setupUI()
     m_tabWidget->addTab(createAcademicSetupTab(), "Academic Setup");
     m_tabWidget->addTab(createProfessorsTab(), "Professor Data");
     m_tabWidget->addTab(createSchedulesTab(), "Academic Schedules");
-    m_tabWidget->addTab(createStudentsTab(), "Students");
     
     mainLayout->addWidget(m_tabWidget);
+}
+
+void AdminPanel::refreshAllData() {
+    refreshCollegesTable();
+    refreshCoursesTable();
+    refreshDepartmentsTable();
+    refreshRoomsTable();
+    refreshLevelsTable();
+    refreshProfessorsTable();
+    refreshSchedulesTable();
+    refreshStudentsTable();
+}
+
+void AdminPanel::onRefreshAll() {
+    refreshAllData();
+    QMessageBox::information(this, "Success", "Application data has been refreshed successfully.");
+}
+
+void AdminPanel::onTestDatabase() {
+    QString report = "=== DATABASE CONNECTION TEST ===\n\n";
+    
+    QSqlDatabase db = DBConnection::instance().database();
+    
+    // Test 1: Connection Status
+    report += "1. CONNECTION STATUS:\n";
+    if (db.isOpen()) {
+        report += "   ✓ Database is CONNECTED\n";
+        report += "   Database Name: " + db.databaseName() + "\n";
+        report += "   Host: " + db.hostName() + "\n";
+        report += "   Driver: " + db.driverName() + "\n\n";
+    } else {
+        report += "   ✗ Database is NOT CONNECTED\n";
+        report += "   Error: " + db.lastError().text() + "\n\n";
+        QMessageBox::critical(this, "Database Error", report);
+        return;
+    }
+    
+    // Test 2: Users Table
+    report += "2. USERS TABLE TEST:\n";
+    QSqlQuery userQuery(db);
+    if (userQuery.exec("SELECT COUNT(*) as total, SUM(CASE WHEN role='student' THEN 1 ELSE 0 END) as students FROM users")) {
+        if (userQuery.next()) {
+            int total = userQuery.value("total").toInt();
+            int students = userQuery.value("students").toInt();
+            report += "   ✓ Total users: " + QString::number(total) + "\n";
+            report += "   ✓ Users with role='student': " + QString::number(students) + "\n\n";
+        }
+    } else {
+        report += "   ✗ Error: " + userQuery.lastError().text() + "\n\n";
+    }
+    
+    // Test 3: Students Data Table
+    report += "3. STUDENTS_DATA TABLE TEST:\n";
+    QSqlQuery studentDataQuery(db);
+    if (studentDataQuery.exec("SELECT COUNT(*) as total FROM students_data")) {
+        if (studentDataQuery.next()) {
+            int total = studentDataQuery.value("total").toInt();
+            report += "   ✓ Total student profiles: " + QString::number(total) + "\n\n";
+        }
+    } else {
+        report += "   ✗ Error: " + studentDataQuery.lastError().text() + "\n\n";
+    }
+    
+    // Test 4: The Actual Student Query
+    report += "4. STUDENT RETRIEVAL QUERY TEST:\n";
+    report += "   Query: " + Queries::SELECT_ALL_STUDENTS_DATA + "\n\n";
+    
+    QSqlQuery testQuery(db);
+    if (testQuery.exec(Queries::SELECT_ALL_STUDENTS_DATA)) {
+        int count = 0;
+        report += "   ✓ Query executed successfully!\n";
+        report += "   Results:\n";
+        
+        while (testQuery.next() && count < 5) {
+            count++;
+            QString name = testQuery.value("full_name").toString();
+            QString studentNum = testQuery.value("student_number").toString();
+            QString role = testQuery.value("role").toString();
+            int userId = testQuery.value("user_id").toInt();
+            int profileId = testQuery.value("id").toInt();
+            
+            report += QString("   %1. %2 (Student#: %3, Role: %4, UserID: %5, ProfileID: %6)\n")
+                .arg(count).arg(name).arg(studentNum).arg(role).arg(userId).arg(profileId);
+        }
+        
+        // Count remaining
+        while (testQuery.next()) count++;
+        
+        report += "\n   Total records returned: " + QString::number(count) + "\n\n";
+        
+        if (count == 0) {
+            report += "   ⚠ WARNING: No students found!\n";
+            report += "   This means either:\n";
+            report += "   - No users have role='student' in the database\n";
+            report += "   - The query has an issue\n\n";
+        }
+    } else {
+        report += "   ✗ Query FAILED!\n";
+        report += "   Error: " + testQuery.lastError().text() + "\n\n";
+    }
+    
+    // Test 5: Check for orphaned records
+    report += "5. ORPHANED RECORDS CHECK:\n";
+    QSqlQuery orphanQuery(db);
+    if (orphanQuery.exec("SELECT u.id, u.full_name, u.username FROM users u LEFT JOIN students_data sd ON u.id = sd.user_id WHERE u.role='student' AND sd.id IS NULL")) {
+        int orphans = 0;
+        QString orphanList = "";
+        while (orphanQuery.next()) {
+            orphans++;
+            if (orphans <= 3) {
+                orphanList += QString("   - %1 (ID: %2, Username: %3)\n")
+                    .arg(orphanQuery.value("full_name").toString())
+                    .arg(orphanQuery.value("id").toInt())
+                    .arg(orphanQuery.value("username").toString());
+            }
+        }
+        
+        if (orphans > 0) {
+            report += "   ⚠ Found " + QString::number(orphans) + " student users WITHOUT profile data:\n";
+            report += orphanList;
+            if (orphans > 3) {
+                report += "   ... and " + QString::number(orphans - 3) + " more\n";
+            }
+            report += "\n";
+        } else {
+            report += "   ✓ No orphaned student records\n\n";
+        }
+    }
+    
+    report += "=== END OF TEST ===";
+    
+    // Show in a scrollable dialog
+    QDialog* dialog = new QDialog(this);
+    dialog->setWindowTitle("Database Connection Test Results");
+    dialog->resize(700, 500);
+    
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+    QTextEdit* textEdit = new QTextEdit();
+    textEdit->setReadOnly(true);
+    textEdit->setPlainText(report);
+    textEdit->setFont(QFont("Courier New", 9));
+    layout->addWidget(textEdit);
+    
+    QPushButton* closeBtn = new QPushButton("Close");
+    connect(closeBtn, &QPushButton::clicked, dialog, &QDialog::accept);
+    layout->addWidget(closeBtn);
+    
+    qDebug() << report;
+    dialog->exec();
 }
 
 QWidget* AdminPanel::createFacultiesTab() {
@@ -175,16 +335,31 @@ QWidget* AdminPanel::createAcademicSetupTab() {
 QWidget* AdminPanel::createProfessorsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
+    QHBoxLayout* btns = new QHBoxLayout();
+    
     QPushButton* addBtn = new QPushButton("Register Professor");
-    addBtn->setFixedWidth(200);
+    QPushButton* editBtn = new QPushButton("Edit Professor");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Professor");
+    deleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+
     m_professorsTable = new QTableWidget();
     m_professorsTable->setColumnCount(4);
     m_professorsTable->setHorizontalHeaderLabels({"ID", "Professor Name", "Specialization", "Title"});
     m_professorsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_professorsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(addBtn);
+    
+    layout->addLayout(btns);
     layout->addWidget(m_professorsTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddProfessor);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditProfessor);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteProfessor);
     return widget;
 }
 
@@ -238,18 +413,47 @@ void AdminPanel::onLogout() {
 }
 
 void AdminPanel::refreshStudentsTable() {
+    qDebug() << "=== REFRESHING STUDENTS TABLE ===";
     m_studentsTable->setRowCount(0);
-    for (const auto& s : m_studentController.getAllStudents()) {
+    
+    QList<StudentData> allStudents = m_studentController.getAllStudents();
+    qDebug() << "Received" << allStudents.size() << "students from controller";
+    
+    for (const auto& s : allStudents) {
         int r = m_studentsTable->rowCount();
         m_studentsTable->insertRow(r);
-        m_studentsTable->setItem(r, 0, new QTableWidgetItem(QString::number(s.id())));
+        
+        // Use user ID if profile ID is missing (0)
+        QString idStr = (s.id() == 0) ? QString("U-%1").arg(s.userId()) : QString::number(s.id());
+        m_studentsTable->setItem(r, 0, new QTableWidgetItem(idStr));
+        
         m_studentsTable->setItem(r, 1, new QTableWidgetItem(s.studentNumber()));
         m_studentsTable->setItem(r, 2, new QTableWidgetItem(s.fullName()));
-        m_studentsTable->setItem(r, 3, new QTableWidgetItem(s.idNumber()));
-        m_studentsTable->setItem(r, 4, new QTableWidgetItem(s.department()));
-        m_studentsTable->setItem(r, 5, new QTableWidgetItem(QString::number(s.academicLevelId())));
-        m_studentsTable->setItem(r, 6, new QTableWidgetItem(s.status()));
+        m_studentsTable->setItem(r, 3, new QTableWidgetItem(s.idNumber().isEmpty() ? "---" : s.idNumber()));
+        m_studentsTable->setItem(r, 4, new QTableWidgetItem(s.department().isEmpty() ? "---" : s.department()));
+        
+        QString level = s.levelName();
+        if(level.isEmpty()) level = (s.academicLevelId() == 0) ? "---" : QString::number(s.academicLevelId());
+        m_studentsTable->setItem(r, 5, new QTableWidgetItem(level));
+        
+        QString status = s.status();
+        if (status.isEmpty()) status = (s.id() == 0) ? "Incomplete Profile" : "Pending";
+        m_studentsTable->setItem(r, 6, new QTableWidgetItem(status));
+
+        // Color code incomplete records
+        if (s.id() == 0) {
+            for (int col = 0; col < 7; ++col) {
+                m_studentsTable->item(r, col)->setForeground(Qt::red);
+            }
+        }
+        
+        if (r < 3) {
+            qDebug() << "Row" << r << ":" << s.fullName() << "| Student#:" << s.studentNumber() << "| Role:" << s.role();
+        }
     }
+    
+    qDebug() << "Students table now has" << m_studentsTable->rowCount() << "rows";
+    qDebug() << "=== END REFRESH STUDENTS TABLE ===";
 }
 
 void AdminPanel::refreshCoursesTable() {
@@ -336,33 +540,84 @@ void AdminPanel::onAddStudent() {
     QDialog dialog(this);
     dialog.setWindowTitle("Student Registration");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* name = new QLineEdit();
     QLineEdit* nationalId = new QLineEdit();
     nationalId->setMaxLength(14);
     nationalId->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
-    nationalId->setPlaceholderText("Must be 14 digits");
     
     QLineEdit* code = new QLineEdit();
     QComboBox* dept = new QComboBox();
     for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
+    
+    QComboBox* level = new QComboBox();
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
+
     layout->addRow("Full Name:", name);
     layout->addRow("National ID:", nationalId);
     layout->addRow("Student Code:", code);
     layout->addRow("Department:", dept);
-    QPushButton* btn = new QPushButton("Register");
+    layout->addRow("Academic Level:", level);
+
+    QPushButton* btn = new QPushButton("Register Student");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
-        if (nationalId->text().length() != 14) {
-            QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
+        if (name->text().isEmpty() || code->text().isEmpty() || nationalId->text().length() != 14) {
+            QMessageBox::warning(this, "Input Error", "Please fill all fields. National ID must be 14 digits.");
             return;
         }
-        User u; u.setFullName(name->text()); u.setUsername(code->text()); u.setRole("student"); u.setPassword(code->text());
-        if (m_userController.addUser(u)) {
-            User cu = m_userController.getUserByUsername(code->text());
-            StudentData sd; sd.setUserId(cu.id()); sd.setStudentNumber(code->text()); sd.setIdNumber(nationalId->text()); sd.setDepartmentId(dept->currentData().toInt());
-            m_studentController.addStudent(sd);
-            refreshStudentsTable();
+
+        User u; 
+        u.setFullName(name->text()); 
+        u.setUsername(code->text()); 
+        u.setRole("student"); 
+        u.setPassword(code->text()); // Initial password is their code
+
+        QString userError;
+        bool userReady = false;
+        User cu;
+
+        if (m_userController.addUser(u, &userError)) {
+            cu = m_userController.getUserByUsername(code->text());
+            userReady = (cu.id() > 0);
+        } else if (userError.contains("Duplicate entry", Qt::CaseInsensitive)) {
+            // Check if this existing user is a "ghost" (no student data)
+            cu = m_userController.getUserByUsername(code->text());
+            if (cu.id() > 0) {
+                StudentData existing = m_studentController.getStudentByUserId(cu.id());
+                if (existing.id() == 0) {
+                    // Profile is missing, we can "heal" this by proceeding
+                    userReady = true;
+                } else {
+                    QMessageBox::warning(this, "Duplicate Student", "The Student Code '" + code->text() + "' is already fully registered in the system.");
+                    return;
+                }
+            }
+        }
+
+        if (userReady) {
+            StudentData sd; 
+            sd.setUserId(cu.id()); 
+            sd.setStudentNumber(code->text()); 
+            sd.setIdNumber(nationalId->text()); 
+            sd.setDepartmentId(dept->currentData().toInt());
+            sd.setAcademicLevelId(level->currentData().toInt());
+            sd.setStatus("active");
+
+            if (m_studentController.addStudent(sd)) {
+                QMessageBox::information(this, "Success", "Student registered successfully (Linked to existing identity).");
+                refreshStudentsTable();
+            } else {
+                // Only rollback if we just created the user in this session
+                if (!userError.contains("Duplicate entry")) {
+                    m_userController.deleteUser(cu.id());
+                }
+                QMessageBox::critical(this, "Database Error", "Failed to save student profile details.");
+            }
+        } else {
+            QMessageBox::critical(this, "Identity Error", "Failed to setup user account.\n\nDetails: " + userError);
         }
     }
 }
@@ -373,19 +628,37 @@ void AdminPanel::onEditStudent() {
     int studentId = m_studentsTable->item(row, 0)->text().toInt();
     StudentData student = m_studentController.getStudentById(studentId);
     if (student.id() == 0) return;
+
     QDialog dialog(this);
-    dialog.setWindowTitle("Edit Student");
+    dialog.setWindowTitle("Edit Student Profile");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* nameEdit = new QLineEdit(student.fullName());
     QLineEdit* idEdit = new QLineEdit(student.idNumber());
     idEdit->setMaxLength(14);
     idEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
     
-    layout->addRow("Name:", nameEdit);
-    layout->addRow("ID Number:", idEdit);
-    QPushButton* ok = new QPushButton("Save");
+    QComboBox* deptEdit = new QComboBox();
+    for(const auto& d : m_departmentController.getAllDepartments()) {
+        deptEdit->addItem(d.name(), d.id());
+        if (d.id() == student.departmentId()) deptEdit->setCurrentIndex(deptEdit->count() - 1);
+    }
+
+    QComboBox* levelEdit = new QComboBox();
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) {
+        levelEdit->addItem(l.name(), l.id());
+        if (l.id() == student.academicLevelId()) levelEdit->setCurrentIndex(levelEdit->count() - 1);
+    }
+
+    layout->addRow("Full Name:", nameEdit);
+    layout->addRow("National ID:", idEdit);
+    layout->addRow("Department:", deptEdit);
+    layout->addRow("Academic Level:", levelEdit);
+
+    QPushButton* ok = new QPushButton("Save Changes");
     layout->addRow(ok);
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
         if (idEdit->text().length() != 14) {
             QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
@@ -393,8 +666,15 @@ void AdminPanel::onEditStudent() {
         }
         student.setFullName(nameEdit->text());
         student.setIdNumber(idEdit->text());
-        m_studentController.updateStudent(student);
-        refreshStudentsTable();
+        student.setDepartmentId(deptEdit->currentData().toInt());
+        student.setAcademicLevelId(levelEdit->currentData().toInt());
+
+        if (m_studentController.updateStudent(student)) {
+            QMessageBox::information(this, "Success", "Student records updated successfully.");
+            refreshStudentsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to update student records.");
+        }
     }
 }
 
@@ -402,31 +682,64 @@ void AdminPanel::onDeleteStudent() {
     int row = m_studentsTable->currentRow();
     if (row < 0) return;
     int id = m_studentsTable->item(row, 0)->text().toInt();
-    if (QMessageBox::question(this, "Confirm", "Delete student?") == QMessageBox::Yes) {
-        m_studentController.deleteStudent(id);
-        refreshStudentsTable();
+    if (QMessageBox::question(this, "Confirm", "Are you sure you want to delete this student?") == QMessageBox::Yes) {
+        if (m_studentController.deleteStudent(id)) {
+            QMessageBox::information(this, "Deleted", "Student has been removed from the system.");
+            refreshStudentsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to delete student.");
+        }
     }
 }
 
 void AdminPanel::onAddCourse() {
     QDialog dialog(this);
-    dialog.setWindowTitle("New Course Entry");
+    dialog.setWindowTitle("New Academic Course");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* name = new QLineEdit();
     QComboBox* type = new QComboBox(); type->addItems({"Theoretical", "Practical"});
     QComboBox* maxG = new QComboBox(); maxG->addItems({"100", "150"});
     QSpinBox* credits = new QSpinBox(); credits->setRange(1, 10);
+    
+    QComboBox* level = new QComboBox();
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
+    
+    QComboBox* semester = new QComboBox();
+    for(const auto& s : m_semesterController.getAllSemesters()) {
+        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
+    }
+
     layout->addRow("Course Name:", name);
     layout->addRow("Type:", type);
-    layout->addRow("Max Degree:", maxG);
-    layout->addRow("Credits:", credits);
-    QPushButton* btn = new QPushButton("Create");
+    layout->addRow("Max Points:", maxG);
+    layout->addRow("Credit Hours:", credits);
+    layout->addRow("Academic Level:", level);
+    layout->addRow("Semester:", semester);
+
+    QPushButton* btn = new QPushButton("Create Course");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
-        Course c; c.setName(name->text()); c.setCourseType(type->currentText()); c.setMaxGrade(maxG->currentText().toInt()); c.setCreditHours(credits->value());
-        m_courseController.addCourse(c);
-        refreshCoursesTable();
+        if (name->text().isEmpty()) {
+            QMessageBox::warning(this, "Input Error", "Course name cannot be empty.");
+            return;
+        }
+        Course c; 
+        c.setName(name->text()); 
+        c.setCourseType(type->currentText()); 
+        c.setMaxGrade(maxG->currentText().toInt()); 
+        c.setCreditHours(credits->value());
+        c.setYearLevel(level->currentData().toInt());
+        c.setSemesterId(semester->currentData().toInt());
+
+        if (m_courseController.addCourse(c)) {
+            QMessageBox::information(this, "Success", "Course created successfully.");
+            refreshCoursesTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to create course. Please check database connectivity.");
+        }
     }
 }
 
@@ -435,18 +748,58 @@ void AdminPanel::onEditCourse() {
     if (row < 0) return;
     int id = m_coursesTable->item(row, 0)->text().toInt();
     Course c = m_courseController.getCourseById(id);
+    
     QDialog dialog(this);
-    dialog.setWindowTitle("Edit Course");
+    dialog.setWindowTitle("Edit Course Details");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* name = new QLineEdit(c.name());
-    layout->addRow("Name:", name);
-    QPushButton* ok = new QPushButton("Save");
+    QComboBox* type = new QComboBox(); type->addItems({"Theoretical", "Practical"});
+    type->setCurrentText(c.courseType());
+    
+    QComboBox* maxG = new QComboBox(); maxG->addItems({"100", "150"});
+    maxG->setCurrentText(QString::number(c.maxGrade()));
+    
+    QSpinBox* credits = new QSpinBox(); credits->setRange(1, 10);
+    credits->setValue(c.creditHours());
+
+    QComboBox* level = new QComboBox();
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) {
+        level->addItem(l.name(), l.id());
+        if (l.id() == c.yearLevel()) level->setCurrentIndex(level->count()-1);
+    }
+    
+    QComboBox* semester = new QComboBox();
+    for(const auto& s : m_semesterController.getAllSemesters()) {
+        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
+        if (s.id() == c.semesterId()) semester->setCurrentIndex(semester->count()-1);
+    }
+
+    layout->addRow("Course Name:", name);
+    layout->addRow("Type:", type);
+    layout->addRow("Max Grade:", maxG);
+    layout->addRow("Credits:", credits);
+    layout->addRow("Academic Level:", level);
+    layout->addRow("Semester:", semester);
+
+    QPushButton* ok = new QPushButton("Save Changes");
     layout->addRow(ok);
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
         c.setName(name->text());
-        m_courseController.updateCourse(c);
-        refreshCoursesTable();
+        c.setCourseType(type->currentText());
+        c.setMaxGrade(maxG->currentText().toInt());
+        c.setCreditHours(credits->value());
+        c.setYearLevel(level->currentData().toInt());
+        c.setSemesterId(semester->currentData().toInt());
+
+        if (m_courseController.updateCourse(c)) {
+            QMessageBox::information(this, "Success", "Course updated successfully.");
+            refreshCoursesTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to update course.");
+        }
     }
 }
 
@@ -454,9 +807,13 @@ void AdminPanel::onDeleteCourse() {
     int row = m_coursesTable->currentRow();
     if (row < 0) return;
     int id = m_coursesTable->item(row, 0)->text().toInt();
-    if (QMessageBox::question(this, "Confirm", "Delete course?") == QMessageBox::Yes) {
-        m_courseController.deleteCourse(id);
-        refreshCoursesTable();
+    if (QMessageBox::question(this, "Confirm", "Delete this course?") == QMessageBox::Yes) {
+        if (m_courseController.deleteCourse(id)) {
+            QMessageBox::information(this, "Deleted", "Course removed.");
+            refreshCoursesTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to delete course.");
+        }
     }
 }
 
@@ -474,9 +831,17 @@ void AdminPanel::onAddRoom() {
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (name->text().isEmpty()) {
+            QMessageBox::warning(this, "Input Error", "Room name is required.");
+            return;
+        }
         Room r; r.setName(name->text()); r.setType(type->currentText()); r.setCapacity(cap->value());
-        m_roomController.addRoom(r);
-        refreshRoomsTable();
+        if (m_roomController.addRoom(r)) {
+            QMessageBox::information(this, "Success", "Physical room/lab registered.");
+            refreshRoomsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to add room to registry.");
+        }
     }
 }
 
@@ -492,9 +857,17 @@ void AdminPanel::onAddCollege() {
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (name->text().isEmpty() || code->text().isEmpty()) {
+            QMessageBox::warning(this, "Input Error", "Name and Code are both required.");
+            return;
+        }
         College c; c.setName(name->text()); c.setCode(code->text());
-        m_collegeController.addCollege(c);
-        refreshCollegesTable();
+        if (m_collegeController.addCollege(c)) {
+            QMessageBox::information(this, "Success", "College/Faculty added.");
+            refreshCollegesTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to add college.");
+        }
     }
 }
 
@@ -513,9 +886,17 @@ void AdminPanel::onAddDepartment() {
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (name->text().isEmpty() || college->currentData().toInt() == 0) {
+            QMessageBox::warning(this, "Input Error", "Please provide a name and select a parent College.");
+            return;
+        }
         Department d; d.setName(name->text()); d.setCollegeId(college->currentData().toInt()); d.setCode(code->text());
-        m_departmentController.addDepartment(d);
-        refreshDepartmentsTable();
+        if (m_departmentController.addDepartment(d)) {
+            QMessageBox::information(this, "Success", "Department created.");
+            refreshDepartmentsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to create department.");
+        }
     }
 }
 
@@ -531,9 +912,17 @@ void AdminPanel::onAddLevel() {
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (name->text().isEmpty()) {
+            QMessageBox::warning(this, "Input Error", "Level name cannot be empty.");
+            return;
+        }
         AcademicLevel l; l.setName(name->text()); l.setLevelNumber(num->value());
-        m_academicLevelController.addAcademicLevel(l);
-        refreshLevelsTable();
+        if (m_academicLevelController.addAcademicLevel(l)) {
+            QMessageBox::information(this, "Success", "Academic level added.");
+            refreshLevelsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to add level.");
+        }
     }
 }
 
@@ -541,32 +930,138 @@ void AdminPanel::onAddProfessor() {
     QDialog dialog(this);
     dialog.setWindowTitle("Register Professor");
     QFormLayout* layout = new QFormLayout(&dialog);
+    
     QLineEdit* name = new QLineEdit();
     QLineEdit* idNum = new QLineEdit();
     idNum->setMaxLength(14);
     idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
-    idNum->setPlaceholderText("Exactly 14 digits");
     
     QLineEdit* spec = new QLineEdit();
     QLineEdit* tit = new QLineEdit();
-    layout->addRow("Name:", name);
+
+    layout->addRow("Full Name:", name);
     layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
     layout->addRow("Title:", tit);
-    QPushButton* btn = new QPushButton("Register");
+
+    QPushButton* btn = new QPushButton("Register Professor");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
     if (dialog.exec() == QDialog::Accepted) {
-        if (idNum->text().length() != 14) {
-            QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
+        if (name->text().isEmpty() || idNum->text().length() != 14) {
+            QMessageBox::warning(this, "Input Error", "Name and 14-digit National ID are required.");
             return;
         }
-        User u; u.setFullName(name->text()); u.setUsername(name->text().replace(" ", ".")); u.setRole("professor"); u.setPassword("prof123");
-        if (m_userController.addUser(u)) {
-            User cu = m_userController.getUserByUsername(u.username());
-            Professor p; p.setUserId(cu.id()); p.setIdNumber(idNum->text()); p.setSpecialization(spec->text()); p.setTitle(tit->text());
-            m_professorController.addProfessor(p);
+
+        User u; 
+        u.setFullName(name->text()); 
+        u.setUsername(idNum->text()); 
+        u.setRole("professor"); 
+        u.setPassword("prof123");
+
+        QString userError;
+        bool userReady = false;
+        User cu;
+
+        if (m_userController.addUser(u, &userError)) {
+            cu = m_userController.getUserByUsername(idNum->text());
+            userReady = (cu.id() > 0);
+        } else if (userError.contains("Duplicate entry", Qt::CaseInsensitive)) {
+            // Check if this existing user is a "ghost" (no professor data)
+            cu = m_userController.getUserByUsername(idNum->text());
+            if (cu.id() > 0) {
+                Professor existing = m_professorController.getProfessorByUserId(cu.id());
+                if (existing.id() == 0) {
+                    // Faculty Profile is missing, link to existing account
+                    userReady = true;
+                } else {
+                    QMessageBox::warning(this, "Duplicate Professor", "This National ID is already fully registered as a faculty member.");
+                    return;
+                }
+            }
+        }
+
+        if (userReady) {
+            Professor p; 
+            p.setUserId(cu.id()); 
+            p.setIdNumber(idNum->text()); 
+            p.setSpecialization(spec->text()); 
+            p.setTitle(tit->text());
+
+            if (m_professorController.addProfessor(p)) {
+                QMessageBox::information(this, "Success", "Professor registered successfully (Linked to existing identity).");
+                refreshProfessorsTable();
+            } else {
+                // Only rollback if we just created the user in this session
+                if (!userError.contains("Duplicate entry")) {
+                    m_userController.deleteUser(cu.id());
+                }
+                QMessageBox::critical(this, "Error", "Failed to add professor data details.");
+            }
+        } else {
+            QMessageBox::critical(this, "Identity Error", "Failed to setup faculty account.\n\nDetails: " + userError);
+        }
+    }
+}
+
+void AdminPanel::onEditProfessor() {
+    int row = m_professorsTable->currentRow();
+    if (row < 0) return;
+    int profId = m_professorsTable->item(row, 0)->text().toInt();
+    Professor p = m_professorController.getProfessorById(profId);
+    if (p.id() == 0) return;
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Edit Professor Details");
+    QFormLayout* layout = new QFormLayout(&dialog);
+    
+    QLineEdit* name = new QLineEdit(p.fullName());
+    QLineEdit* idNum = new QLineEdit(p.idNumber());
+    idNum->setMaxLength(14);
+    idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
+    
+    QLineEdit* spec = new QLineEdit(p.specialization());
+    QLineEdit* tit = new QLineEdit(p.title());
+
+    layout->addRow("Full Name:", name);
+    layout->addRow("National ID:", idNum);
+    layout->addRow("Specialization:", spec);
+    layout->addRow("Title:", tit);
+
+    QPushButton* ok = new QPushButton("Save Changes");
+    layout->addRow(ok);
+    connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        if (idNum->text().length() != 14) {
+            QMessageBox::warning(this, "Validation Error", "National ID must be 14 digits.");
+            return;
+        }
+        p.setFullName(name->text());
+        p.setIdNumber(idNum->text());
+        p.setSpecialization(spec->text());
+        p.setTitle(tit->text());
+
+        if (m_professorController.updateProfessor(p)) {
+            QMessageBox::information(this, "Success", "Professor records updated.");
             refreshProfessorsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to update records.");
+        }
+    }
+}
+
+void AdminPanel::onDeleteProfessor() {
+    int row = m_professorsTable->currentRow();
+    if (row < 0) return;
+    int id = m_professorsTable->item(row, 0)->text().toInt();
+    if (QMessageBox::question(this, "Confirm", "Remove this professor from the faculty?") == QMessageBox::Yes) {
+        if (m_professorController.deleteProfessor(id)) {
+            QMessageBox::information(this, "Removed", "Professor removed successfully.");
+            refreshProfessorsTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to remove professor.");
         }
     }
 }

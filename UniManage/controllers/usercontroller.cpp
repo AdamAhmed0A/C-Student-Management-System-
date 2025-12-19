@@ -5,23 +5,30 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QDateTime>
+#include <QCryptographicHash>
 
 UserController::UserController() {}
 
 // function to add user
-bool UserController::addUser(const User& user)
+bool UserController::addUser(const User& user, QString* error)
 {
     QSqlQuery query(DBConnection::instance().database());
-	query.prepare(Queries::INSERT_USER);
+    query.prepare(Queries::INSERT_USER);
     query.addBindValue(user.fullName());
     query.addBindValue(user.username());
-    query.addBindValue(user.password());
+    
+    // Always hash password before storing
+    QString hashed = QString(QCryptographicHash::hash(user.password().toUtf8(), QCryptographicHash::Sha256).toHex());
+    query.addBindValue(hashed);
+    
     query.addBindValue(user.role());
     if (!query.exec()) {
-        qDebug() << "Error adding user:" << query.lastError().text();
+        QString err = query.lastError().text();
+        qDebug() << "Error adding user:" << err;
+        if (error) *error = err;
         return false;
     }
-	return true;
+    return true;
 }
 
 // function to update user

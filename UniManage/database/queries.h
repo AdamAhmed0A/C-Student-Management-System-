@@ -19,8 +19,17 @@ namespace Queries {
     const QString UPDATE_STUDENT_DATA = "UPDATE students_data SET id_number = ?, dob = ?, department = ?, department_id = ?, academic_level_id = ?, section_id = ?, seat_number = ?, status = ? "
                                         "WHERE id = ?";
     const QString DELETE_STUDENT_DATA = "DELETE FROM students_data WHERE id = ?";
-    const QString SELECT_ALL_STUDENTS_DATA = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
-                                             "JOIN users u ON sd.user_id = u.id ORDER BY sd.student_number";
+    const QString SELECT_ALL_STUDENTS_DATA = "SELECT u.id as user_id, u.full_name, u.username, u.role, sd.id, "
+                                             "COALESCE(sd.student_number, u.username) as student_number, "
+                                             "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                             "sd.section_id, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                             "d.name as dept_name, al.name as level_name "
+                                             "FROM users u "
+                                             "LEFT JOIN students_data sd ON u.id = sd.user_id "
+                                             "LEFT JOIN departments d ON sd.department_id = d.id "
+                                             "LEFT JOIN academic_levels al ON sd.academic_level_id = al.id "
+                                             "WHERE u.role = 'student' "
+                                             "ORDER BY student_number";
     const QString SELECT_STUDENT_DATA_BY_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
                                               "JOIN users u ON sd.user_id = u.id WHERE sd.id = ?";
     const QString SELECT_STUDENT_DATA_BY_USER_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "

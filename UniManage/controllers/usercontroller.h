@@ -10,7 +10,7 @@ class UserController
 public:
     UserController();
     
-    bool addUser(const User& user);
+    bool addUser(const User& user, QString* error = nullptr);
     bool updateUser(const User& user);
     bool deleteUser(int id);
     

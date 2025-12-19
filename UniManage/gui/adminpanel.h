@@ -42,9 +42,12 @@ private:
     void refreshRoomsTable();
     void refreshProfessorsTable();
     void refreshSchedulesTable();
+    void refreshAllData();
 
 private slots:
     void onLogout();
+    void onRefreshAll();
+    void onTestDatabase();
     void onAddStudent();
     void onEditStudent();
     void onDeleteStudent();
@@ -58,6 +61,8 @@ private slots:
     void onAddLevel();
     void onAddRoom();
     void onAddProfessor();
+    void onEditProfessor();
+    void onDeleteProfessor();
     void onAddSchedule();
     void onManageRoomSpecs();
 

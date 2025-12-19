@@ -21,7 +21,7 @@ LoginWindow::LoginWindow(QWidget *parent)
 {
     setStyleSheet(StyleHelper::getMainStyle());
     setupUI();
-    setWindowTitle("UniManage - System Access");
+    setWindowTitle("University Management System");
     resize(460, 480);
 }
 
@@ -44,18 +44,17 @@ void LoginWindow::setupUI() {
     mainLayout->addWidget(welcome);
 
     m_usernameEdit = new QLineEdit();
-    m_usernameEdit->setPlaceholderText("Enter 14-digit National ID");
+    m_usernameEdit->setPlaceholderText("National ID or Student Code");
     m_usernameEdit->setMinimumHeight(45);
-    // Only allow digits, max 14 characters
-    m_usernameEdit->setMaxLength(14);
-    m_usernameEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), this));
+    // Allow digits and alpha (for student codes), max 20 chars
+    m_usernameEdit->setMaxLength(20);
     
-    mainLayout->addWidget(new QLabel("Identity Number"));
+    mainLayout->addWidget(new QLabel("Identity Number / Code"));
     mainLayout->addWidget(m_usernameEdit);
 
     m_passwordEdit = new QLineEdit();
     m_passwordEdit->setEchoMode(QLineEdit::Password);
-    m_passwordEdit->setPlaceholderText("Enter your secret key");
+    m_passwordEdit->setPlaceholderText("Enter your security key");
     m_passwordEdit->setMinimumHeight(45);
     mainLayout->addWidget(new QLabel("Security Key"));
     mainLayout->addWidget(m_passwordEdit);
@@ -77,15 +76,11 @@ void LoginWindow::onLoginClicked() {
     QString password = m_passwordEdit->text();
     
     if (idNum.isEmpty() || password.isEmpty()) {
-        QMessageBox::warning(this, "Empty Fields", "Identification number and security key are required.");
+        QMessageBox::warning(this, "Empty Fields", "Identification number/code and security key are required.");
         return;
     }
     
-    // Validate length (except for the root admin login)
-    if (idNum != "admin" && idNum.length() != 14) {
-        QMessageBox::warning(this, "Invalid ID", "National ID must be exactly 14 digits.");
-        return;
-    }
+    // Automatic role/id detection happens in tryLogin
 
     if (tryLogin(idNum, password)) {
         if(m_userRole.toLower() == "admin") {

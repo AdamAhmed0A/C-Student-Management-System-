@@ -89,12 +89,20 @@ QList<StudentData> StudentController::getAllStudents()
 {
 	QList<StudentData> students;
 	QSqlQuery query(DBConnection::instance().database());
+    
+    qDebug() << "=== EXECUTING STUDENT QUERY ===";
+    qDebug() << "Query:" << Queries::SELECT_ALL_STUDENTS_DATA;
+    
     if (!query.exec(Queries::SELECT_ALL_STUDENTS_DATA)) {
         qDebug() << "Error retrieving students data:" << query.lastError().text();
         return students;
     }
     
+    qDebug() << "Query executed successfully!";
+    int count = 0;
+    
     while (query.next()) {
+        count++;
         StudentData student;
         student.setId(query.value("id").toInt());
         student.setUserId(query.value("user_id").toInt());
@@ -109,12 +117,25 @@ QList<StudentData> StudentController::getAllStudents()
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
         student.setUpdatedAt(query.value("updated_at").toDateTime());
-        // Additional user info
+        // Additional info from joins
         student.setFullName(query.value("full_name").toString());
         student.setUsername(query.value("username").toString());
+        student.setRole(query.value("role").toString());
+        
+        QString dName = query.value("dept_name").toString();
+        if(!dName.isEmpty()) student.setDepartment(dName);
+        
+        student.setLevelName(query.value("level_name").toString());
+        
+        if (count <= 3) {
+            qDebug() << "Student" << count << ":" << student.fullName() << "| ID:" << student.id() << "| UserID:" << student.userId() << "| Role:" << student.role();
+        }
         
         students.append(student);
     }
+    
+    qDebug() << "Total students retrieved:" << count;
+    qDebug() << "=== END STUDENT QUERY ===";
     
 	return students;
 }

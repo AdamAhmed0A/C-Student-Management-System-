@@ -32,6 +32,7 @@ private:
     
 private slots:
     void onLogout();
+    void onRefreshAll();
 
 private:
     int m_userId;
