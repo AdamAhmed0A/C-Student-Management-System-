@@ -16,6 +16,8 @@
 #include <QDateTime>
 #include <QTextEdit>
 #include <QTabWidget>
+#include <QRegularExpressionValidator>
+#include <QRegularExpression>
 
 AdminPanel::AdminPanel(int adminId, QWidget *parent)
     : QWidget(parent), m_adminId(adminId)
@@ -335,20 +337,30 @@ void AdminPanel::onAddStudent() {
     dialog.setWindowTitle("Student Registration");
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit();
+    QLineEdit* nationalId = new QLineEdit();
+    nationalId->setMaxLength(14);
+    nationalId->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
+    nationalId->setPlaceholderText("Must be 14 digits");
+    
     QLineEdit* code = new QLineEdit();
     QComboBox* dept = new QComboBox();
     for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
     layout->addRow("Full Name:", name);
+    layout->addRow("National ID:", nationalId);
     layout->addRow("Student Code:", code);
     layout->addRow("Department:", dept);
     QPushButton* btn = new QPushButton("Register");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (nationalId->text().length() != 14) {
+            QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
+            return;
+        }
         User u; u.setFullName(name->text()); u.setUsername(code->text()); u.setRole("student"); u.setPassword(code->text());
         if (m_userController.addUser(u)) {
             User cu = m_userController.getUserByUsername(code->text());
-            StudentData sd; sd.setUserId(cu.id()); sd.setStudentNumber(code->text()); sd.setDepartmentId(dept->currentData().toInt());
+            StudentData sd; sd.setUserId(cu.id()); sd.setStudentNumber(code->text()); sd.setIdNumber(nationalId->text()); sd.setDepartmentId(dept->currentData().toInt());
             m_studentController.addStudent(sd);
             refreshStudentsTable();
         }
@@ -366,12 +378,19 @@ void AdminPanel::onEditStudent() {
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* nameEdit = new QLineEdit(student.fullName());
     QLineEdit* idEdit = new QLineEdit(student.idNumber());
+    idEdit->setMaxLength(14);
+    idEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
+    
     layout->addRow("Name:", nameEdit);
     layout->addRow("ID Number:", idEdit);
     QPushButton* ok = new QPushButton("Save");
     layout->addRow(ok);
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (idEdit->text().length() != 14) {
+            QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
+            return;
+        }
         student.setFullName(nameEdit->text());
         student.setIdNumber(idEdit->text());
         m_studentController.updateStudent(student);
@@ -523,19 +542,29 @@ void AdminPanel::onAddProfessor() {
     dialog.setWindowTitle("Register Professor");
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit();
+    QLineEdit* idNum = new QLineEdit();
+    idNum->setMaxLength(14);
+    idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
+    idNum->setPlaceholderText("Exactly 14 digits");
+    
     QLineEdit* spec = new QLineEdit();
     QLineEdit* tit = new QLineEdit();
     layout->addRow("Name:", name);
+    layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
     layout->addRow("Title:", tit);
     QPushButton* btn = new QPushButton("Register");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
     if (dialog.exec() == QDialog::Accepted) {
+        if (idNum->text().length() != 14) {
+            QMessageBox::warning(this, "Validation Error", "National ID must be exactly 14 digits.");
+            return;
+        }
         User u; u.setFullName(name->text()); u.setUsername(name->text().replace(" ", ".")); u.setRole("professor"); u.setPassword("prof123");
         if (m_userController.addUser(u)) {
             User cu = m_userController.getUserByUsername(u.username());
-            Professor p; p.setUserId(cu.id()); p.setSpecialization(spec->text()); p.setTitle(tit->text());
+            Professor p; p.setUserId(cu.id()); p.setIdNumber(idNum->text()); p.setSpecialization(spec->text()); p.setTitle(tit->text());
             m_professorController.addProfessor(p);
             refreshProfessorsTable();
         }

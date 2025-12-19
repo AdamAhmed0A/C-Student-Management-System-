@@ -293,6 +293,7 @@ bool DBConnection::createTables()
     if (!query.exec("CREATE TABLE IF NOT EXISTS `professors` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "user_id INT,"
+                    "id_number VARCHAR(100) UNIQUE NULL,"
                     "specialization VARCHAR(255),"
                     "title VARCHAR(100),"
                     "personal_info TEXT,"

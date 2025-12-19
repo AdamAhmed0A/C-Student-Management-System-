@@ -27,6 +27,8 @@ namespace Queries {
                                                    "JOIN users u ON sd.user_id = u.id WHERE sd.user_id = ?";
     const QString SELECT_STUDENT_DATA_BY_STUDENT_NUMBER = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
 		"JOIN users u ON sd.user_id = u.id WHERE sd.student_number = ?";
+    const QString SELECT_STUDENT_BY_ID_NUMBER = "SELECT sd.*, u.full_name, u.role, u.password FROM students_data sd "
+                                                "JOIN users u ON sd.user_id = u.id WHERE sd.id_number = ?";
 
     // Semester queries
     const QString INSERT_SEMESTER = "INSERT INTO semester (year, semester) VALUES (?, ?)";
@@ -109,11 +111,12 @@ namespace Queries {
     const QString SELECT_ROOM_SPECS = "SELECT * FROM room_specs WHERE room_id = ?";
 
     // Professor queries
-    const QString INSERT_PROFESSOR = "INSERT INTO professors (user_id, specialization, title, personal_info) VALUES (?, ?, ?, ?)";
-    const QString UPDATE_PROFESSOR = "UPDATE professors SET specialization = ?, title = ?, personal_info = ? WHERE id = ?";
+    const QString INSERT_PROFESSOR = "INSERT INTO professors (user_id, specialization, title, personal_info, id_number) VALUES (?, ?, ?, ?, ?)";
+    const QString UPDATE_PROFESSOR = "UPDATE professors SET specialization = ?, title = ?, personal_info = ?, id_number = ? WHERE id = ?";
     const QString DELETE_PROFESSOR = "DELETE FROM professors WHERE id = ?";
     const QString SELECT_ALL_PROFESSORS = "SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id ORDER BY u.full_name";
     const QString SELECT_PROFESSOR_BY_USER_ID = "SELECT p.*, u.full_name FROM professors p JOIN users u ON p.user_id = u.id WHERE p.user_id = ?";
+    const QString SELECT_PROFESSOR_BY_ID_NUMBER = "SELECT p.*, u.full_name, u.role, u.password FROM professors p JOIN users u ON p.user_id = u.id WHERE p.id_number = ?";
 
     // Schedule queries
     const QString INSERT_SCHEDULE = "INSERT INTO schedules (course_id, room_id, professor_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)";

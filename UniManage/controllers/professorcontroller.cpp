@@ -15,6 +15,7 @@ bool ProfessorController::addProfessor(const Professor& prof)
     query.addBindValue(prof.specialization());
     query.addBindValue(prof.title());
     query.addBindValue(prof.personalInfo());
+    query.addBindValue(prof.idNumber());
     return query.exec();
 }
 
@@ -25,6 +26,7 @@ bool ProfessorController::updateProfessor(const Professor& prof)
     query.addBindValue(prof.specialization());
     query.addBindValue(prof.title());
     query.addBindValue(prof.personalInfo());
+    query.addBindValue(prof.idNumber());
     query.addBindValue(prof.id());
     return query.exec();
 }
@@ -46,6 +48,7 @@ QList<Professor> ProfessorController::getAllProfessors()
             Professor p;
             p.setId(query.value("id").toInt());
             p.setUserId(query.value("user_id").toInt());
+            p.setIdNumber(query.value("id_number").toString());
             p.setSpecialization(query.value("specialization").toString());
             p.setTitle(query.value("title").toString());
             p.setPersonalInfo(query.value("personal_info").toString());
@@ -65,6 +68,7 @@ Professor ProfessorController::getProfessorByUserId(int userId)
     if (query.exec() && query.next()) {
         p.setId(query.value("id").toInt());
         p.setUserId(query.value("user_id").toInt());
+        p.setIdNumber(query.value("id_number").toString());
         p.setSpecialization(query.value("specialization").toString());
         p.setTitle(query.value("title").toString());
         p.setPersonalInfo(query.value("personal_info").toString());

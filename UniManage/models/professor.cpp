@@ -20,5 +20,8 @@ void Professor::setTitle(const QString& title) { m_title = title; }
 QString Professor::personalInfo() const { return m_personalInfo; }
 void Professor::setPersonalInfo(const QString& info) { m_personalInfo = info; }
 
+QString Professor::idNumber() const { return m_idNumber; }
+void Professor::setIdNumber(const QString& idNumber) { m_idNumber = idNumber; }
+
 QString Professor::fullName() const { return m_fullName; }
 void Professor::setFullName(const QString& name) { m_fullName = name; }

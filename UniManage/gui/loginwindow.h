@@ -4,7 +4,6 @@
 #include <QWidget>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QComboBox>
 #include <QLabel>
 
 class LoginWindow : public QWidget
@@ -16,15 +15,13 @@ public:
     ~LoginWindow();
 
 private slots:
-    void onUserTypeChanged(int index);
     void onLoginClicked();
     void onTestConnectionClicked();
 
 private:
     void setupUI();
-    bool tryLogin(const QString& username, const QString& password, const QString& role);
+    bool tryLogin(const QString& idNumber, const QString& password);
 
-    QComboBox* m_userTypeCombo;
     QLabel* m_usernameLabel;
     QLineEdit* m_usernameEdit;
     QLabel* m_passwordLabel;
@@ -33,6 +30,7 @@ private:
     QPushButton* m_testConnButton;
 
     int m_currentUserId;
+    QString m_userRole;
 };
 
 #endif // LOGINWINDOW_H
