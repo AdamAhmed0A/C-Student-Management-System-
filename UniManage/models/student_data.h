@@ -56,6 +56,9 @@ public:
     QString levelName() const;
     void setLevelName(const QString &levelName);
 
+    QString sectionName() const;
+    void setSectionName(const QString &sectionName);
+
     // Helper to store joined user name
     QString fullName() const;
     void setFullName(const QString &fullName);
@@ -87,6 +90,7 @@ private:
     QString m_username; // Joined from User
     QString m_role;     // Joined from User
     QString m_levelName; // Joined from Academic Levels
+    QString m_sectionName; // Joined/Computed from Section
 };
 
 #endif // STUDENT_DATA_H

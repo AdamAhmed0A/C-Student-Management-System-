@@ -15,6 +15,8 @@
 #include <QTextEdit>
 #include <QCheckBox>
 #include <QListWidget>
+#include <QSpinBox>
+#include <QDialogButtonBox>
 
 ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     : QWidget(parent), m_userId(userId)
@@ -48,7 +50,7 @@ void ProfessorPanel::setupUI() {
     header->addWidget(title);
     header->addStretch();
     
-    QLAbel* userLabel = new QLabel("Welcome, " + m_professor.fullName());
+    QLabel* userLabel = new QLabel("Welcome, " + m_professor.fullName());
     userLabel->setStyleSheet("font-size: 16px; color: #555; margin-right: 10px;");
     header->addWidget(userLabel);
 
@@ -130,14 +132,19 @@ QWidget* ProfessorPanel::createCoursesTab() {
     QVBoxLayout* layout = new QVBoxLayout(tab);
     
     QHBoxLayout* tools = new QHBoxLayout();
-    QPushButton* addBtn = new QPushButton("Request New Course"); // Maybe not? Let's assume Add for now or just Edit.
-    // Given requirements, "Professors can enter... k) Academic courses". We'll allow editing existing assigned courses fully.
-    // Adding might be restricted to Admin, but let's allow Edit.
-    // Actually, "Enter, update, append" implies full CRUD. I'll add buttons.
-    
+    QPushButton* addBtn = new QPushButton("Request New Course"); 
+    connect(addBtn, &QPushButton::clicked, this, &ProfessorPanel::onAddCourse);
+    tools->addWidget(addBtn);
+
     QPushButton* editBtn = new QPushButton("Edit Details");
     connect(editBtn, &QPushButton::clicked, this, &ProfessorPanel::onEditCourse);
     tools->addWidget(editBtn);
+
+    QPushButton* delBtn = new QPushButton("Delete Course");
+    delBtn->setObjectName("dangerBtn");
+    connect(delBtn, &QPushButton::clicked, this, &ProfessorPanel::onDeleteCourse);
+    tools->addWidget(delBtn);
+
     tools->addStretch();
     layout->addLayout(tools);
 
@@ -150,6 +157,80 @@ QWidget* ProfessorPanel::createCoursesTab() {
     layout->addWidget(m_coursesTable);
     
     return tab;
+}
+
+void ProfessorPanel::onAddCourse() {
+    QDialog dlg(this);
+    dlg.setWindowTitle("Add New Course");
+    QFormLayout* form = new QFormLayout(&dlg);
+    
+    QLineEdit* nameEd = new QLineEdit();
+    QLineEdit* descEd = new QLineEdit();
+    QSpinBox* creditsSb = new QSpinBox();
+    creditsSb->setRange(1, 6);
+    creditsSb->setValue(3);
+    
+    QComboBox* typeCb = new QComboBox();
+    typeCb->addItems({"Theoretical", "Practical"});
+    
+    QSpinBox* maxGradeSb = new QSpinBox();
+    maxGradeSb->setRange(0, 500);
+    maxGradeSb->setValue(100);
+    
+    connect(typeCb, &QComboBox::currentTextChanged, [maxGradeSb](const QString& t){
+        if(t == "Practical") maxGradeSb->setValue(150);
+        else maxGradeSb->setValue(100);
+    });
+    
+    form->addRow("Name:", nameEd);
+    form->addRow("Description:", descEd);
+    form->addRow("Credits:", creditsSb);
+    form->addRow("Type:", typeCb);
+    form->addRow("Max Grade:", maxGradeSb);
+    
+    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    form->addRow(bb);
+    
+    if(dlg.exec() == QDialog::Accepted) {
+        Course c;
+        c.setName(nameEd->text());
+        c.setDescription(descEd->text());
+        c.setCreditHours(creditsSb->value());
+        c.setCourseType(typeCb->currentText());
+        c.setMaxGrade(maxGradeSb->value());
+        c.setYearLevel(1); 
+        c.setSemesterId(1); 
+        
+        if(m_courseController.addCourse(c)) {
+            QMessageBox::information(this, "Success", "Course added to catalog.");
+            loadCourses(); 
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to add course.");
+        }
+    }
+}
+
+void ProfessorPanel::onDeleteCourse() {
+    QList<QTableWidgetItem*> sel = m_coursesTable->selectedItems();
+    if(sel.isEmpty()) return;
+    
+    int row = sel.first()->row();
+    int cid = m_coursesTable->item(row, 0)->text().toInt();
+    QString name = m_coursesTable->item(row, 1)->text();
+    
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Delete Course", "Are you sure you want to delete '" + name + "'?", QMessageBox::Yes|QMessageBox::No);
+    
+    if (reply == QMessageBox::Yes) {
+        if(m_courseController.deleteCourse(cid)) {
+            QMessageBox::information(this, "Deleted", "Course deleted.");
+            loadCourses();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to delete course.");
+        }
+    }
 }
 
 QWidget* ProfessorPanel::createProfileTab() {

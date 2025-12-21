@@ -40,7 +40,6 @@ private slots:
     void onAddCourse();
     void onEditCourse();
     void onDeleteCourse();
-    void onSaveCourse(); // Dialog slot
 
     // Profile
     void onSaveProfile();
