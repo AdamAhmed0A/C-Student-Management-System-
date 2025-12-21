@@ -305,4 +305,50 @@ if (m_userController.updateUser(currentUser) && m_professorController.updateProf
 
 *Document updated: 2025-12-21*
 *System: UniManage - University Management System*
-*Latest Update: Removed Title field, separated Code and National ID columns*
+*Latest Update: Enhanced Attendance tracking, Course visibility, and Calendar management*
+
+---
+
+## Recent Enhancements (2025-12-21)
+
+### 1. **Attendance Tab - In-place Tracking & Grading**
+
+**File:** `UniManage/gui/professorpanel.cpp`
+
+**Changes:**
+- Added a **Date Selector** to choose the day of attendance.
+- Added a **Today Status** column directly in the student table with a ComboBox (Present, Absent, Late, Excused).
+- Integrated **Assignment Grades** (Ass. 1, Ass. 2, CW, Final) and Total/Grade calculation in the same view.
+- Added **Submit Attendance** button to batch update attendance logs for the selected date.
+- Added **Save Grades** button to save all assignment marks and recalculate totals in one click.
+
+**Purpose:**
+- Streamlines the professor's workflow by allowing them to take attendance and manage grades in a single integrated view without extra dialogs.
+
+---
+
+### 2. **Courses Tab - Read-Only Assigned Courses**
+
+**File:** `UniManage/gui/professorpanel.cpp`
+
+**Changes:**
+- Renamed "My Courses" tab to **Courses**.
+- Restricted the view to show **only courses assigned to the professor** by the administrator (linked via schedules).
+- Removed **Add**, **Edit**, and **Delete** buttons from the professor's view to maintain administrative control.
+
+**Purpose:**
+- Ensures professors only see and interact with their mandated curriculum while preventing unauthorized changes to the global course catalog.
+
+---
+
+### 3. **Calendar Management - Full Professor Control**
+
+**File:** `UniManage/gui/professorpanel.cpp`, `UniManage/gui/studentPortal.cpp`
+
+**Changes:**
+- Implemented **Add**, **Edit**, and **Delete** functionality for academic calendar events within the Professor Panel.
+- Integrated `CalendarController` to synchronize events with the central database.
+- Added a **Calendar Tab** to the Student Portal (Read-only) so students can view academic milestones, holidays, and exam dates set by professors and admin.
+
+**Purpose:**
+- "Fixes calendar functionality all over the application" by making it a living system where professors can announce important dates directly to students.

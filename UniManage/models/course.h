@@ -43,6 +43,9 @@ public:
     // Helper fields
     QString semesterName() const; // e.g. "2024 - Sem 1"
     void setSemesterName(const QString& name);
+    
+    QString assignedProfessor() const;
+    void setAssignedProfessor(const QString& name);
 
 private:
     int m_id;
@@ -56,6 +59,7 @@ private:
     QString m_semesterName;
     int m_maxGrade;
     QString m_courseType;
+    QString m_assignedProfessor;
 };
 
 #endif // COURSE_H

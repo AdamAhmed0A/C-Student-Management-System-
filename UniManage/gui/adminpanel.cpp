@@ -83,6 +83,7 @@ void AdminPanel::setupUI()
     m_tabWidget->addTab(createAcademicSetupTab(), "Academic Setup");
     m_tabWidget->addTab(createProfessorsTab(), "Professor Data");
     m_tabWidget->addTab(createSchedulesTab(), "Academic Schedules");
+    m_tabWidget->addTab(createCalendarTab(), "Calendar Management");
     
     mainLayout->addWidget(m_tabWidget);
 }
@@ -96,6 +97,190 @@ void AdminPanel::refreshAllData() {
     refreshProfessorsTable();
     refreshSchedulesTable();
     refreshStudentsTable();
+    refreshCalendarTable();
+}
+
+void AdminPanel::refreshCalendarTable() {
+    m_calendarTable->setRowCount(0);
+    for (const auto& e : m_calendarController.getAllEvents()) {
+        int r = m_calendarTable->rowCount();
+        m_calendarTable->insertRow(r);
+        m_calendarTable->setItem(r, 0, new QTableWidgetItem(QString::number(e.id())));
+        m_calendarTable->setItem(r, 1, new QTableWidgetItem(e.title()));
+        m_calendarTable->setItem(r, 2, new QTableWidgetItem(e.startDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 3, new QTableWidgetItem(e.endDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 4, new QTableWidgetItem(e.eventType()));
+        m_calendarTable->setItem(r, 5, new QTableWidgetItem(e.description()));
+    }
+}
+
+QWidget* AdminPanel::createCalendarTab() {
+    QWidget* widget = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(widget);
+    
+    QHBoxLayout* btns = new QHBoxLayout();
+    QPushButton* addBtn = new QPushButton("New Event");
+    QPushButton* editBtn = new QPushButton("Edit Event");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Event");
+    deleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+    
+    m_calendarTable = new QTableWidget();
+    m_calendarTable->setColumnCount(6);
+    m_calendarTable->setHorizontalHeaderLabels({"ID", "Title", "Start", "End", "Type", "Description"});
+    m_calendarTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_calendarTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
+    layout->addLayout(btns);
+    layout->addWidget(m_calendarTable);
+    
+    connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddCalendarEvent);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditCalendarEvent);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteCalendarEvent);
+    
+    refreshCalendarTable();
+    return widget;
+}
+
+void AdminPanel::onAssignProfessor() {
+    int cur = m_coursesTable->currentRow();
+    if (cur < 0) {
+        QMessageBox::warning(this, "Selection Required", "Please select a course to assign.");
+        return;
+    }
+    
+    int courseId = m_coursesTable->item(cur, 0)->text().toInt();
+    QString courseName = m_coursesTable->item(cur, 1)->text();
+    
+    QDialog dlg(this);
+    dlg.setWindowTitle("Assign Professor to " + courseName);
+    QVBoxLayout* lay = new QVBoxLayout(&dlg);
+    
+    lay->addWidget(new QLabel("Select Professor:"));
+    QComboBox* profCb = new QComboBox();
+    
+    // Load professors
+    QList<Professor> profs = m_professorController.getAllProfessors();
+    for (const auto& p : profs) {
+        profCb->addItem(p.fullName(), p.id());
+    }
+    lay->addWidget(profCb);
+    
+    QHBoxLayout* btns = new QHBoxLayout();
+    QPushButton* okBtn = new QPushButton("Assign");
+    QPushButton* cancelBtn = new QPushButton("Cancel");
+    btns->addWidget(okBtn);
+    btns->addWidget(cancelBtn);
+    lay->addLayout(btns);
+    
+    connect(okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    connect(cancelBtn, &QPushButton::clicked, &dlg, &QDialog::reject);
+    
+    if (dlg.exec() == QDialog::Accepted) {
+        int profId = profCb->currentData().toInt();
+        if (m_scheduleController.assignProfessorToCourse(courseId, profId)) {
+            QMessageBox::information(this, "Success", "Course assigned successfully.");
+            refreshCoursesTable();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to assign course.");
+        }
+    }
+}
+
+void AdminPanel::onAddCalendarEvent() {
+    QDialog dlg(this);
+    dlg.setWindowTitle("Add Calendar Event");
+    QFormLayout* form = new QFormLayout(&dlg);
+    QLineEdit* title = new QLineEdit();
+    QTextEdit* desc = new QTextEdit();
+    QDateEdit* start = new QDateEdit(QDate::currentDate());
+    QDateEdit* end = new QDateEdit(QDate::currentDate());
+    QComboBox* type = new QComboBox();
+    type->addItems({"Academic", "Holiday", "Exam", "Registration", "Other"});
+    
+    form->addRow("Title:", title);
+    form->addRow("Description:", desc);
+    form->addRow("Start:", start);
+    form->addRow("End:", end);
+    form->addRow("Type:", type);
+    
+    QPushButton* btn = new QPushButton("Add Event");
+    connect(btn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    form->addRow(btn);
+    
+    if (dlg.exec() == QDialog::Accepted) {
+        CalendarEvent e;
+        e.setTitle(title->text());
+        e.setDescription(desc->toPlainText());
+        e.setStartDate(start->date());
+        e.setEndDate(end->date());
+        e.setEventType(type->currentText());
+        if (m_calendarController.addEvent(e)) {
+            QMessageBox::information(this, "Success", "Event added.");
+            refreshCalendarTable();
+        }
+    }
+}
+
+void AdminPanel::onEditCalendarEvent() {
+    int cur = m_calendarTable->currentRow();
+    if(cur < 0) return;
+    int eid = m_calendarTable->item(cur, 0)->text().toInt();
+    
+    QList<CalendarEvent> all = m_calendarController.getAllEvents();
+    CalendarEvent e;
+    bool found = false;
+    for(const auto& item : all) { if(item.id() == eid) { e = item; found = true; break; } }
+    if(!found) return;
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("Edit Event");
+    QFormLayout* form = new QFormLayout(&dlg);
+    QLineEdit* title = new QLineEdit(e.title());
+    QTextEdit* desc = new QTextEdit(e.description());
+    QDateEdit* start = new QDateEdit(e.startDate());
+    QDateEdit* end = new QDateEdit(e.endDate());
+    QComboBox* type = new QComboBox();
+    type->addItems({"Academic", "Holiday", "Exam", "Registration", "Other"});
+    type->setCurrentText(e.eventType());
+    
+    form->addRow("Title:", title);
+    form->addRow("Description:", desc);
+    form->addRow("Start Date:", start);
+    form->addRow("End Date:", end);
+    form->addRow("Event Type:", type);
+    
+    QPushButton* btn = new QPushButton("Save Changes");
+    connect(btn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    form->addRow(btn);
+    
+    if (dlg.exec() == QDialog::Accepted) {
+        e.setTitle(title->text());
+        e.setDescription(desc->toPlainText());
+        e.setStartDate(start->date());
+        e.setEndDate(end->date());
+        e.setEventType(type->currentText());
+        if (m_calendarController.updateEvent(e)) {
+            QMessageBox::information(this, "Success", "Event updated.");
+            refreshCalendarTable();
+        }
+    }
+}
+
+void AdminPanel::onDeleteCalendarEvent() {
+    int cur = m_calendarTable->currentRow();
+    if(cur < 0) return;
+    int eid = m_calendarTable->item(cur, 0)->text().toInt();
+    if (QMessageBox::question(this, "Confirm", "Delete this event?") == QMessageBox::Yes) {
+        if (m_calendarController.deleteEvent(eid)) {
+            refreshCalendarTable();
+        }
+    }
 }
 
 void AdminPanel::onRefreshAll() {
@@ -282,15 +467,23 @@ QWidget* AdminPanel::createCoursesTab() {
     btns->addWidget(deleteBtn);
     btns->addStretch();
     m_coursesTable = new QTableWidget();
-    m_coursesTable->setColumnCount(8);
-    m_coursesTable->setHorizontalHeaderLabels({"ID", "Name", "Type", "Max Degree", "Credits", "Level", "Semester", "Description"});
+    m_coursesTable->setColumnCount(9);
+    m_coursesTable->setHorizontalHeaderLabels({"ID", "Name", "Professor", "Type", "Max Degree", "Credits", "Level", "Semester", "Description"});
     m_coursesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_coursesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
+    QPushButton* assignBtn = new QPushButton("Assign Professor");
+    assignBtn->setObjectName("primaryBtn");
+    btns->addWidget(assignBtn);
+
     layout->addLayout(btns);
     layout->addWidget(m_coursesTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddCourse);
     connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditCourse);
     connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteCourse);
+    connect(assignBtn, &QPushButton::clicked, this, &AdminPanel::onAssignProfessor);
+    
     return widget;
 }
 
@@ -463,12 +656,13 @@ void AdminPanel::refreshCoursesTable() {
         m_coursesTable->insertRow(r);
         m_coursesTable->setItem(r, 0, new QTableWidgetItem(QString::number(c.id())));
         m_coursesTable->setItem(r, 1, new QTableWidgetItem(c.name()));
-        m_coursesTable->setItem(r, 2, new QTableWidgetItem(c.courseType()));
-        m_coursesTable->setItem(r, 3, new QTableWidgetItem(QString::number(c.maxGrade())));
-        m_coursesTable->setItem(r, 4, new QTableWidgetItem(QString::number(c.creditHours())));
-        m_coursesTable->setItem(r, 5, new QTableWidgetItem(QString::number(c.yearLevel())));
-        m_coursesTable->setItem(r, 6, new QTableWidgetItem(c.semesterName()));
-        m_coursesTable->setItem(r, 7, new QTableWidgetItem(c.description()));
+        m_coursesTable->setItem(r, 2, new QTableWidgetItem(c.assignedProfessor().isEmpty() ? "---" : c.assignedProfessor()));
+        m_coursesTable->setItem(r, 3, new QTableWidgetItem(c.courseType()));
+        m_coursesTable->setItem(r, 4, new QTableWidgetItem(QString::number(c.maxGrade())));
+        m_coursesTable->setItem(r, 5, new QTableWidgetItem(QString::number(c.creditHours())));
+        m_coursesTable->setItem(r, 6, new QTableWidgetItem(QString::number(c.yearLevel())));
+        m_coursesTable->setItem(r, 7, new QTableWidgetItem(c.semesterName()));
+        m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.description()));
     }
 }
 
@@ -539,7 +733,26 @@ void AdminPanel::refreshProfessorsTable() {
     }
 }
 
-void AdminPanel::refreshSchedulesTable() {}
+void AdminPanel::refreshSchedulesTable() {
+    m_schedulesTable->setRowCount(0);
+    QSqlQuery query("SELECT s.id, c.name, r.name, u.full_name, s.day_of_week, s.start_time, s.end_time "
+                    "FROM schedules s "
+                    "JOIN courses c ON s.course_id = c.id "
+                    "JOIN rooms r ON s.room_id = r.id "
+                    "JOIN professors p ON s.professor_id = p.id "
+                    "JOIN users u ON p.user_id = u.id", 
+                    DBConnection::instance().database());
+    
+    if (query.exec()) {
+        while (query.next()) {
+            int r = m_schedulesTable->rowCount();
+            m_schedulesTable->insertRow(r);
+            for(int i=0; i<7; ++i) {
+                m_schedulesTable->setItem(r, i, new QTableWidgetItem(query.value(i).toString()));
+            }
+        }
+    }
+}
 
 void AdminPanel::onAddStudent() {
     QDialog dialog(this);

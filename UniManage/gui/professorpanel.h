@@ -31,7 +31,6 @@ public:
 private slots:
     void onCourseSelected(int index);
     void onSaveGrades();
-    void onTakeAttendance();
     void onRefreshStudents();
     void onRefreshAll();
     void onLogout();
@@ -43,6 +42,7 @@ private slots:
 
     // Profile
     void onSaveProfile();
+    void onSubmitAttendance();
 
 private:
     void setupUI();
@@ -65,6 +65,7 @@ private:
     
     // Attendance & Grading
     QComboBox* m_courseSelector;
+    QDateEdit* m_attendanceDate;
     QTableWidget* m_studentsTable;
     
     // Schedule

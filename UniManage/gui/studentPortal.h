@@ -8,6 +8,7 @@
 #include "../controllers/studentcontroller.h"
 #include "../controllers/enrollmentcontroller.h"
 #include "../controllers/paymentcontroller.h"
+#include "../controllers/calendarcontroller.h"
 #include "../models/student_data.h"
 
 class StudentPortal : public QWidget
@@ -24,10 +25,12 @@ private:
     QWidget* createGradesTab();
     QWidget* createScheduleTab();
     QWidget* createPaymentsTab();
+    QWidget* createCalendarTab();
     
     void loadStudentData();
     void refreshGrades();
     void refreshPayments();
+    void refreshCalendar();
     void calculateGPA();
     
 private slots:
@@ -48,6 +51,8 @@ private:
     StudentController m_studentController;
     EnrollmentController m_enrollmentController;
     PaymentController m_paymentController;
+    CalendarController m_calendarController;
+    QTableWidget* m_calendarTable;
 };
 
 #endif // STUDENTPORTAL_H

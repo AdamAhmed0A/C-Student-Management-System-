@@ -52,7 +52,13 @@ namespace Queries {
     const QString INSERT_COURSE = "INSERT INTO courses (name, description, year_level, credit_hours, semester_id, max_grade, course_type) VALUES (?, ?, ?, ?, ?, ?, ?)";
     const QString UPDATE_COURSE = "UPDATE courses SET name = ?, description = ?, year_level = ?, credit_hours = ?, semester_id = ?, max_grade = ?, course_type = ? WHERE id = ?";
     const QString DELETE_COURSE = "DELETE FROM courses WHERE id = ?";
-    const QString SELECT_ALL_COURSES = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "
+    const QString SELECT_ALL_COURSES = "SELECT c.*, s.year as semester_year, s.semester as semester_number, "
+                                       "(SELECT GROUP_CONCAT(DISTINCT u.full_name SEPARATOR ', ') "
+                                       " FROM schedules sch "
+                                       " JOIN professors p ON sch.professor_id = p.id "
+                                       " JOIN users u ON p.user_id = u.id "
+                                       " WHERE sch.course_id = c.id) as assigned_professors "
+                                       "FROM courses c "
                                        "LEFT JOIN semester s ON c.semester_id = s.id ORDER BY c.name";
     const QString SELECT_COURSES_BY_SEMESTER = "SELECT * FROM courses WHERE semester_id = ?";
     const QString SELECT_COURSE_BY_ID = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "

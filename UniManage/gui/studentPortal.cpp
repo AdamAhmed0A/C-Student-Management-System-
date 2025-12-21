@@ -60,6 +60,7 @@ void StudentPortal::setupUI() {
     m_tabWidget->addTab(createGradesTab(), "My Grades");
     m_tabWidget->addTab(createScheduleTab(), "Weekly Schedule");
     m_tabWidget->addTab(createPaymentsTab(), "Tuition Fees");
+    m_tabWidget->addTab(createCalendarTab(), "Calendar");
 
     mainLayout->addWidget(m_tabWidget);
 }
@@ -74,6 +75,7 @@ void StudentPortal::onRefreshAll() {
     loadStudentData();
     refreshGrades();
     refreshPayments();
+    refreshCalendar();
     QMessageBox::information(this, "Refreshed", "Your student profile and academic records have been updated.");
 }
 
@@ -132,6 +134,21 @@ QWidget* StudentPortal::createPaymentsTab() {
     return widget;
 }
 
+QWidget* StudentPortal::createCalendarTab() {
+    QWidget* widget = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(widget);
+    
+    m_calendarTable = new QTableWidget();
+    m_calendarTable->setColumnCount(5);
+    m_calendarTable->setHorizontalHeaderLabels({"Title", "Start Date", "End Date", "Type", "Description"});
+    m_calendarTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_calendarTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    layout->addWidget(m_calendarTable);
+    
+    refreshCalendar();
+    return widget;
+}
+
 void StudentPortal::refreshGrades() {
     m_gradesTable->setRowCount(0);
     double totalPoints = 0;
@@ -170,6 +187,19 @@ void StudentPortal::refreshPayments() {
         m_paymentsTable->setItem(r, 2, new QTableWidgetItem(p.method()));
         m_paymentsTable->setItem(r, 3, new QTableWidgetItem(p.status()));
         m_paymentsTable->setItem(r, 4, new QTableWidgetItem(p.notes()));
+    }
+}
+
+void StudentPortal::refreshCalendar() {
+    m_calendarTable->setRowCount(0);
+    for(const auto& e : m_calendarController.getAllEvents()) {
+        int r = m_calendarTable->rowCount();
+        m_calendarTable->insertRow(r);
+        m_calendarTable->setItem(r, 0, new QTableWidgetItem(e.title()));
+        m_calendarTable->setItem(r, 1, new QTableWidgetItem(e.startDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 2, new QTableWidgetItem(e.endDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 3, new QTableWidgetItem(e.eventType()));
+        m_calendarTable->setItem(r, 4, new QTableWidgetItem(e.description()));
     }
 }
 

@@ -112,3 +112,6 @@ void Course::setMaxGrade(int maxGrade) { m_maxGrade = maxGrade; }
 
 QString Course::courseType() const { return m_courseType; }
 void Course::setCourseType(const QString& courseType) { m_courseType = courseType; }
+
+QString Course::assignedProfessor() const { return m_assignedProfessor; }
+void Course::setAssignedProfessor(const QString& name) { m_assignedProfessor = name; }

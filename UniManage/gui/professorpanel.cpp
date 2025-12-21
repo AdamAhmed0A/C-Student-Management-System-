@@ -1,7 +1,6 @@
 #include "professorpanel.h"
 #include "stylehelper.h"
 #include "loginwindow.h"
-#include "../controllers/newscontroller.h" 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -26,7 +25,6 @@ ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     setupUI();
     loadCourses(); // Load lists
     loadSchedule();
-    loadNews();
     setWindowTitle("Professor Portal - Professor " + m_professor.fullName());
     resize(1200, 800);
 }
@@ -89,12 +87,24 @@ QWidget* ProfessorPanel::createAttendanceTab() {
     connect(m_courseSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ProfessorPanel::onCourseSelected);
     controls->addWidget(m_courseSelector);
     
+    controls->addSpacing(20);
+    controls->addWidget(new QLabel("Select Date:"));
+    m_attendanceDate = new QDateEdit(QDate::currentDate());
+    m_attendanceDate->setCalendarPopup(true);
+    m_attendanceDate->setMinimumWidth(120);
+    connect(m_attendanceDate, &QDateEdit::dateChanged, this, &ProfessorPanel::onRefreshStudents);
+    controls->addWidget(m_attendanceDate);
+    
     controls->addStretch();
     
-    QPushButton* attBtn = new QPushButton("Take Attendance");
-    attBtn->setObjectName("primaryBtn");
-    connect(attBtn, &QPushButton::clicked, this, &ProfessorPanel::onTakeAttendance);
-    controls->addWidget(attBtn);
+    QPushButton* refreshStdBtn = new QPushButton("Refresh List");
+    connect(refreshStdBtn, &QPushButton::clicked, this, &ProfessorPanel::onRefreshStudents);
+    controls->addWidget(refreshStdBtn);
+    
+    QPushButton* submitAttBtn = new QPushButton("Submit Attendance");
+    submitAttBtn->setObjectName("primaryBtn");
+    connect(submitAttBtn, &QPushButton::clicked, this, &ProfessorPanel::onSubmitAttendance);
+    controls->addWidget(submitAttBtn);
 
     QPushButton* saveBtn = new QPushButton("Save Grades");
     saveBtn->setObjectName("primaryBtn");
@@ -105,15 +115,15 @@ QWidget* ProfessorPanel::createAttendanceTab() {
 
     // Combined table for attendance and grades - all editable
     m_studentsTable = new QTableWidget();
-    QStringList headers = {"EnrID", "Student", "Att", "Abs", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
+    QStringList headers = {"EnrID", "Student", "Today Status", "Att Total", "Abs Total", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
     m_studentsTable->setColumnCount(headers.size());
     m_studentsTable->setHorizontalHeaderLabels(headers);
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_studentsTable->setAlternatingRowColors(true);
-    m_studentsTable->setEditTriggers(QAbstractItemView::DoubleClick | QAbstractItemView::EditKeyPressed);
+    m_studentsTable->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
     layout->addWidget(m_studentsTable);
     
-    QLabel* helpText = new QLabel("Double-click cells to edit grades. Use 'Take Attendance' for daily attendance logging.");
+    QLabel* helpText = new QLabel("Select 'Today Status' and click 'Submit Attendance'. Use 'Save Grades' for updating assignment marks.");
     helpText->setStyleSheet("color: #666; font-style: italic; padding: 5px;");
     layout->addWidget(helpText);
     
@@ -159,80 +169,6 @@ QWidget* ProfessorPanel::createCoursesTab() {
     return tab;
 }
 
-void ProfessorPanel::onAddCourse() {
-    QDialog dlg(this);
-    dlg.setWindowTitle("Add New Course");
-    QFormLayout* form = new QFormLayout(&dlg);
-    
-    QLineEdit* nameEd = new QLineEdit();
-    QLineEdit* descEd = new QLineEdit();
-    QSpinBox* creditsSb = new QSpinBox();
-    creditsSb->setRange(1, 6);
-    creditsSb->setValue(3);
-    
-    QComboBox* typeCb = new QComboBox();
-    typeCb->addItems({"Theoretical", "Practical"});
-    
-    QSpinBox* maxGradeSb = new QSpinBox();
-    maxGradeSb->setRange(0, 500);
-    maxGradeSb->setValue(100);
-    
-    connect(typeCb, &QComboBox::currentTextChanged, [maxGradeSb](const QString& t){
-        if(t == "Practical") maxGradeSb->setValue(150);
-        else maxGradeSb->setValue(100);
-    });
-    
-    form->addRow("Name:", nameEd);
-    form->addRow("Description:", descEd);
-    form->addRow("Credits:", creditsSb);
-    form->addRow("Type:", typeCb);
-    form->addRow("Max Grade:", maxGradeSb);
-    
-    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-    form->addRow(bb);
-    
-    if(dlg.exec() == QDialog::Accepted) {
-        Course c;
-        c.setName(nameEd->text());
-        c.setDescription(descEd->text());
-        c.setCreditHours(creditsSb->value());
-        c.setCourseType(typeCb->currentText());
-        c.setMaxGrade(maxGradeSb->value());
-        c.setYearLevel(1); 
-        c.setSemesterId(1); 
-        
-        if(m_courseController.addCourse(c)) {
-            QMessageBox::information(this, "Success", "Course added to catalog.");
-            loadCourses(); 
-        } else {
-            QMessageBox::critical(this, "Error", "Failed to add course.");
-        }
-    }
-}
-
-void ProfessorPanel::onDeleteCourse() {
-    QList<QTableWidgetItem*> sel = m_coursesTable->selectedItems();
-    if(sel.isEmpty()) return;
-    
-    int row = sel.first()->row();
-    int cid = m_coursesTable->item(row, 0)->text().toInt();
-    QString name = m_coursesTable->item(row, 1)->text();
-    
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Delete Course", "Are you sure you want to delete '" + name + "'?", QMessageBox::Yes|QMessageBox::No);
-    
-    if (reply == QMessageBox::Yes) {
-        if(m_courseController.deleteCourse(cid)) {
-            QMessageBox::information(this, "Deleted", "Course deleted.");
-            loadCourses();
-        } else {
-            QMessageBox::critical(this, "Error", "Failed to delete course.");
-        }
-    }
-}
-
 QWidget* ProfessorPanel::createProfileTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -240,15 +176,12 @@ QWidget* ProfessorPanel::createProfileTab() {
     QFormLayout* form = new QFormLayout();
     
     m_profSpecializationEdit = new QLineEdit();
-    m_profTitleEdit = new QLineEdit();
     m_profInfoEdit = new QTextEdit(); // HTML capable
     
     m_profSpecializationEdit->setText(m_professor.specialization());
-    m_profTitleEdit->setText(m_professor.title());
-    m_profInfoEdit->setText(m_professor.personalInfo());
+    m_profInfoEdit->setHtml(m_professor.personalInfo());
     
     form->addRow("Specialization:", m_profSpecializationEdit);
-    form->addRow("Title:", m_profTitleEdit);
     form->addRow("Personal Info:", m_profInfoEdit);
     
     layout->addLayout(form);
@@ -298,8 +231,8 @@ QWidget* ProfessorPanel::createCalendarTab() {
     
     // Calendar events table
     m_calendarTable = new QTableWidget();
-    m_calendarTable->setColumnCount(5);
-    m_calendarTable->setHorizontalHeaderLabels({"ID", "Title", "Start Date", "End Date", "Type"});
+    m_calendarTable->setColumnCount(6);
+    m_calendarTable->setHorizontalHeaderLabels({"ID", "Title", "Start Date", "End Date", "Type", "Description"});
     m_calendarTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_calendarTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_calendarTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -307,9 +240,7 @@ QWidget* ProfessorPanel::createCalendarTab() {
     m_calendarTable->setAlternatingRowColors(true);
     layout->addWidget(m_calendarTable);
     
-    QLabel* noteLabel = new QLabel("Note: Calendar events are visible to all users. Use this to manage academic schedules, holidays, and important dates.");
-    noteLabel->setStyleSheet("color: #666; font-style: italic; padding: 5px;");
-    layout->addWidget(noteLabel);
+    loadCalendarEvents();
     
     return tab;
 }
@@ -322,10 +253,10 @@ void ProfessorPanel::onLogout() {
 
 void ProfessorPanel::onRefreshAll() {
     loadProfessorData();
-    loadCourses(); // Refreshes selector and courses table
+    loadCourses(); 
     loadSchedule();
-    loadNews();
-    onRefreshStudents(); // Refreshes student table if course selected
+    loadCalendarEvents();
+    onRefreshStudents(); 
     QMessageBox::information(this, "Refreshed", "All data reloaded from database.");
 }
 
@@ -333,7 +264,6 @@ void ProfessorPanel::loadCourses() {
     m_courseSelector->blockSignals(true);
     m_courseSelector->clear();
     
-    // Load courses assigned to this professor
     QList<Course> courses = m_courseController.getCoursesByProfessor(m_professor.id());
     
     m_coursesTable->setRowCount(0);
@@ -352,7 +282,10 @@ void ProfessorPanel::loadCourses() {
     }
     
     m_courseSelector->blockSignals(false);
-    if(m_courseSelector->count() > 0) m_courseSelector->setCurrentIndex(0);
+    if(m_courseSelector->count() > 0) {
+        m_courseSelector->setCurrentIndex(0);
+        onRefreshStudents();
+    }
 }
 
 void ProfessorPanel::loadSchedule() {
@@ -365,20 +298,21 @@ void ProfessorPanel::loadSchedule() {
         m_scheduleTable->setItem(r, 1, new QTableWidgetItem(s.startTime().toString("HH:mm") + " - " + s.endTime().toString("HH:mm")));
         m_scheduleTable->setItem(r, 2, new QTableWidgetItem(s.courseName()));
         m_scheduleTable->setItem(r, 3, new QTableWidgetItem(s.roomName()));
-        
-        // Find Course Type if possible (or query course again, but let's leave it blank or basic)
-        m_scheduleTable->setItem(r, 4, new QTableWidgetItem("Lecture/Lab"));
+        m_scheduleTable->setItem(r, 4, new QTableWidgetItem("Assigned Session"));
     }
 }
 
-void ProfessorPanel::loadNews() {
-    m_newsList->clear();
-    NewsController nc;
-    QList<News> news = nc.getAllNews();
-    for(const auto& n : news) {
-        QString itemText = QString("[%1] %2\n%3").arg(n.createdAt().toString("yyyy-MM-dd"), n.title(), n.body());
-        QListWidgetItem* item = new QListWidgetItem(itemText);
-        m_newsList->addItem(item);
+void ProfessorPanel::loadCalendarEvents() {
+    m_calendarTable->setRowCount(0);
+    for(const auto& e : m_calendarController.getAllEvents()) {
+        int r = m_calendarTable->rowCount();
+        m_calendarTable->insertRow(r);
+        m_calendarTable->setItem(r, 0, new QTableWidgetItem(QString::number(e.id())));
+        m_calendarTable->setItem(r, 1, new QTableWidgetItem(e.title()));
+        m_calendarTable->setItem(r, 2, new QTableWidgetItem(e.startDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 3, new QTableWidgetItem(e.endDate().toString("yyyy-MM-dd")));
+        m_calendarTable->setItem(r, 4, new QTableWidgetItem(e.eventType()));
+        m_calendarTable->setItem(r, 5, new QTableWidgetItem(e.description()));
     }
 }
 
@@ -389,8 +323,11 @@ void ProfessorPanel::onCourseSelected(int index) {
 void ProfessorPanel::onRefreshStudents() {
     if(m_courseSelector->count() == 0) return;
     int courseId = m_courseSelector->currentData().toInt();
+    QDate currentAttDate = m_attendanceDate->date();
     
     QList<Enrollment> enrollments = m_enrollmentController.getEnrollmentsByCourse(courseId);
+    QList<AttendanceLog> logs = m_enrollmentController.getAttendanceLogsByCourse(courseId, currentAttDate);
+    
     m_studentsTable->setRowCount(0);
     
     for(const auto& e : enrollments) {
@@ -399,24 +336,68 @@ void ProfessorPanel::onRefreshStudents() {
         
         m_studentsTable->setItem(r, 0, new QTableWidgetItem(QString::number(e.id())));
         QTableWidgetItem* nameItem = new QTableWidgetItem(e.studentName());
-        nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable); // Read-only
+        nameItem->setFlags(nameItem->flags() & ~(Qt::ItemIsEditable)); // Remove editable flag
         m_studentsTable->setItem(r, 1, nameItem);
         
-        m_studentsTable->setItem(r, 2, new QTableWidgetItem(QString::number(e.attendanceCount())));
-        m_studentsTable->setItem(r, 3, new QTableWidgetItem(QString::number(e.absenceCount())));
+        // Today's Status Selector
+        QComboBox* cb = new QComboBox();
+        cb->addItems({"---", "Present", "Absent", "Late", "Excused"});
         
-        m_studentsTable->setItem(r, 4, new QTableWidgetItem(QString::number(e.assignment1Grade())));
-        m_studentsTable->setItem(r, 5, new QTableWidgetItem(QString::number(e.assignment2Grade())));
-        m_studentsTable->setItem(r, 6, new QTableWidgetItem(QString::number(e.courseworkGrade())));
-        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString::number(e.finalExamGrade())));
+        // Find if log exists for today
+        for(const auto& log : logs) {
+            if(log.enrollmentId() == e.id()) {
+                cb->setCurrentText(log.status());
+                break;
+            }
+        }
+        m_studentsTable->setCellWidget(r, 2, cb);
+        
+        m_studentsTable->setItem(r, 3, new QTableWidgetItem(QString::number(e.attendanceCount())));
+        m_studentsTable->setItem(r, 4, new QTableWidgetItem(QString::number(e.absenceCount())));
+        
+        m_studentsTable->setItem(r, 5, new QTableWidgetItem(QString::number(e.assignment1Grade())));
+        m_studentsTable->setItem(r, 6, new QTableWidgetItem(QString::number(e.assignment2Grade())));
+        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString::number(e.courseworkGrade())));
+        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString::number(e.finalExamGrade())));
         
         QTableWidgetItem* total = new QTableWidgetItem(QString::number(e.totalGrade()));
-        total->setFlags(total->flags() & ~Qt::ItemIsEditable);
-        m_studentsTable->setItem(r, 8, total);
+        total->setFlags(total->flags() & ~(Qt::ItemIsEditable));
+        m_studentsTable->setItem(r, 9, total);
         
         QTableWidgetItem* grade = new QTableWidgetItem(e.letterGrade());
-        grade->setFlags(grade->flags() & ~Qt::ItemIsEditable);
-        m_studentsTable->setItem(r, 9, grade);
+        grade->setFlags(grade->flags() & ~(Qt::ItemIsEditable));
+        m_studentsTable->setItem(r, 10, grade);
+    }
+}
+
+void ProfessorPanel::onSubmitAttendance() {
+    if(m_courseSelector->count() == 0) return;
+    QDate date = m_attendanceDate->date();
+    
+    bool allOk = true;
+    for(int i=0; i<m_studentsTable->rowCount(); ++i) {
+        int eid = m_studentsTable->item(i, 0)->text().toInt();
+        QComboBox* cb = qobject_cast<QComboBox*>(m_studentsTable->cellWidget(i, 2));
+        QString status = cb->currentText();
+        
+        if(status == "---") continue;
+        
+        AttendanceLog log;
+        log.setEnrollmentId(eid);
+        log.setDate(date);
+        log.setStatus(status);
+        log.setNotes("Logged via Batch Attendance");
+        
+        if(!m_enrollmentController.addAttendanceLog(log)) {
+            allOk = false;
+        }
+    }
+    
+    if(allOk) {
+        QMessageBox::information(this, "Success", "Attendance updated successfully.");
+        onRefreshStudents();
+    } else {
+        QMessageBox::warning(this, "Partial Success", "Some records could not be updated.");
     }
 }
 
@@ -430,19 +411,13 @@ void ProfessorPanel::onSaveGrades() {
         Enrollment e;
         e.setId(m_studentsTable->item(i, 0)->text().toInt());
         
-        // Fetch current to keep other fields? No, standard CRUD. 
-        // We only update grades/attendance counts here.
-        // Ideally we fetch, update, save. But for speed we just set what we have.
-        // Actually, status/student_id/etc needed? EnrollmentController::updateEnrollment only updates status/grades/att.
-        // So we are safe.
-        
-        e.setAttendanceCount(m_studentsTable->item(i, 2)->text().toInt());
-        e.setAbsenceCount(m_studentsTable->item(i, 3)->text().toInt());
-        e.setAssignment1Grade(m_studentsTable->item(i, 4)->text().toDouble());
-        e.setAssignment2Grade(m_studentsTable->item(i, 5)->text().toDouble());
-        e.setCourseworkGrade(m_studentsTable->item(i, 6)->text().toDouble());
-        e.setFinalExamGrade(m_studentsTable->item(i, 7)->text().toDouble());
-        e.setStatus("active"); // default
+        e.setAttendanceCount(m_studentsTable->item(i, 3)->text().toInt());
+        e.setAbsenceCount(m_studentsTable->item(i, 4)->text().toInt());
+        e.setAssignment1Grade(m_studentsTable->item(i, 5)->text().toDouble());
+        e.setAssignment2Grade(m_studentsTable->item(i, 6)->text().toDouble());
+        e.setCourseworkGrade(m_studentsTable->item(i, 7)->text().toDouble());
+        e.setFinalExamGrade(m_studentsTable->item(i, 8)->text().toDouble());
+        e.setStatus("active");
         
         m_enrollmentController.calculateTotalAndGrade(e, course.courseType(), course.maxGrade());
         
@@ -459,118 +434,24 @@ void ProfessorPanel::onSaveGrades() {
     }
 }
 
-void ProfessorPanel::onTakeAttendance() {
-    if(m_courseSelector->count() == 0) return;
-    int curCourseId = m_courseSelector->currentData().toInt();
-    
-    QDialog dlg(this);
-    dlg.setWindowTitle("Take Lecture Attendance");
-    dlg.resize(400, 500);
-    QVBoxLayout* lay = new QVBoxLayout(&dlg);
-    
-    QHBoxLayout* dateLay = new QHBoxLayout();
-    dateLay->addWidget(new QLabel("Date:"));
-    QDateEdit* de = new QDateEdit(QDate::currentDate());
-    de->setCalendarPopup(true);
-    dateLay->addWidget(de);
-    lay->addLayout(dateLay);
-    
-    QTableWidget* attTable = new QTableWidget();
-    attTable->setColumnCount(3);
-    attTable->setHorizontalHeaderLabels({"Student", "Status", "Notes"});
-    attTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    
-    // Populate
-    QList<Enrollment> students = m_enrollmentController.getEnrollmentsByCourse(curCourseId);
-    attTable->setRowCount(students.size());
-    
-    int row = 0;
-    for(const auto& s : students) {
-        attTable->setItem(row, 0, new QTableWidgetItem(s.studentName()));
-        
-        QComboBox* cb = new QComboBox();
-        cb->addItems({"Present", "Absent", "Late", "Excused"});
-        attTable->setCellWidget(row, 1, cb);
-        
-        attTable->setItem(row, 2, new QTableWidgetItem(""));
-        attTable->item(row, 0)->setData(Qt::UserRole, s.id()); // Enrollment ID
-        
-        row++;
-    }
-    lay->addWidget(attTable);
-    
-    QHBoxLayout* btns = new QHBoxLayout();
-    QPushButton* saveBtn = new QPushButton("Save Attendance");
-    connect(saveBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
-    btns->addWidget(saveBtn);
-    lay->addLayout(btns);
-    
-    if(dlg.exec() == QDialog::Accepted) {
-        // Save Logs and Update Counts
-        for(int i=0; i<attTable->rowCount(); ++i) {
-            int eid = attTable->item(i, 0)->data(Qt::UserRole).toInt();
-            QComboBox* cb = qobject_cast<QComboBox*>(attTable->cellWidget(i, 1));
-            QString status = cb->currentText();
-            QString notes = attTable->item(i, 2)->text();
-            
-            AttendanceLog log;
-            log.setEnrollmentId(eid);
-            log.setDate(de->date());
-            log.setStatus(status);
-            log.setNotes(notes);
-            m_enrollmentController.addAttendanceLog(log);
-            
-            // Optional: Increment counts in enrollment if absent/present
-            // We need to fetch the enrollment first to increment reliably, 
-            // or we trust that the user will use "Save Grades" to sync counts if they manually edit them.
-            // Requirement says "Student attendance and absence tracking".
-            // Automatic update of count:
-            if(status == "Absent") {
-                // We should update the count. Simple approach: query current count, inc, update.
-                // Or just let them be logs. But the main table shows counts. 
-                // Let's rely on the log being the source of truth? No, existing schema uses counts.
-                // I won't auto-update counts complexly here to avoid race conditions or heavy logic.
-                // User can use the main grid to adjust total counts if needed, or I can try to update it.
-                // Let's Try to update it.
-                // But simplified: Just saving logs for now as per "Lecture attendance".
-            }
-        }
-        QMessageBox::information(this, "Saved", "Attendance logs saved.");
-    }
-}
 
-void ProfessorPanel::onEditCourse() {
-    QList<QTableWidgetItem*> sel = m_coursesTable->selectedItems();
-    if(sel.isEmpty()) return;
-    
-    int row = sel.first()->row();
-    int cid = m_coursesTable->item(row, 0)->text().toInt();
-    Course c = m_courseController.getCourseById(cid);
-    
+void ProfessorPanel::onAddCalendarEvent() {
     QDialog dlg(this);
-    dlg.setWindowTitle("Edit Course Details");
+    dlg.setWindowTitle("Add Event");
     QFormLayout* form = new QFormLayout(&dlg);
     
-    QLineEdit* nameEd = new QLineEdit(c.name());
-    QLineEdit* descEd = new QLineEdit(c.description());
+    QLineEdit* titleEd = new QLineEdit();
+    QTextEdit* descEd = new QTextEdit();
+    QDateEdit* startDe = new QDateEdit(QDate::currentDate());
+    QDateEdit* endDe = new QDateEdit(QDate::currentDate());
     QComboBox* typeCb = new QComboBox();
-    typeCb->addItems({"Theoretical", "Practical"});
-    typeCb->setCurrentText(c.courseType());
+    typeCb->addItems({"Academic", "Holiday", "Exam", "Registration", "Other"});
     
-    QSpinBox* maxGradeSb = new QSpinBox();
-    maxGradeSb->setRange(0, 500);
-    maxGradeSb->setValue(c.maxGrade());
-    
-    // Auto-set max grade based on type logic if changed (optional helpfulness)
-    connect(typeCb, &QComboBox::currentTextChanged, [maxGradeSb](const QString& t){
-        if(t == "Practical") maxGradeSb->setValue(150);
-        else maxGradeSb->setValue(100);
-    });
-    
-    form->addRow("Name:", nameEd);
+    form->addRow("Title:", titleEd);
     form->addRow("Description:", descEd);
-    form->addRow("Type:", typeCb);
-    form->addRow("Max Grade:", maxGradeSb);
+    form->addRow("Start Date:", startDe);
+    form->addRow("End Date:", endDe);
+    form->addRow("Event Type:", typeCb);
     
     QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
@@ -578,28 +459,93 @@ void ProfessorPanel::onEditCourse() {
     form->addRow(bb);
     
     if(dlg.exec() == QDialog::Accepted) {
-        c.setName(nameEd->text());
-        c.setDescription(descEd->text());
-        c.setCourseType(typeCb->currentText());
-        c.setMaxGrade(maxGradeSb->value());
+        CalendarEvent e;
+        e.setTitle(titleEd->text());
+        e.setDescription(descEd->toPlainText());
+        e.setStartDate(startDe->date());
+        e.setEndDate(endDe->date());
+        e.setEventType(typeCb->currentText());
         
-        if(m_courseController.updateCourse(c)) {
-            QMessageBox::information(this, "Success", "Course updated.");
-            loadCourses();
+        if(m_calendarController.addEvent(e)) {
+            QMessageBox::information(this, "Success", "Event added.");
+            loadCalendarEvents();
         } else {
-            QMessageBox::critical(this, "Error", "Failed to update course.");
+            QMessageBox::critical(this, "Error", "Failed to add event.");
+        }
+    }
+}
+
+void ProfessorPanel::onEditCalendarEvent() {
+    int cur = m_calendarTable->currentRow();
+    if(cur < 0) return;
+    
+    int eid = m_calendarTable->item(cur, 0)->text().toInt();
+    QList<CalendarEvent> all = m_calendarController.getAllEvents();
+    CalendarEvent e;
+    bool found = false;
+    for(const auto& item : all) { if(item.id() == eid) { e = item; found = true; break; } }
+    if(!found) return;
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("Edit Event");
+    QFormLayout* form = new QFormLayout(&dlg);
+    
+    QLineEdit* titleEd = new QLineEdit(e.title());
+    QTextEdit* descEd = new QTextEdit(e.description());
+    QDateEdit* startDe = new QDateEdit(e.startDate());
+    QDateEdit* endDe = new QDateEdit(e.endDate());
+    QComboBox* typeCb = new QComboBox();
+    typeCb->addItems({"Academic", "Holiday", "Exam", "Registration", "Other"});
+    typeCb->setCurrentText(e.eventType());
+    
+    form->addRow("Title:", titleEd);
+    form->addRow("Description:", descEd);
+    form->addRow("Start Date:", startDe);
+    form->addRow("End Date:", endDe);
+    form->addRow("Event Type:", typeCb);
+    
+    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    form->addRow(bb);
+    
+    if(dlg.exec() == QDialog::Accepted) {
+        e.setTitle(titleEd->text());
+        e.setDescription(descEd->toPlainText());
+        e.setStartDate(startDe->date());
+        e.setEndDate(endDe->date());
+        e.setEventType(typeCb->currentText());
+        
+        if(m_calendarController.updateEvent(e)) {
+            QMessageBox::information(this, "Success", "Event updated.");
+            loadCalendarEvents();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to update event.");
+        }
+    }
+}
+
+void ProfessorPanel::onDeleteCalendarEvent() {
+    int cur = m_calendarTable->currentRow();
+    if(cur < 0) return;
+    
+    int eid = m_calendarTable->item(cur, 0)->text().toInt();
+    if(QMessageBox::question(this, "Confirm", "Delete this event?") == QMessageBox::Yes) {
+        if(m_calendarController.deleteEvent(eid)) {
+            QMessageBox::information(this, "Success", "Event deleted.");
+            loadCalendarEvents();
+        } else {
+            QMessageBox::critical(this, "Error", "Failed to delete event.");
         }
     }
 }
 
 void ProfessorPanel::onSaveProfile() {
     m_professor.setSpecialization(m_profSpecializationEdit->text());
-    m_professor.setTitle(m_profTitleEdit->text());
     m_professor.setPersonalInfo(m_profInfoEdit->toHtml());
     
     if(m_professorController.updateProfessor(m_professor)) {
         QMessageBox::information(this, "Success", "Profile updated.");
-        setWindowTitle("Professor Portal - Professor " + m_professor.fullName());
     } else {
         QMessageBox::critical(this, "Error", "Failed to update profile.");
     }

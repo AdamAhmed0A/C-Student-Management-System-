@@ -10,7 +10,7 @@ public:
     ScheduleController();
     
     QList<Schedule> getScheduleByProfessor(int professorId);
-    // Add other methods if needed (add, delete, etc.) but for Professor Panel we mainly need to View.
+    bool assignProfessorToCourse(int courseId, int professorId);
 };
 
 #endif // SCHEDULECONTROLLER_H

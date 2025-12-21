@@ -107,6 +107,8 @@ QList<Course> CourseController::getAllCourses()
             c.setSemesterName(semName);
         }
 
+        c.setAssignedProfessor(query.value("assigned_professors").toString());
+
         list.append(c);
     }
     return list;
