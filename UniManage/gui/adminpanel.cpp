@@ -349,8 +349,8 @@ QWidget* AdminPanel::createProfessorsTab() {
     btns->addStretch();
 
     m_professorsTable = new QTableWidget();
-    m_professorsTable->setColumnCount(4);
-    m_professorsTable->setHorizontalHeaderLabels({"ID", "Professor Name", "Specialization", "Title"});
+    m_professorsTable->setColumnCount(5);
+    m_professorsTable->setHorizontalHeaderLabels({"ID", "Professor Name", "Code", "Specialization", "Title"});
     m_professorsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_professorsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     
@@ -529,8 +529,9 @@ void AdminPanel::refreshProfessorsTable() {
         m_professorsTable->insertRow(r);
         m_professorsTable->setItem(r, 0, new QTableWidgetItem(QString::number(p.id())));
         m_professorsTable->setItem(r, 1, new QTableWidgetItem(p.fullName()));
-        m_professorsTable->setItem(r, 2, new QTableWidgetItem(p.specialization()));
-        m_professorsTable->setItem(r, 3, new QTableWidgetItem(p.title()));
+        m_professorsTable->setItem(r, 2, new QTableWidgetItem(p.idNumber()));
+        m_professorsTable->setItem(r, 3, new QTableWidgetItem(p.specialization()));
+        m_professorsTable->setItem(r, 4, new QTableWidgetItem(p.title()));
     }
 }
 
@@ -961,6 +962,9 @@ void AdminPanel::onAddProfessor() {
     QFormLayout* layout = new QFormLayout(&dialog);
     
     QLineEdit* name = new QLineEdit();
+    QLineEdit* profCode = new QLineEdit();
+    profCode->setPlaceholderText("Enter unique professor code (e.g., PROF001)");
+    
     QLineEdit* idNum = new QLineEdit();
     idNum->setMaxLength(14);
     idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
@@ -969,43 +973,48 @@ void AdminPanel::onAddProfessor() {
     QLineEdit* tit = new QLineEdit();
 
     layout->addRow("Full Name:", name);
+    layout->addRow("Professor Code:", profCode);
     layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
     layout->addRow("Title:", tit);
+    
+    QLabel* noteLabel = new QLabel("Note: The Professor Code will be used as the login password.");
+    noteLabel->setStyleSheet("color: #666; font-style: italic; font-size: 11px;");
+    layout->addRow(noteLabel);
 
     QPushButton* btn = new QPushButton("Register Professor");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
 
     if (dialog.exec() == QDialog::Accepted) {
-        if (name->text().isEmpty() || idNum->text().length() != 14) {
-            QMessageBox::warning(this, "Input Error", "Name and 14-digit National ID are required.");
+        if (name->text().isEmpty() || profCode->text().isEmpty() || idNum->text().length() != 14) {
+            QMessageBox::warning(this, "Input Error", "Name, Professor Code, and 14-digit National ID are required.");
             return;
         }
 
         User u; 
         u.setFullName(name->text()); 
-        u.setUsername(idNum->text()); 
+        u.setUsername(profCode->text()); 
         u.setRole("professor"); 
-        u.setPassword("prof123");
+        u.setPassword(profCode->text()); // Password is the professor code
 
         QString userError;
         bool userReady = false;
         User cu;
 
         if (m_userController.addUser(u, &userError)) {
-            cu = m_userController.getUserByUsername(idNum->text());
+            cu = m_userController.getUserByUsername(profCode->text());
             userReady = (cu.id() > 0);
         } else if (userError.contains("Duplicate entry", Qt::CaseInsensitive)) {
             // Check if this existing user is a "ghost" (no professor data)
-            cu = m_userController.getUserByUsername(idNum->text());
+            cu = m_userController.getUserByUsername(profCode->text());
             if (cu.id() > 0) {
                 Professor existing = m_professorController.getProfessorByUserId(cu.id());
                 if (existing.id() == 0) {
                     // Faculty Profile is missing, link to existing account
                     userReady = true;
                 } else {
-                    QMessageBox::warning(this, "Duplicate Professor", "This National ID is already fully registered as a faculty member.");
+                    QMessageBox::warning(this, "Duplicate Professor", "This Professor Code is already registered.");
                     return;
                 }
             }
@@ -1019,7 +1028,14 @@ void AdminPanel::onAddProfessor() {
             p.setTitle(tit->text());
 
             if (m_professorController.addProfessor(p)) {
-                QMessageBox::information(this, "Success", "Professor registered successfully (Linked to existing identity).");
+                QString successMsg = QString("Professor registered successfully!\n\n"
+                                            "Login Credentials:\n"
+                                            "Username: %1\n"
+                                            "Password: %2\n\n"
+                                            "Please provide these credentials to the professor.")
+                                            .arg(profCode->text())
+                                            .arg(profCode->text());
+                QMessageBox::information(this, "Success", successMsg);
                 refreshProfessorsTable();
             } else {
                 // Only rollback if we just created the user in this session
@@ -1041,11 +1057,18 @@ void AdminPanel::onEditProfessor() {
     Professor p = m_professorController.getProfessorById(profId);
     if (p.id() == 0) return;
 
+    // Get current user to retrieve username (professor code)
+    User currentUser = m_userController.getUserById(p.userId());
+    QString currentCode = currentUser.username();
+
     QDialog dialog(this);
     dialog.setWindowTitle("Edit Professor Details");
     QFormLayout* layout = new QFormLayout(&dialog);
     
     QLineEdit* name = new QLineEdit(p.fullName());
+    QLineEdit* profCode = new QLineEdit(currentCode);
+    profCode->setPlaceholderText("Professor login code");
+    
     QLineEdit* idNum = new QLineEdit(p.idNumber());
     idNum->setMaxLength(14);
     idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
@@ -1054,26 +1077,45 @@ void AdminPanel::onEditProfessor() {
     QLineEdit* tit = new QLineEdit(p.title());
 
     layout->addRow("Full Name:", name);
+    layout->addRow("Professor Code:", profCode);
     layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
     layout->addRow("Title:", tit);
+    
+    QLabel* noteLabel = new QLabel("Note: Changing the code will update the login username and password.");
+    noteLabel->setStyleSheet("color: #666; font-style: italic; font-size: 11px;");
+    layout->addRow(noteLabel);
 
     QPushButton* ok = new QPushButton("Save Changes");
     layout->addRow(ok);
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
 
     if (dialog.exec() == QDialog::Accepted) {
-        if (idNum->text().length() != 14) {
-            QMessageBox::warning(this, "Validation Error", "National ID must be 14 digits.");
+        if (profCode->text().isEmpty() || idNum->text().length() != 14) {
+            QMessageBox::warning(this, "Validation Error", "Professor Code and 14-digit National ID are required.");
             return;
         }
-        p.setFullName(name->text());
+        
+        // Update professor data
         p.setIdNumber(idNum->text());
         p.setSpecialization(spec->text());
         p.setTitle(tit->text());
 
-        if (m_professorController.updateProfessor(p)) {
-            QMessageBox::information(this, "Success", "Professor records updated.");
+        // Update user account if code changed
+        bool codeChanged = (profCode->text() != currentCode);
+        if (codeChanged) {
+            currentUser.setUsername(profCode->text());
+            currentUser.setPassword(profCode->text()); // Password matches code
+        }
+        currentUser.setFullName(name->text());
+
+        if (m_userController.updateUser(currentUser) && m_professorController.updateProfessor(p)) {
+            QString msg = "Professor records updated.";
+            if (codeChanged) {
+                msg += QString("\n\nNew Login Credentials:\nUsername: %1\nPassword: %2")
+                       .arg(profCode->text()).arg(profCode->text());
+            }
+            QMessageBox::information(this, "Success", msg);
             refreshProfessorsTable();
         } else {
             QMessageBox::critical(this, "Error", "Failed to update records.");
