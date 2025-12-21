@@ -14,7 +14,7 @@
 #include "../controllers/enrollmentcontroller.h"
 #include "../controllers/coursecontroller.h"
 #include "../controllers/schedulecontroller.h"
-#include "../controllers/newscontroller.h"
+#include "../controllers/calendarcontroller.h"
 
 #include "../models/professor.h"
 #include "../models/attendance_log.h"
@@ -36,10 +36,10 @@ private slots:
     void onRefreshAll();
     void onLogout();
     
-    // Course Management
-    void onAddCourse();
-    void onEditCourse();
-    void onDeleteCourse();
+    // Calendar Management
+    void onAddCalendarEvent();
+    void onEditCalendarEvent();
+    void onDeleteCalendarEvent();
 
     // Profile
     void onSaveProfile();
@@ -49,10 +49,10 @@ private:
     void loadProfessorData();
     void loadCourses();
     void loadSchedule();
-    void loadNews();
+    void loadCalendarEvents();
     
     // Helpers
-    QWidget* createGradingTab();
+    QWidget* createAttendanceTab();
     QWidget* createScheduleTab();
     QWidget* createCoursesTab();
     QWidget* createProfileTab();
@@ -63,7 +63,7 @@ private:
     
     QTabWidget* m_tabWidget;
     
-    // Grading
+    // Attendance & Grading
     QComboBox* m_courseSelector;
     QTableWidget* m_studentsTable;
     
@@ -74,19 +74,17 @@ private:
     QTableWidget* m_coursesTable;
     
     // Profile
-    QLineEdit* m_profEmailEdit; // Username
     QLineEdit* m_profSpecializationEdit;
-    QLineEdit* m_profTitleEdit;
     QTextEdit* m_profInfoEdit;
     
     // Calendar
-    QListWidget* m_newsList; // Using ListWidget for news items
+    QTableWidget* m_calendarTable;
     
     ProfessorController m_professorController;
     EnrollmentController m_enrollmentController;
     CourseController m_courseController;
     ScheduleController m_scheduleController;
-    // We'll init NewsController inside logic if needed or add member
+    CalendarController m_calendarController;
 };
 
 #endif // PROFESSORPANEL_H

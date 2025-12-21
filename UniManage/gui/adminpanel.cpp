@@ -350,7 +350,7 @@ QWidget* AdminPanel::createProfessorsTab() {
 
     m_professorsTable = new QTableWidget();
     m_professorsTable->setColumnCount(5);
-    m_professorsTable->setHorizontalHeaderLabels({"ID", "Professor Name", "Code", "Specialization", "Title"});
+    m_professorsTable->setHorizontalHeaderLabels({"ID", "Name", "Code", "National ID", "Specialization"});
     m_professorsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_professorsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     
@@ -529,9 +529,13 @@ void AdminPanel::refreshProfessorsTable() {
         m_professorsTable->insertRow(r);
         m_professorsTable->setItem(r, 0, new QTableWidgetItem(QString::number(p.id())));
         m_professorsTable->setItem(r, 1, new QTableWidgetItem(p.fullName()));
-        m_professorsTable->setItem(r, 2, new QTableWidgetItem(p.idNumber()));
-        m_professorsTable->setItem(r, 3, new QTableWidgetItem(p.specialization()));
-        m_professorsTable->setItem(r, 4, new QTableWidgetItem(p.title()));
+        
+        // Get username (code) from user table
+        User u = m_userController.getUserById(p.userId());
+        m_professorsTable->setItem(r, 2, new QTableWidgetItem(u.username()));
+        
+        m_professorsTable->setItem(r, 3, new QTableWidgetItem(p.idNumber()));
+        m_professorsTable->setItem(r, 4, new QTableWidgetItem(p.specialization()));
     }
 }
 
@@ -970,13 +974,11 @@ void AdminPanel::onAddProfessor() {
     idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
     
     QLineEdit* spec = new QLineEdit();
-    QLineEdit* tit = new QLineEdit();
 
     layout->addRow("Full Name:", name);
     layout->addRow("Professor Code:", profCode);
     layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
-    layout->addRow("Title:", tit);
     
     QLabel* noteLabel = new QLabel("Note: The Professor Code will be used as the login password.");
     noteLabel->setStyleSheet("color: #666; font-style: italic; font-size: 11px;");
@@ -1024,8 +1026,7 @@ void AdminPanel::onAddProfessor() {
             Professor p; 
             p.setUserId(cu.id()); 
             p.setIdNumber(idNum->text()); 
-            p.setSpecialization(spec->text()); 
-            p.setTitle(tit->text());
+            p.setSpecialization(spec->text());
 
             if (m_professorController.addProfessor(p)) {
                 QString successMsg = QString("Professor registered successfully!\n\n"
@@ -1074,13 +1075,11 @@ void AdminPanel::onEditProfessor() {
     idNum->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
     
     QLineEdit* spec = new QLineEdit(p.specialization());
-    QLineEdit* tit = new QLineEdit(p.title());
 
     layout->addRow("Full Name:", name);
     layout->addRow("Professor Code:", profCode);
     layout->addRow("National ID:", idNum);
     layout->addRow("Specialization:", spec);
-    layout->addRow("Title:", tit);
     
     QLabel* noteLabel = new QLabel("Note: Changing the code will update the login username and password.");
     noteLabel->setStyleSheet("color: #666; font-style: italic; font-size: 11px;");
@@ -1099,7 +1098,6 @@ void AdminPanel::onEditProfessor() {
         // Update professor data
         p.setIdNumber(idNum->text());
         p.setSpecialization(spec->text());
-        p.setTitle(tit->text());
 
         // Update user account if code changed
         bool codeChanged = (profCode->text() != currentCode);

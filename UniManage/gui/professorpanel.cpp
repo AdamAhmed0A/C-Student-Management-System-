@@ -27,7 +27,7 @@ ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     loadCourses(); // Load lists
     loadSchedule();
     loadNews();
-    setWindowTitle("Instructor Portal - " + m_professor.fullName());
+    setWindowTitle("Professor Portal - Professor " + m_professor.fullName());
     resize(1200, 800);
 }
 
@@ -44,13 +44,13 @@ void ProfessorPanel::setupUI() {
 
     // Header
     QHBoxLayout* header = new QHBoxLayout();
-    QLabel* title = new QLabel("Instructor Dashboard");
+    QLabel* title = new QLabel("Professor Dashboard");
     title->setObjectName("titleLabel");
     title->setStyleSheet("font-size: 24px; font-weight: bold; color: #2c3e50;");
     header->addWidget(title);
     header->addStretch();
     
-    QLabel* userLabel = new QLabel("Welcome, " + m_professor.fullName());
+    QLabel* userLabel = new QLabel("Welcome, Professor " + m_professor.fullName());
     userLabel->setStyleSheet("font-size: 16px; color: #555; margin-right: 10px;");
     header->addWidget(userLabel);
 
@@ -66,18 +66,19 @@ void ProfessorPanel::setupUI() {
     
     mainLayout->addLayout(header);
 
-    // Context Tabs
+    // Context Tabs - Reorganized for better workflow
     m_tabWidget = new QTabWidget();
-    m_tabWidget->addTab(createGradingTab(), "Grading & Attendance");
+    m_tabWidget->addTab(createAttendanceTab(), "Attendance");
+    m_tabWidget->addTab(createCoursesTab(), "Courses");
     m_tabWidget->addTab(createScheduleTab(), "Schedule");
-    m_tabWidget->addTab(createCoursesTab(), "My Courses"); // Manage Courses (Desc, etc)
-    m_tabWidget->addTab(createProfileTab(), "Profile");
     m_tabWidget->addTab(createCalendarTab(), "Calendar");
+    m_tabWidget->addTab(createProfileTab(), "Profile");
 
     mainLayout->addWidget(m_tabWidget);
 }
 
-QWidget* ProfessorPanel::createGradingTab() {
+
+QWidget* ProfessorPanel::createAttendanceTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
     
@@ -102,16 +103,23 @@ QWidget* ProfessorPanel::createGradingTab() {
     
     layout->addLayout(controls);
 
+    // Combined table for attendance and grades - all editable
     m_studentsTable = new QTableWidget();
-    QStringList headers = {"EnrID", "Student", "Att (Total)", "Abs (Total)", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
+    QStringList headers = {"EnrID", "Student", "Att", "Abs", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
     m_studentsTable->setColumnCount(headers.size());
     m_studentsTable->setHorizontalHeaderLabels(headers);
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_studentsTable->setAlternatingRowColors(true);
+    m_studentsTable->setEditTriggers(QAbstractItemView::DoubleClick | QAbstractItemView::EditKeyPressed);
     layout->addWidget(m_studentsTable);
+    
+    QLabel* helpText = new QLabel("Double-click cells to edit grades. Use 'Take Attendance' for daily attendance logging.");
+    helpText->setStyleSheet("color: #666; font-style: italic; padding: 5px;");
+    layout->addWidget(helpText);
     
     return tab;
 }
+
 
 QWidget* ProfessorPanel::createScheduleTab() {
     QWidget* tab = new QWidget();
@@ -131,22 +139,9 @@ QWidget* ProfessorPanel::createCoursesTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
     
-    QHBoxLayout* tools = new QHBoxLayout();
-    QPushButton* addBtn = new QPushButton("Request New Course"); 
-    connect(addBtn, &QPushButton::clicked, this, &ProfessorPanel::onAddCourse);
-    tools->addWidget(addBtn);
-
-    QPushButton* editBtn = new QPushButton("Edit Details");
-    connect(editBtn, &QPushButton::clicked, this, &ProfessorPanel::onEditCourse);
-    tools->addWidget(editBtn);
-
-    QPushButton* delBtn = new QPushButton("Delete Course");
-    delBtn->setObjectName("dangerBtn");
-    connect(delBtn, &QPushButton::clicked, this, &ProfessorPanel::onDeleteCourse);
-    tools->addWidget(delBtn);
-
-    tools->addStretch();
-    layout->addLayout(tools);
+    QLabel* infoLabel = new QLabel("Courses Assigned to You:");
+    infoLabel->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px;");
+    layout->addWidget(infoLabel);
 
     m_coursesTable = new QTableWidget();
     m_coursesTable->setColumnCount(6);
@@ -154,7 +149,12 @@ QWidget* ProfessorPanel::createCoursesTab() {
     m_coursesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_coursesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_coursesTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_coursesTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // Read-only
     layout->addWidget(m_coursesTable);
+    
+    QLabel* noteLabel = new QLabel("Note: Courses are assigned by the administrator. Contact admin to modify course assignments.");
+    noteLabel->setStyleSheet("color: #666; font-style: italic; padding: 5px;");
+    layout->addWidget(noteLabel);
     
     return tab;
 }
@@ -266,10 +266,50 @@ QWidget* ProfessorPanel::createCalendarTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
     
-    layout->addWidget(new QLabel("Academic Calendar & Updates"));
+    QLabel* titleLabel = new QLabel("Academic Calendar & Events");
+    titleLabel->setStyleSheet("font-size: 16px; font-weight: bold; padding: 5px;");
+    layout->addWidget(titleLabel);
     
-    m_newsList = new QListWidget();
-    layout->addWidget(m_newsList);
+    // Controls for calendar management
+    QHBoxLayout* controls = new QHBoxLayout();
+    
+    QPushButton* addEventBtn = new QPushButton("Add Event");
+    addEventBtn->setObjectName("primaryBtn");
+    connect(addEventBtn, &QPushButton::clicked, this, &ProfessorPanel::onAddCalendarEvent);
+    controls->addWidget(addEventBtn);
+    
+    QPushButton* editEventBtn = new QPushButton("Edit Event");
+    editEventBtn->setObjectName("secondaryBtn");
+    connect(editEventBtn, &QPushButton::clicked, this, &ProfessorPanel::onEditCalendarEvent);
+    controls->addWidget(editEventBtn);
+    
+    QPushButton* deleteEventBtn = new QPushButton("Delete Event");
+    deleteEventBtn->setObjectName("dangerBtn");
+    connect(deleteEventBtn, &QPushButton::clicked, this, &ProfessorPanel::onDeleteCalendarEvent);
+    controls->addWidget(deleteEventBtn);
+    
+    controls->addStretch();
+    
+    QPushButton* refreshBtn = new QPushButton("Refresh");
+    connect(refreshBtn, &QPushButton::clicked, this, &ProfessorPanel::loadCalendarEvents);
+    controls->addWidget(refreshBtn);
+    
+    layout->addLayout(controls);
+    
+    // Calendar events table
+    m_calendarTable = new QTableWidget();
+    m_calendarTable->setColumnCount(5);
+    m_calendarTable->setHorizontalHeaderLabels({"ID", "Title", "Start Date", "End Date", "Type"});
+    m_calendarTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_calendarTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_calendarTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_calendarTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_calendarTable->setAlternatingRowColors(true);
+    layout->addWidget(m_calendarTable);
+    
+    QLabel* noteLabel = new QLabel("Note: Calendar events are visible to all users. Use this to manage academic schedules, holidays, and important dates.");
+    noteLabel->setStyleSheet("color: #666; font-style: italic; padding: 5px;");
+    layout->addWidget(noteLabel);
     
     return tab;
 }
@@ -559,7 +599,7 @@ void ProfessorPanel::onSaveProfile() {
     
     if(m_professorController.updateProfessor(m_professor)) {
         QMessageBox::information(this, "Success", "Profile updated.");
-        setWindowTitle("Instructor Portal - " + m_professor.fullName());
+        setWindowTitle("Professor Portal - Professor " + m_professor.fullName());
     } else {
         QMessageBox::critical(this, "Error", "Failed to update profile.");
     }
