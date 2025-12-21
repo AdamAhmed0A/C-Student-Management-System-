@@ -85,6 +85,8 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByStudent(int studentId)
             e.setLetterGrade(query.value("letter_grade").toString());
             e.setEnrolledAt(query.value("enrolled_at").toDateTime());
             e.setCourseName(query.value("course_name").toString());
+            e.setCourseMaxGrade(query.value("max_grade").toInt());
+            e.setCourseType(query.value("course_type").toString());
             list.append(e);
         }
     }
@@ -145,3 +147,91 @@ void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& 
 
     e.setLetterGrade(grade);
 }
+
+bool EnrollmentController::addAttendanceLog(const AttendanceLog& log)
+{
+    QSqlDatabase& db = DBConnection::instance().database();
+    
+    // 1. Check if log exists for this date
+    QSqlQuery checkQuery(db);
+    checkQuery.prepare("SELECT id FROM attendance_logs WHERE enrollment_id = ? AND date = ?");
+    checkQuery.addBindValue(log.enrollmentId());
+    checkQuery.addBindValue(log.date());
+    
+    bool exists = false;
+    int existingId = -1;
+    if (checkQuery.exec() && checkQuery.next()) {
+        exists = true;
+        existingId = checkQuery.value(0).toInt();
+    }
+    
+    // 2. Insert or Update
+    QSqlQuery query(db);
+    if (exists) {
+        query.prepare("UPDATE attendance_logs SET status = ?, notes = ? WHERE id = ?");
+        query.addBindValue(log.status());
+        query.addBindValue(log.notes());
+        query.addBindValue(existingId);
+    } else {
+        query.prepare(Queries::INSERT_ATTENDANCE_LOG);
+        query.addBindValue(log.enrollmentId());
+        query.addBindValue(log.date());
+        query.addBindValue(log.status());
+        query.addBindValue(log.notes());
+    }
+    
+    if (!query.exec()) {
+        qDebug() << "addAttendanceLog (insert/update) failed:" << query.lastError().text();
+        return false;
+    }
+    
+    // 3. Recalculate counts
+    QSqlQuery countQuery(db);
+    int presentCount = 0;
+    int absentCount = 0;
+    
+    countQuery.prepare("SELECT COUNT(*) FROM attendance_logs WHERE enrollment_id = ? AND status = 'Present'");
+    countQuery.addBindValue(log.enrollmentId());
+    if (countQuery.exec() && countQuery.next()) presentCount = countQuery.value(0).toInt();
+    
+    countQuery.prepare("SELECT COUNT(*) FROM attendance_logs WHERE enrollment_id = ? AND status = 'Absent'");
+    countQuery.addBindValue(log.enrollmentId());
+    if (countQuery.exec() && countQuery.next()) absentCount = countQuery.value(0).toInt();
+    
+    // 4. Update Enrollment
+    QSqlQuery updateEnrollment(db);
+    updateEnrollment.prepare("UPDATE enrollments SET attendance_count = ?, absence_count = ? WHERE id = ?");
+    updateEnrollment.addBindValue(presentCount);
+    updateEnrollment.addBindValue(absentCount);
+    updateEnrollment.addBindValue(log.enrollmentId());
+    
+    if (!updateEnrollment.exec()) {
+        qDebug() << "addAttendanceLog (update enrollment counts) failed:" << updateEnrollment.lastError().text();
+        return false; 
+    }
+    
+    return true;
+}
+
+QList<AttendanceLog> EnrollmentController::getAttendanceLogsByCourse(int courseId, const QDate& date)
+{
+    QList<AttendanceLog> list;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_ATTENDANCE_LOGS_BY_COURSE_DATE);
+    query.addBindValue(courseId);
+    query.addBindValue(date);
+    
+    if (query.exec()) {
+        while (query.next()) {
+            AttendanceLog log;
+            log.setId(query.value("id").toInt());
+            log.setEnrollmentId(query.value("enrollment_id").toInt());
+            log.setDate(query.value("date").toDate());
+            log.setStatus(query.value("status").toString());
+            log.setNotes(query.value("notes").toString());
+            list.append(log);
+        }
+    }
+    return list;
+}
+

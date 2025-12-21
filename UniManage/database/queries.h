@@ -54,6 +54,11 @@ namespace Queries {
     const QString SELECT_COURSES_BY_SEMESTER = "SELECT * FROM courses WHERE semester_id = ?";
     const QString SELECT_COURSE_BY_ID = "SELECT c.*, s.year as semester_year, s.semester as semester_number FROM courses c "
                                         "LEFT JOIN semester s ON c.semester_id = s.id WHERE c.id = ?";
+    const QString SELECT_COURSES_BY_PROFESSOR = "SELECT DISTINCT c.*, s.year as semester_year, s.semester as semester_number "
+                                                "FROM courses c "
+                                                "JOIN schedules sch ON c.id = sch.course_id "
+                                                "LEFT JOIN semester s ON c.semester_id = s.id "
+                                                "WHERE sch.professor_id = ? ORDER BY c.name";
 
     // Section queries
     const QString INSERT_SECTION = "INSERT INTO sections (course_id, capacity, semester_id) VALUES (?, ?, ?)";
@@ -135,6 +140,24 @@ namespace Queries {
                                          "JOIN rooms r ON s.room_id = r.id "
                                          "JOIN professors p ON s.professor_id = p.id "
                                          "JOIN users u ON p.user_id = u.id";
+    const QString SELECT_SCHEDULE_BY_PROFESSOR = "SELECT s.*, c.name as course_name, r.name as room_name "
+                                                 "FROM schedules s JOIN courses c ON s.course_id = c.id "
+                                                 "JOIN rooms r ON s.room_id = r.id "
+                                                 "WHERE s.professor_id = ? ORDER BY s.day_of_week, s.start_time";
+
+    // Attendance Log Queries
+    const QString INSERT_ATTENDANCE_LOG = "INSERT INTO attendance_logs (enrollment_id, date, status, notes) VALUES (?, ?, ?, ?)";
+    const QString SELECT_ATTENDANCE_LOGS_BY_ENROLLMENT = "SELECT * FROM attendance_logs WHERE enrollment_id = ? ORDER BY date DESC";
+    const QString SELECT_ATTENDANCE_LOGS_BY_COURSE_DATE = "SELECT al.* FROM attendance_logs al "
+                                                          "JOIN enrollments e ON al.enrollment_id = e.id "
+                                                          "WHERE e.course_id = ? AND al.date = ?";
+
+    // Calendar Event queries
+    const QString INSERT_CALENDAR_EVENT = "INSERT INTO calendar_events (title, description, start_date, end_date, event_type) VALUES (?, ?, ?, ?, ?)";
+    const QString UPDATE_CALENDAR_EVENT = "UPDATE calendar_events SET title = ?, description = ?, start_date = ?, end_date = ?, event_type = ? WHERE id = ?";
+    const QString DELETE_CALENDAR_EVENT = "DELETE FROM calendar_events WHERE id = ?";
+    const QString SELECT_ALL_CALENDAR_EVENTS = "SELECT * FROM calendar_events ORDER BY start_date";
+    const QString SELECT_CALENDAR_EVENTS_BY_RANGE = "SELECT * FROM calendar_events WHERE start_date >= ? AND end_date <= ? ORDER BY start_date";
 }
 
 #endif // QUERIES_H

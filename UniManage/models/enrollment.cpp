@@ -5,7 +5,8 @@ Enrollment::Enrollment()
       m_attendanceCount(0), m_absenceCount(0),
       m_assignment1Grade(0.0), m_assignment2Grade(0.0),
       m_courseworkGrade(0.0), m_finalExamGrade(0.0),
-      m_totalGrade(0.0), m_isRafaaApplied(false)
+      m_totalGrade(0.0), m_isRafaaApplied(false),
+      m_courseMaxGrade(100), m_courseType("Theoretical")
 {
     m_enrolledAt = QDateTime::currentDateTime();
 }
@@ -57,3 +58,9 @@ void Enrollment::setStudentName(const QString& name) { m_studentName = name; }
 
 QString Enrollment::courseName() const { return m_courseName; }
 void Enrollment::setCourseName(const QString& name) { m_courseName = name; }
+
+int Enrollment::courseMaxGrade() const { return m_courseMaxGrade; }
+void Enrollment::setCourseMaxGrade(int maxGrade) { m_courseMaxGrade = maxGrade; }
+
+QString Enrollment::courseType() const { return m_courseType; }
+void Enrollment::setCourseType(const QString& type) { m_courseType = type; }

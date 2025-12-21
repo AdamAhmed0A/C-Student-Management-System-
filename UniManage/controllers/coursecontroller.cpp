@@ -18,6 +18,8 @@ bool CourseController::addCourse(const Course& course)
     query.addBindValue(course.yearLevel());
     query.addBindValue(course.creditHours());
     query.addBindValue(course.semesterId());
+    query.addBindValue(course.maxGrade());
+    query.addBindValue(course.courseType());
 
     if (!query.exec()) {
         qDebug() << "addCourse failed:" << query.lastError().text();
@@ -36,6 +38,8 @@ bool CourseController::updateCourse(const Course& course)
     query.addBindValue(course.yearLevel());
     query.addBindValue(course.creditHours());
     query.addBindValue(course.semesterId());
+    query.addBindValue(course.maxGrade());
+    query.addBindValue(course.courseType());
     query.addBindValue(course.id());
 
     if (!query.exec()) {
@@ -77,8 +81,12 @@ QList<Course> CourseController::getAllCourses()
         int yearLevel = query.value("year_level").toInt();
         int creditHours = query.value("credit_hours").toInt();
         int semesterId = query.value("semester_id").toInt();
+        int maxGrade = query.value("max_grade").toInt();
+        QString type = query.value("course_type").toString();
 
         Course c(id, name, description, yearLevel, creditHours, semesterId);
+        c.setMaxGrade(maxGrade);
+        c.setCourseType(type);
 
         QString createdStr = query.value("created_at").toString();
         if (!createdStr.isEmpty()) {
@@ -124,8 +132,12 @@ QList<Course> CourseController::getCoursesBySemester(int semesterId)
         int yearLevel = query.value("year_level").toInt();
         int creditHours = query.value("credit_hours").toInt();
         int semId = query.value("semester_id").toInt();
+        int maxGrade = query.value("max_grade").toInt();
+        QString type = query.value("course_type").toString();
 
         Course c(id, name, description, yearLevel, creditHours, semId);
+        c.setMaxGrade(maxGrade);
+        c.setCourseType(type);
 
         QString createdStr = query.value("created_at").toString();
         if (!createdStr.isEmpty()) {
@@ -164,6 +176,8 @@ Course CourseController::getCourseById(int id)
         c.setYearLevel(query.value("year_level").toInt());
         c.setCreditHours(query.value("credit_hours").toInt());
         c.setSemesterId(query.value("semester_id").toInt());
+        c.setMaxGrade(query.value("max_grade").toInt());
+        c.setCourseType(query.value("course_type").toString());
 
         QString createdStr = query.value("created_at").toString();
         if (!createdStr.isEmpty()) {
@@ -185,4 +199,43 @@ Course CourseController::getCourseById(int id)
         }
     }
     return c;
+}
+
+QList<Course> CourseController::getCoursesByProfessor(int professorId)
+{
+    QList<Course> list;
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
+    query.prepare(Queries::SELECT_COURSES_BY_PROFESSOR);
+    query.addBindValue(professorId);
+
+    if (!query.exec()) {
+        qDebug() << "getCoursesByProfessor failed:" << query.lastError().text();
+        return list;
+    }
+
+    while (query.next()) {
+        int id = query.value("id").toInt();
+        QString name = query.value("name").toString();
+        QString description = query.value("description").toString();
+        int yearLevel = query.value("year_level").toInt();
+        int creditHours = query.value("credit_hours").toInt();
+        int semId = query.value("semester_id").toInt();
+        int maxGrade = query.value("max_grade").toInt();
+        QString type = query.value("course_type").toString();
+        
+        Course c(id, name, description, yearLevel, creditHours, semId);
+        c.setMaxGrade(maxGrade);
+        c.setCourseType(type);
+
+        QString semesterYear = query.value("semester_year").toString();
+        QString semesterNumber = query.value("semester_number").toString();
+        if (!semesterYear.isEmpty() || !semesterNumber.isEmpty()) {
+            QString semName = QString("%1 - Sem %2").arg(semesterYear).arg(semesterNumber);
+            c.setSemesterName(semName);
+        }
+
+        list.append(c);
+    }
+    return list;
 }

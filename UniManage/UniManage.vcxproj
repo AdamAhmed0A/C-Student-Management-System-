@@ -119,11 +119,16 @@
     <ClCompile Include="controllers\academic_level_controller.cpp" />
     <ClCompile Include="controllers\roomcontroller.cpp" />
     <ClCompile Include="controllers\professorcontroller.cpp" />
+    <ClCompile Include="controllers\calendarcontroller.cpp" />
+    <ClCompile Include="controllers\schedulecontroller.cpp" />
     <ClCompile Include="models\college.cpp" />
     <ClCompile Include="models\department.cpp" />
     <ClCompile Include="models\academic_level.cpp" />
     <ClCompile Include="models\room.cpp" />
     <ClCompile Include="models\professor.cpp" />
+    <ClCompile Include="models\calendar_event.cpp" />
+    <ClCompile Include="models\schedule.cpp" />
+    <ClCompile Include="models\attendance_log.cpp" />
     <ClCompile Include="gui\professorpanel.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -153,11 +158,16 @@
     <ClInclude Include="controllers\academic_level_controller.h" />
     <ClInclude Include="controllers\roomcontroller.h" />
     <ClInclude Include="controllers\professorcontroller.h" />
+    <ClInclude Include="controllers\calendarcontroller.h" />
+    <ClInclude Include="controllers\schedulecontroller.h" />
     <ClInclude Include="models\college.h" />
     <ClInclude Include="models\department.h" />
     <ClInclude Include="models\academic_level.h" />
     <ClInclude Include="models\room.h" />
     <ClInclude Include="models\professor.h" />
+    <ClInclude Include="models\calendar_event.h" />
+    <ClInclude Include="models\schedule.h" />
+    <ClInclude Include="models\attendance_log.h" />
     <QtMoc Include="gui\professorpanel.h" />
     <ClInclude Include="gui\stylehelper.h" />
   </ItemGroup>

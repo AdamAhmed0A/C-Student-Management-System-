@@ -44,11 +44,11 @@ void LoginWindow::setupUI() {
     mainLayout->addWidget(welcome);
 
     m_usernameEdit = new QLineEdit();
-    m_usernameEdit->setPlaceholderText("Student Code / National ID (Admin)");
+    m_usernameEdit->setPlaceholderText("Student Code");
     m_usernameEdit->setMinimumHeight(45);
     m_usernameEdit->setMaxLength(50);
     
-    mainLayout->addWidget(new QLabel("Code / Username"));
+    mainLayout->addWidget(new QLabel("Code"));
     mainLayout->addWidget(m_usernameEdit);
 
     m_passwordEdit = new QLineEdit();

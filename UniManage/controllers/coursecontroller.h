@@ -15,6 +15,7 @@ public:
 
     QList<Course> getAllCourses();
     QList<Course> getCoursesBySemester(int semesterId);
+    QList<Course> getCoursesByProfessor(int professorId);
     Course getCourseById(int id);
 };
 

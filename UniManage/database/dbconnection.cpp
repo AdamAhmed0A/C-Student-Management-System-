@@ -382,6 +382,33 @@ bool DBConnection::createTables()
         return false;
     }
 
+    // Attendance Logs table (New)
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `attendance_logs` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "enrollment_id INT,"
+                    "date DATE,"
+                    "status VARCHAR(50)," // Present, Absent, Late, Excused
+                    "notes TEXT,"
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "FOREIGN KEY (enrollment_id) REFERENCES enrollments(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating attendance_logs table:" << query.lastError().text();
+        return false;
+    }
+
+    // Calendar Events table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS `calendar_events` ("
+                    "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "title VARCHAR(255) NOT NULL,"
+                    "description TEXT,"
+                    "start_date DATE,"
+                    "end_date DATE,"
+                    "event_type VARCHAR(50)," // Holiday, Exam, Term, Deadline
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "updated_at DATETIME NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+        qDebug() << "Error creating calendar_events table:" << query.lastError().text();
+        return false;
+    }
+
     qDebug() << "All tables created/updated successfully for expanded SIS";
     return true;
 }
