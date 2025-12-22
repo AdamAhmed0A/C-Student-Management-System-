@@ -68,6 +68,9 @@ void Enrollment::setCourseType(const QString& type) { m_courseType = type; }
 QString Enrollment::studentSection() const { return m_studentSection; }
 void Enrollment::setStudentSection(const QString& section) { m_studentSection = section; }
 
+QString Enrollment::studentLevel() const { return m_studentLevel; }
+void Enrollment::setStudentLevel(const QString& level) { m_studentLevel = level; }
+
 QString Enrollment::studentCode() const { return m_studentCode; }
 void Enrollment::setStudentCode(const QString& code) { m_studentCode = code; }
 

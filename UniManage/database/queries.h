@@ -115,10 +115,11 @@ namespace Queries {
     const QString DELETE_ENROLLMENT = "DELETE FROM enrollments WHERE id = ?";
     const QString SELECT_ENROLLMENTS_BY_STUDENT = "SELECT e.*, c.name as course_name, c.course_type, c.max_grade FROM enrollments e "
                                                  "JOIN courses c ON e.course_id = c.id WHERE e.student_id = ?";
-    const QString SELECT_ENROLLMENTS_BY_COURSE = "SELECT e.*, sd.student_number, u.full_name, s.name as section_name, sem.year as academic_year FROM enrollments e "
+    const QString SELECT_ENROLLMENTS_BY_COURSE = "SELECT e.*, sd.student_number, u.full_name, s.name as section_name, al.name as level_name, sem.year as academic_year FROM enrollments e "
                                                 "JOIN students_data sd ON e.student_id = sd.id "
                                                 "JOIN users u ON sd.user_id = u.id "
                                                 "LEFT JOIN sections s ON sd.section_id = s.id "
+                                                "LEFT JOIN academic_levels al ON sd.academic_level_id = al.id "
                                                 "JOIN courses c ON e.course_id = c.id "
                                                 "LEFT JOIN semester sem ON c.semester_id = sem.id "
                                                 "WHERE e.course_id = ?";

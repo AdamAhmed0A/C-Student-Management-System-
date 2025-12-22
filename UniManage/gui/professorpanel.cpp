@@ -121,7 +121,7 @@ QWidget* ProfessorPanel::createAttendanceTab() {
 
     // Combined table for attendance and grades - all editable
     m_studentsTable = new QTableWidget();
-    QStringList headers = {"Student Code", "Student Name", "Year", "Section", "Today Status", "Att Total", "Abs Total", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
+    QStringList headers = {"Student Code", "Student Name", "Level", "Section", "Today Status", "Att Total", "Abs Total", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
     m_studentsTable->setColumnCount(headers.size());
     m_studentsTable->setHorizontalHeaderLabels(headers);
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -377,10 +377,10 @@ void ProfessorPanel::onRefreshStudents() {
         nameItem->setFlags(nameItem->flags() & ~(Qt::ItemIsEditable));
         m_studentsTable->setItem(r, 1, nameItem);
         
-        // Col 2: Academic Year
-        QTableWidgetItem* yearItem = new QTableWidgetItem(e.academicYear());
-        yearItem->setFlags(yearItem->flags() & ~(Qt::ItemIsEditable));
-        m_studentsTable->setItem(r, 2, yearItem);
+        // Col 2: Student Level (e.g. Level 1, Level 2)
+        QTableWidgetItem* levelItem = new QTableWidgetItem(e.studentLevel());
+        levelItem->setFlags(levelItem->flags() & ~(Qt::ItemIsEditable));
+        m_studentsTable->setItem(r, 2, levelItem);
 
         // Col 3: Section
         QTableWidgetItem* sectItem = new QTableWidgetItem(e.studentSection().isEmpty() ? "---" : e.studentSection());

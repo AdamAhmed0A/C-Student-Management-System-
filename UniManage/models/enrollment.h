@@ -67,6 +67,9 @@ public:
     QString studentSection() const;
     void setStudentSection(const QString& section);
 
+    QString studentLevel() const;
+    void setStudentLevel(const QString& level);
+
     QString studentCode() const;
     void setStudentCode(const QString& code);
 
@@ -94,6 +97,7 @@ private:
     int m_courseMaxGrade;
     QString m_courseType;
     QString m_studentSection;
+    QString m_studentLevel;
     QString m_studentCode;
     QString m_academicYear;
 };
