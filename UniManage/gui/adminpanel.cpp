@@ -1163,7 +1163,7 @@ void AdminPanel::onAddStudent() {
     // layout->addRow("Department:", dept);
     layout->addRow("Academic Level:", level);
     layout->addRow("Section/Group:", section);
-    layout->addRow("Assigned Tuition Fees:", tuition);
+    layout->addRow("Tuition Fees:", tuition);
 
     QPushButton* btn = new QPushButton("Register Student");
     layout->addRow(btn);
@@ -1278,7 +1278,6 @@ void AdminPanel::onEditStudent() {
 
     QDoubleSpinBox* tuitionEdit = new QDoubleSpinBox();
     tuitionEdit->setRange(0, 1000000);
-    // tuitionEdit->setPrefix("");
     tuitionEdit->setValue(student.tuitionFees());
 
     layout->addRow("Full Name:", nameEdit);
