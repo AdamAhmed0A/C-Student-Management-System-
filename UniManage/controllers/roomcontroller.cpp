@@ -4,12 +4,14 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include "../database/persistence.h"
 
 RoomController::RoomController() {}
 
 bool RoomController::addRoom(const Room& room)
 {
-    QSqlQuery query(DBConnection::instance().database());
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
     query.prepare(Queries::INSERT_ROOM);
     query.addBindValue(room.name());
     query.addBindValue(room.type());
@@ -20,12 +22,17 @@ bool RoomController::addRoom(const Room& room)
     query.addBindValue(room.computersCount());
     query.addBindValue(room.seatingDescription());
     query.addBindValue(room.code());
-    return query.exec();
+    if (query.exec()) {
+        Persistence::logChange(room.type(), "Create", query.lastInsertId().toInt(), room.name());
+        return true;
+    }
+    return false;
 }
 
 bool RoomController::updateRoom(const Room& room)
 {
-    QSqlQuery query(DBConnection::instance().database());
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
     query.prepare(Queries::UPDATE_ROOM);
     query.addBindValue(room.name());
     query.addBindValue(room.type());
@@ -37,15 +44,24 @@ bool RoomController::updateRoom(const Room& room)
     query.addBindValue(room.seatingDescription());
     query.addBindValue(room.code());
     query.addBindValue(room.id());
-    return query.exec();
+    if (query.exec()) {
+        Persistence::logChange(room.type(), "Edit", room.id(), room.name());
+        return true;
+    }
+    return false;
 }
 
 bool RoomController::deleteRoom(int id)
 {
-    QSqlQuery query(DBConnection::instance().database());
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
     query.prepare(Queries::DELETE_ROOM);
     query.addBindValue(id);
-    return query.exec();
+    if (query.exec()) {
+        Persistence::logChange("Facility", "Delete", id, "Removed Hall/Lab");
+        return true;
+    }
+    return false;
 }
 
 QList<Room> RoomController::getAllRooms()
@@ -108,4 +124,26 @@ bool RoomController::deleteRoomSpecs(int roomId)
     query.prepare(Queries::DELETE_ROOM_SPECS);
     query.addBindValue(roomId);
     return query.exec();
+}
+
+Room RoomController::getRoomById(int id)
+{
+    Room r;
+    QSqlDatabase& db = DBConnection::instance().database();
+    QSqlQuery query(db);
+    query.prepare(Queries::SELECT_ROOM_BY_ID);
+    query.addBindValue(id);
+    if (query.exec() && query.next()) {
+        r.setId(query.value("id").toInt());
+        r.setName(query.value("name").toString());
+        r.setType(query.value("type").toString());
+        r.setCapacity(query.value("capacity").toInt());
+        r.setAcUnits(query.value("ac_units").toInt());
+        r.setFansCount(query.value("fans_count").toInt());
+        r.setLightingPoints(query.value("lighting_points").toInt());
+        r.setComputersCount(query.value("computers_count").toInt());
+        r.setSeatingDescription(query.value("seating_description").toString());
+        r.setCode(query.value("code").toString());
+    }
+    return r;
 }

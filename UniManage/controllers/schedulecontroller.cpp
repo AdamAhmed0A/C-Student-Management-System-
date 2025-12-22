@@ -73,3 +73,61 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
         return insert.exec();
     }
 }
+
+bool ScheduleController::addSchedule(const Schedule& s)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::INSERT_SCHEDULE);
+    query.addBindValue(s.courseId());
+    query.addBindValue(s.roomId());
+    query.addBindValue(s.professorId());
+    query.addBindValue(s.dayOfWeek());
+    query.addBindValue(s.startTime().toString("HH:mm:ss"));
+    query.addBindValue(s.endTime().toString("HH:mm:ss"));
+    return query.exec();
+}
+
+bool ScheduleController::updateSchedule(const Schedule& s)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::UPDATE_SCHEDULE);
+    query.addBindValue(s.courseId());
+    query.addBindValue(s.roomId());
+    query.addBindValue(s.professorId());
+    query.addBindValue(s.dayOfWeek());
+    query.addBindValue(s.startTime().toString("HH:mm:ss"));
+    query.addBindValue(s.endTime().toString("HH:mm:ss"));
+    query.addBindValue(s.id());
+    return query.exec();
+}
+
+bool ScheduleController::deleteSchedule(int id)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::DELETE_SCHEDULE);
+    query.addBindValue(id);
+    return query.exec();
+}
+
+QList<Schedule> ScheduleController::getAllSchedules()
+{
+    QList<Schedule> list;
+    QSqlQuery query(DBConnection::instance().database());
+    if (query.exec(Queries::SELECT_ALL_SCHEDULES)) {
+        while (query.next()) {
+            Schedule s;
+            s.setId(query.value("id").toInt());
+            s.setCourseId(query.value("course_id").toInt());
+            s.setRoomId(query.value("room_id").toInt());
+            s.setProfessorId(query.value("professor_id").toInt());
+            s.setDayOfWeek(query.value("day_of_week").toString());
+            s.setStartTime(query.value("start_time").toTime());
+            s.setEndTime(query.value("end_time").toTime());
+            s.setCourseName(query.value("course_name").toString());
+            s.setRoomName(query.value("room_name").toString());
+            s.setProfessorName(query.value("professor_name").toString());
+            list.append(s);
+        }
+    }
+    return list;
+}

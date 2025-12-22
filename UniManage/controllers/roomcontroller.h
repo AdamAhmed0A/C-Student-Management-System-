@@ -12,6 +12,7 @@ public:
     bool updateRoom(const Room& room);
     bool deleteRoom(int id);
     QList<Room> getAllRooms();
+    Room getRoomById(int id);
     
     // Spec management
     bool addRoomSpec(int roomId, const QString& prodId, const QString& name, const QString& desc);

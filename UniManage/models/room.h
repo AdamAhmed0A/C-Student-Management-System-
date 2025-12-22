@@ -52,6 +52,18 @@ private:
     QString m_code;
 };
 
+class LectureHall : public Room {
+public:
+    LectureHall() { setType("Hall"); }
+    // Specific to Hall: Seating Description
+};
+
+class Laboratory : public Room {
+public:
+    Laboratory() { setType("Lab"); }
+    // Specific to Lab: Computers Count
+};
+
 struct RoomSpec {
     int id;
     int roomId;

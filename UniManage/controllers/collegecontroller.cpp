@@ -4,26 +4,37 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include "../database/persistence.h"
 
 CollegeController::CollegeController() {}
 
 bool CollegeController::addCollege(const College& college)
 {
     QSqlQuery query(DBConnection::instance().database());
-    query.prepare(Queries::INSERT_COLLEGE);
+    query.prepare("INSERT INTO colleges (name, code, tuition_fees) VALUES (?, ?, ?)");
     query.addBindValue(college.name());
     query.addBindValue(college.code());
-    return query.exec();
+    query.addBindValue(college.tuitionFees());
+    if (query.exec()) {
+        Persistence::logChange("Faculty", "Create", query.lastInsertId().toInt(), college.name());
+        return true;
+    }
+    return false;
 }
 
 bool CollegeController::updateCollege(const College& college)
 {
     QSqlQuery query(DBConnection::instance().database());
-    query.prepare(Queries::UPDATE_COLLEGE);
+    query.prepare("UPDATE colleges SET name = ?, code = ?, tuition_fees = ? WHERE id = ?");
     query.addBindValue(college.name());
     query.addBindValue(college.code());
+    query.addBindValue(college.tuitionFees());
     query.addBindValue(college.id());
-    return query.exec();
+    if (query.exec()) {
+        Persistence::logChange("Faculty", "Edit", college.id(), college.name());
+        return true;
+    }
+    return false;
 }
 
 bool CollegeController::deleteCollege(int id)
@@ -31,7 +42,11 @@ bool CollegeController::deleteCollege(int id)
     QSqlQuery query(DBConnection::instance().database());
     query.prepare(Queries::DELETE_COLLEGE);
     query.addBindValue(id);
-    return query.exec();
+    if (query.exec()) {
+        Persistence::logChange("Faculty", "Delete", id, "Removed Faculty");
+        return true;
+    }
+    return false;
 }
 
 QList<College> CollegeController::getAllColleges()
@@ -42,7 +57,8 @@ QList<College> CollegeController::getAllColleges()
         while (query.next()) {
             list.append(College(query.value("id").toInt(),
                               query.value("name").toString(),
-                              query.value("code").toString()));
+                              query.value("code").toString(),
+                              query.value("tuition_fees").toDouble()));
         }
     }
     return list;

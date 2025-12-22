@@ -1,16 +1,25 @@
 #include "section.h"
 
 Section::Section()
-    : m_id(0), m_courseId(0), m_capacity(40), m_semesterId(0)
+    : m_id(0), m_name(""), m_courseId(0), m_capacity(40), m_semesterId(0)
 {
 }
 
-Section::Section(int id, int courseId, int capacity, int semesterId)
+Section::Section(int id, const QString& name, int courseId, int capacity, int semesterId)
 {
     m_id = id;
+    m_name = name;
     m_courseId = courseId;
     m_capacity = capacity;
     m_semesterId = semesterId;
+}
+
+QString Section::name() const {
+    return m_name;
+}
+
+void Section::setName(const QString& name) {
+    m_name = name;
 }
 
 int Section::id() const {

@@ -47,6 +47,12 @@ public:
     QString assignedProfessor() const;
     void setAssignedProfessor(const QString& name);
 
+    int departmentId() const;
+    void setDepartmentId(int departmentId);
+
+    QString departmentName() const;
+    void setDepartmentName(const QString& name);
+
 private:
     int m_id;
     QString m_name;
@@ -54,9 +60,11 @@ private:
     int m_yearLevel;
     int m_creditHours;
     int m_semesterId;
+    int m_departmentId;
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
     QString m_semesterName;
+    QString m_departmentName;
     int m_maxGrade;
     QString m_courseType;
     QString m_assignedProfessor;

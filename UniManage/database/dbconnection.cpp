@@ -180,7 +180,8 @@ bool DBConnection::createTables()
     if (!query.exec("CREATE TABLE IF NOT EXISTS `colleges` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
                     "name VARCHAR(255) NOT NULL,"
-                    "code VARCHAR(50) UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "code VARCHAR(50) UNIQUE,"
+                    "tuition_fees DOUBLE DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating colleges table:" << query.lastError().text();
         return false;
     }
@@ -224,11 +225,13 @@ bool DBConnection::createTables()
                     "year_level INT,"
                     "credit_hours INT,"
                     "semester_id INT,"
+                    "department_id INT NOT NULL,"
                     "max_grade INT DEFAULT 100," // 100 or 150
                     "course_type VARCHAR(50) DEFAULT 'Theoretical'," // 'Theoretical' or 'Practical'
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
-                    "FOREIGN KEY (semester_id) REFERENCES semester(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
+                    "FOREIGN KEY (semester_id) REFERENCES semester(id),"
+                    "FOREIGN KEY (department_id) REFERENCES departments(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) {
         qDebug() << "Error creating courses table:" << query.lastError().text();
         return false;
     }
@@ -236,6 +239,7 @@ bool DBConnection::createTables()
     // Sections table
     if (!query.exec("CREATE TABLE IF NOT EXISTS `sections` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"
+                    "name VARCHAR(100),"
                     "course_id INT,"
                     "capacity INT DEFAULT 40,"
                     "semester_id INT,"
@@ -258,21 +262,45 @@ bool DBConnection::createTables()
                     "department_id INT NULL,"
                     "academic_level_id INT NULL,"
                     "section_id INT NULL,"
+                    "college_id INT NULL,"
+                    "tuition_fees DOUBLE DEFAULT 0,"
                     "seat_number VARCHAR(50) NULL,"
                     "status VARCHAR(50) DEFAULT 'active',"
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
                     "updated_at DATETIME NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users(id),"
                      "FOREIGN KEY (department_id) REFERENCES departments(id)," // Now valid
+                     "FOREIGN KEY (college_id) REFERENCES colleges(id),"
                      "FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) { // Now valid
         qDebug() << "Error creating students_data table:" << query.lastError().text();
         return false;
     }
 
-    // Migration: Ensure id_number exists in students_data
-    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `id_number` VARCHAR(100) AFTER `student_number` ");
-    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `department_id` INT NULL AFTER `department` ");
-    query.exec("ALTER TABLE `students_data` ADD COLUMN IF NOT EXISTS `academic_level_id` INT NULL AFTER `department_id` ");
+    // Migrations to ensure all columns exist (Compatibility mode)
+    auto addCol = [&](const QString& table, const QString& col, const QString& type) {
+        QSqlQuery q(m_database);
+        // Check if column exists
+        q.prepare("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+        q.addBindValue(m_dbName);
+        q.addBindValue(table);
+        q.addBindValue(col);
+        if (q.exec() && !q.next()) {
+            qDebug() << "Adding missing column" << col << "to table" << table;
+            q.exec(QString("ALTER TABLE `%1` ADD COLUMN `%2` %3").arg(table).arg(col).arg(type));
+        }
+    };
+
+    addCol("users", "role", "VARCHAR(50) AFTER `password` ");
+    addCol("students_data", "id_number", "VARCHAR(100) AFTER `student_number` ");
+    addCol("students_data", "department_id", "INT NULL AFTER `department` ");
+    addCol("students_data", "academic_level_id", "INT NULL AFTER `department_id` ");
+    addCol("students_data", "college_id", "INT NULL AFTER `section_id` ");
+    addCol("students_data", "tuition_fees", "DOUBLE DEFAULT 0 AFTER `college_id` ");
+    addCol("courses", "department_id", "INT NULL AFTER `semester_id` ");
+    addCol("colleges", "tuition_fees", "DOUBLE DEFAULT 0 AFTER `code` ");
+    addCol("courses", "max_grade", "INT DEFAULT 100");
+    addCol("courses", "course_type", "VARCHAR(50) DEFAULT 'Theoretical'");
+    addCol("sections", "name", "VARCHAR(100) AFTER `id` ");
 
     // Enrollments table (expanded with Grade Distribution)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `enrollments` ("

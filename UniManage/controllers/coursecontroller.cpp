@@ -5,6 +5,7 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QDateTime>
+#include "../database/persistence.h"
 
 CourseController::CourseController() {}
 
@@ -18,6 +19,7 @@ bool CourseController::addCourse(const Course& course)
     query.addBindValue(course.yearLevel());
     query.addBindValue(course.creditHours());
     query.addBindValue(course.semesterId());
+    query.addBindValue(course.departmentId());
     query.addBindValue(course.maxGrade());
     query.addBindValue(course.courseType());
 
@@ -25,6 +27,7 @@ bool CourseController::addCourse(const Course& course)
         qDebug() << "addCourse failed:" << query.lastError().text();
         return false;
     }
+    Persistence::logChange("Course", "Create", query.lastInsertId().toInt(), course.name());
     return true;
 }
 
@@ -38,6 +41,7 @@ bool CourseController::updateCourse(const Course& course)
     query.addBindValue(course.yearLevel());
     query.addBindValue(course.creditHours());
     query.addBindValue(course.semesterId());
+    query.addBindValue(course.departmentId());
     query.addBindValue(course.maxGrade());
     query.addBindValue(course.courseType());
     query.addBindValue(course.id());
@@ -46,6 +50,7 @@ bool CourseController::updateCourse(const Course& course)
         qDebug() << "updateCourse failed:" << query.lastError().text();
         return false;
     }
+    Persistence::logChange("Course", "Edit", course.id(), course.name());
     return true;
 }
 
@@ -60,6 +65,7 @@ bool CourseController::deleteCourse(int id)
         qDebug() << "deleteCourse failed:" << query.lastError().text();
         return false;
     }
+    Persistence::logChange("Course", "Delete", id, "ID removed from system");
     return true;
 }
 
@@ -71,7 +77,10 @@ QList<Course> CourseController::getAllCourses()
 
     if (!query.exec(Queries::SELECT_ALL_COURSES)) {
         qDebug() << "getAllCourses failed:" << query.lastError().text();
-        return list;
+        // Fallback: try simple query
+        if (!query.exec("SELECT * FROM courses ORDER BY name")) {
+            return list;
+        }
     }
 
     while (query.next()) {
@@ -108,6 +117,8 @@ QList<Course> CourseController::getAllCourses()
         }
 
         c.setAssignedProfessor(query.value("assigned_professors").toString());
+        c.setDepartmentId(query.value("department_id").toInt());
+        c.setDepartmentName(query.value("department_name").toString());
 
         list.append(c);
     }

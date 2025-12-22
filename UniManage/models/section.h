@@ -8,7 +8,10 @@ class Section
 {
 public:
     Section();
-    Section(int id, int courseId, int capacity, int semesterId);
+    Section(int id, const QString& name, int courseId, int capacity, int semesterId);
+
+    QString name() const;
+    void setName(const QString& name);
 
     int id() const;
     void setId(int id);
@@ -34,6 +37,7 @@ public:
 
 private:
     int m_id;
+    QString m_name;
     int m_courseId;
     int m_capacity;
     int m_semesterId;

@@ -10,6 +10,10 @@ public:
     ScheduleController();
     
     QList<Schedule> getScheduleByProfessor(int professorId);
+    bool addSchedule(const Schedule& s);
+    bool updateSchedule(const Schedule& s);
+    bool deleteSchedule(int id);
+    QList<Schedule> getAllSchedules();
     bool assignProfessorToCourse(int courseId, int professorId);
 };
 

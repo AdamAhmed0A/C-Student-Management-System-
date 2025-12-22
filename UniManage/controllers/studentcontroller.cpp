@@ -5,6 +5,7 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QDateTime>
+#include "../database/persistence.h"
 
 StudentController::StudentController() {}
 
@@ -28,12 +29,14 @@ bool StudentController::addStudent(const StudentData& student, QString* error)
     else query.addBindValue(student.academicLevelId());
 
     // Handle nullable section_id
-    if (student.sectionId() <= 0) {
-        query.addBindValue(QVariant()); // Bind NULL
-    } else {
-        query.addBindValue(student.sectionId());
-    }
-    
+    if (student.sectionId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.sectionId());
+
+    // college_id
+    if (student.collegeId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.collegeId());
+
+    query.addBindValue(student.tuitionFees());
     query.addBindValue(student.seatNumber());
     query.addBindValue(student.status());
 	if (!query.exec()) {
@@ -42,6 +45,7 @@ bool StudentController::addStudent(const StudentData& student, QString* error)
         if (error) *error = errText;
         return false;
 	}
+    Persistence::logChange("Student", "Enroll", query.lastInsertId().toInt(), student.studentNumber());
 	return true;
 }
 
@@ -61,6 +65,9 @@ bool StudentController::updateStudent(const StudentData& student)
     else query.addBindValue(student.academicLevelId());
 
     query.addBindValue(student.sectionId());
+    if (student.collegeId() <= 0) query.addBindValue(QVariant());
+    else query.addBindValue(student.collegeId());
+    query.addBindValue(student.tuitionFees());
     query.addBindValue(student.seatNumber());
     query.addBindValue(student.status());
     query.addBindValue(student.id());
@@ -68,6 +75,7 @@ bool StudentController::updateStudent(const StudentData& student)
         qDebug() << "Error updating student data:" << query.lastError().text();
         return false;
 	}
+    Persistence::logChange("Student", "Edit", student.id(), student.studentNumber());
 	return true;
 }
 
@@ -81,6 +89,7 @@ bool StudentController::deleteStudent(int id)
         qDebug() << "Error deleting student data:" << query.lastError().text();
         return false;
 	}
+    Persistence::logChange("Student", "Delete", id, "Removed Student");
     return true;
 }
 
@@ -95,7 +104,16 @@ QList<StudentData> StudentController::getAllStudents()
     
     if (!query.exec(Queries::SELECT_ALL_STUDENTS_DATA)) {
         qDebug() << "Error retrieving students data:" << query.lastError().text();
-        return students;
+        // Fallback: Try a simpler query if the complexity is failing due to joins or missing columns
+        // This ensures the admin can still see the user accounts even if profile data has issues
+        QString fallback = "SELECT u.id AS user_id, 0 AS id, u.full_name, u.username, u.role, u.username AS student_number, "
+                           "'' AS id_number, NULL AS dob, '' AS department, 0 AS department_id, 0 AS academic_level_id, "
+                           "0 AS section_id, 0 AS college_id, 0.0 AS tuition_fees, '' AS seat_number, 'Incomplete Profile' AS status, "
+                           "u.created_at, u.updated_at, '' AS dept_name, '' AS level_name, '' AS college_name "
+                           "FROM users u WHERE u.role = 'student'";
+        if (!query.exec(fallback)) {
+            return students;
+        }
     }
     
     qDebug() << "Query executed successfully!";
@@ -113,10 +131,13 @@ QList<StudentData> StudentController::getAllStudents()
         student.setDepartmentId(query.value("department_id").toInt());
         student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
+        student.setCollegeId(query.value("college_id").toInt());
+        student.setTuitionFees(query.value("tuition_fees").toDouble());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
         student.setUpdatedAt(query.value("updated_at").toDateTime());
+        
         // Additional info from joins
         student.setFullName(query.value("full_name").toString());
         student.setUsername(query.value("username").toString());
@@ -126,16 +147,11 @@ QList<StudentData> StudentController::getAllStudents()
         if(!dName.isEmpty()) student.setDepartment(dName);
         
         student.setLevelName(query.value("level_name").toString());
-        
-        if (count <= 3) {
-            qDebug() << "Student" << count << ":" << student.fullName() << "| ID:" << student.id() << "| UserID:" << student.userId() << "| Role:" << student.role();
-        }
+        student.setCollegeName(query.value("college_name").toString());
+        student.setSectionName(query.value("section_name").toString());
         
         students.append(student);
     }
-    
-    qDebug() << "Total students retrieved:" << count;
-    qDebug() << "=== END STUDENT QUERY ===";
     
 	return students;
 }

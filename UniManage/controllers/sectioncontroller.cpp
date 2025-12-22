@@ -12,6 +12,7 @@ bool SectionController::addSection(const Section& section)
 {
 	QSqlQuery query(DBConnection::instance().database());
     query.prepare(Queries::INSERT_SECTION);
+    query.addBindValue(section.name());
     query.addBindValue(section.courseId());
     query.addBindValue(section.capacity());
     query.addBindValue(section.semesterId());
@@ -27,6 +28,7 @@ bool SectionController::updateSection(const Section& section)
 {
 	QSqlQuery query(DBConnection::instance().database());
     query.prepare(Queries::UPDATE_SECTION);
+    query.addBindValue(section.name());
     query.addBindValue(section.courseId());
     query.addBindValue(section.capacity());
     query.addBindValue(section.semesterId());
@@ -64,6 +66,7 @@ QList<Section> SectionController::getAllSections()
     while (query.next()) {
         Section section;
         section.setId(query.value("id").toInt());
+        section.setName(query.value("name").toString());
         section.setCourseId(query.value("course_id").toInt());
         section.setCapacity(query.value("capacity").toInt());
         section.setSemesterId(query.value("semester_id").toInt());
@@ -92,6 +95,7 @@ QList<Section> SectionController::getSectionsByCourse(int courseId)
     while (query.next()) {
         Section section;
         section.setId(query.value("id").toInt());
+        section.setName(query.value("name").toString());
         section.setCourseId(query.value("course_id").toInt());
         section.setCapacity(query.value("capacity").toInt());
         section.setSemesterId(query.value("semester_id").toInt());

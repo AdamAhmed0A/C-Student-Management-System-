@@ -1,7 +1,7 @@
 #include "course.h"
 
 Course::Course()
-    : m_id(0), m_yearLevel(1), m_creditHours(3), m_semesterId(0), m_maxGrade(100), m_courseType("Theoretical")
+    : m_id(0), m_yearLevel(1), m_creditHours(3), m_semesterId(0), m_departmentId(0), m_maxGrade(100), m_courseType("Theoretical")
 {
 }
 
@@ -13,6 +13,7 @@ Course::Course(int id, const QString &name, const QString &description, int year
     m_yearLevel = yearLevel;
     m_creditHours = creditHours;
     m_semesterId = semesterId;
+    m_departmentId = 0;
     m_createdAt = QDateTime::currentDateTime();
     m_updatedAt = QDateTime::currentDateTime();
 }
@@ -115,3 +116,9 @@ void Course::setCourseType(const QString& courseType) { m_courseType = courseTyp
 
 QString Course::assignedProfessor() const { return m_assignedProfessor; }
 void Course::setAssignedProfessor(const QString& name) { m_assignedProfessor = name; }
+
+int Course::departmentId() const { return m_departmentId; }
+void Course::setDepartmentId(int departmentId) { m_departmentId = departmentId; }
+
+QString Course::departmentName() const { return m_departmentName; }
+void Course::setDepartmentName(const QString &name) { m_departmentName = name; }

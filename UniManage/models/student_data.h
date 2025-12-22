@@ -71,6 +71,15 @@ public:
     QString role() const;
     void setRole(const QString &role);
 
+    int collegeId() const;
+    void setCollegeId(int collegeId);
+
+    QString collegeName() const;
+    void setCollegeName(const QString &collegeName);
+
+    double tuitionFees() const;
+    void setTuitionFees(double fees);
+
 private:
     int m_id;
     int m_userId;
@@ -80,6 +89,7 @@ private:
     QDateTime m_dob;
     QString m_department;
     int m_departmentId;
+    int m_collegeId;
     int m_academicLevelId;
     int m_sectionId;
     QString m_seatNumber;
@@ -91,6 +101,8 @@ private:
     QString m_role;     // Joined from User
     QString m_levelName; // Joined from Academic Levels
     QString m_sectionName; // Joined/Computed from Section
+    QString m_collegeName; 
+    double m_tuitionFees;
 };
 
 #endif // STUDENT_DATA_H

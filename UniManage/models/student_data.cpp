@@ -1,13 +1,26 @@
 #include "student_data.h"
 
 StudentData::StudentData()
-    : m_id(0), m_userId(0), m_sectionId(0), m_departmentId(0), m_academicLevelId(0)
+    : m_id(0), m_userId(0), m_departmentId(0), m_collegeId(0), m_academicLevelId(0), m_sectionId(0), m_tuitionFees(0.0)
 {
 }
 
 StudentData::StudentData(int id, int userId, const QString &studentNumber, const QString &idNumber, const QString &phone, const QDateTime &dob, const QString &department, int sectionId, const QString &seatNumber, const QString &status)
-    : m_id(id), m_userId(userId), m_studentNumber(studentNumber), m_idNumber(idNumber), m_phone(phone), m_dob(dob), m_department(department), m_sectionId(sectionId), m_seatNumber(seatNumber), m_status(status), m_departmentId(0), m_academicLevelId(0)
 {
+    m_id = id;
+    m_userId = userId;
+    m_studentNumber = studentNumber;
+    m_idNumber = idNumber;
+    m_phone = phone;
+    m_dob = dob;
+    m_department = department;
+    m_departmentId = 0;
+    m_collegeId = 0;
+    m_sectionId = sectionId;
+    m_seatNumber = seatNumber;
+    m_status = status;
+    m_academicLevelId = 0;
+    m_tuitionFees = 0.0;
     m_createdAt = QDateTime::currentDateTime();
     m_updatedAt = QDateTime::currentDateTime();
 }
@@ -62,6 +75,15 @@ void StudentData::setUsername(const QString &username) { m_username = username; 
 
 QString StudentData::role() const { return m_role; }
 void StudentData::setRole(const QString &role) { m_role = role; }
+
+int StudentData::collegeId() const { return m_collegeId; }
+void StudentData::setCollegeId(int collegeId) { m_collegeId = collegeId; }
+
+QString StudentData::collegeName() const { return m_collegeName; }
+void StudentData::setCollegeName(const QString &collegeName) { m_collegeName = collegeName; }
+
+double StudentData::tuitionFees() const { return m_tuitionFees; }
+void StudentData::setTuitionFees(double fees) { m_tuitionFees = fees; }
 
 QString StudentData::levelName() const { return m_levelName; }
 void StudentData::setLevelName(const QString &levelName) { m_levelName = levelName; }

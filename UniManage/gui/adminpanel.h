@@ -16,6 +16,7 @@
 #include "../controllers/professorcontroller.h"
 #include "../controllers/calendarcontroller.h"
 #include "../controllers/schedulecontroller.h"
+#include "../controllers/sectioncontroller.h"
 #include "../models/semester.h"
 
 class AdminPanel : public QWidget
@@ -36,6 +37,7 @@ private:
     QWidget* createProfessorsTab();
     QWidget* createSchedulesTab();
     QWidget* createAcademicSetupTab();
+    QWidget* createSectionsTab();
     QWidget* createCalendarTab();
     
     void refreshStudentsTable();
@@ -46,6 +48,7 @@ private:
     void refreshRoomsTable();
     void refreshProfessorsTable();
     void refreshSchedulesTable();
+    void refreshSectionsTable();
     void refreshCalendarTable();
     void refreshAllData();
 
@@ -74,6 +77,20 @@ private slots:
     void onAddCalendarEvent();
     void onEditCalendarEvent();
     void onDeleteCalendarEvent();
+    void onEditCollege();
+    void onDeleteCollege();
+    void onEditRoom();
+    void onDeleteRoom();
+    void onEditDepartment();
+    void onDeleteDepartment();
+    void onPrintData();
+    void onEditLevel();
+    void onDeleteLevel();
+    void onAddSection(); 
+    void onEditSection();
+    void onDeleteSection();
+    void onEditSchedule();
+    void onDeleteSchedule();
 
 private:
     int m_adminId;
@@ -98,7 +115,9 @@ private:
     ProfessorController m_professorController;
     CalendarController m_calendarController;
     ScheduleController m_scheduleController;
+    SectionController m_sectionController;
     QTableWidget* m_calendarTable;
+    QTableWidget* m_sectionsTable;
 };
 
 #endif // ADMINPANEL_H

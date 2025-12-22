@@ -16,8 +16,10 @@
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
-#include <QTextEdit>    
+#include <QTextEdit>
 #include <QTabWidget>
+#include <QDoubleSpinBox>
+#include "../database/persistence.h"
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
 #include <QSqlQuery>
@@ -64,6 +66,12 @@ void AdminPanel::setupUI()
     connect(refreshBtn, &QPushButton::clicked, this, &AdminPanel::onRefreshAll);
     header->addWidget(refreshBtn);
 
+    QPushButton* printBtn = new QPushButton("View/Print Data");
+    printBtn->setObjectName("primaryBtn");
+    printBtn->setFixedWidth(150);
+    connect(printBtn, &QPushButton::clicked, this, &AdminPanel::onPrintData);
+    header->addWidget(printBtn);
+
     QPushButton* logoutBtn = new QPushButton("Logout System");
     logoutBtn->setObjectName("dangerBtn");
     logoutBtn->setFixedWidth(150);
@@ -83,21 +91,28 @@ void AdminPanel::setupUI()
     m_tabWidget->addTab(createAcademicSetupTab(), "Academic Setup");
     m_tabWidget->addTab(createProfessorsTab(), "Professor Data");
     m_tabWidget->addTab(createSchedulesTab(), "Academic Schedules");
+    m_tabWidget->addTab(createSectionsTab(), "Sections/Groups");
     m_tabWidget->addTab(createCalendarTab(), "Calendar Management");
     
     mainLayout->addWidget(m_tabWidget);
 }
 
-void AdminPanel::refreshAllData() {
-    refreshCollegesTable();
-    refreshCoursesTable();
-    refreshDepartmentsTable();
-    refreshRoomsTable();
-    refreshLevelsTable();
-    refreshProfessorsTable();
-    refreshSchedulesTable();
-    refreshStudentsTable();
     refreshCalendarTable();
+    refreshSectionsTable();
+}
+
+void AdminPanel::refreshSectionsTable() {
+    m_sectionsTable->setRowCount(0);
+    for (const auto& s : m_sectionController.getAllSections()) {
+        int r = m_sectionsTable->rowCount();
+        m_sectionsTable->insertRow(r);
+        m_sectionsTable->setItem(r, 0, new QTableWidgetItem(QString::number(s.id())));
+        m_sectionsTable->setItem(r, 1, new QTableWidgetItem(s.name()));
+        m_sectionsTable->setItem(r, 2, new QTableWidgetItem(s.courseName()));
+        m_sectionsTable->setItem(r, 3, new QTableWidgetItem(QString::number(s.capacity())));
+        // Mapping semester id to string would be better, but we use ID for now
+        m_sectionsTable->setItem(r, 4, new QTableWidgetItem(QString::number(s.semesterId())));
+    }
 }
 
 void AdminPanel::refreshCalendarTable() {
@@ -283,6 +298,67 @@ void AdminPanel::onDeleteCalendarEvent() {
     }
 }
 
+
+// Level Management
+void AdminPanel::onEditLevel() { /* UI implementation */ }
+void AdminPanel::onDeleteLevel() {
+    int row = m_levelsTable->currentRow();
+    if (row < 0) return;
+    int id = m_levelsTable->item(row, 0)->text().toInt();
+    if (m_academicLevelController.deleteAcademicLevel(id)) {
+        refreshLevelsTable();
+    }
+}
+
+// Section Management
+void AdminPanel::onAddSection() {
+    QDialog dialog(this);
+    dialog.setWindowTitle("New Section/Group");
+    QFormLayout* layout = new QFormLayout(&dialog);
+    QLineEdit* name = new QLineEdit();
+    QComboBox* course = new QComboBox();
+    for(const auto& c : m_courseController.getAllCourses()) course->addItem(c.name(), c.id());
+    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 400); cap->setValue(40);
+    QComboBox* sem = new QComboBox();
+    for(const auto& s : m_semesterController.getAllSemesters()) sem->addItem(QString::number(s.id()), s.id());
+    
+    layout->addRow("Section Name:", name);
+    layout->addRow("Course:", course);
+    layout->addRow("Max Capacity:", cap);
+    layout->addRow("Semester ID:", sem);
+    
+    QPushButton* btn = new QPushButton("Create");
+    layout->addRow(btn);
+    connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        Section s;
+        s.setName(name->text());
+        s.setCourseId(course->currentData().toInt());
+        s.setCapacity(cap->value());
+        s.setSemesterId(sem->currentData().toInt());
+        if(m_sectionController.addSection(s)) {
+            refreshSectionsTable();
+        }
+    }
+}
+void AdminPanel::onEditSection() { /* Similar to Add */ }
+void AdminPanel::onDeleteSection() {
+    int row = m_sectionsTable->currentRow();
+    if (row < 0) return;
+    int id = m_sectionsTable->item(row, 0)->text().toInt();
+    if(m_sectionController.deleteSection(id)) refreshSectionsTable();
+}
+
+// Schedule Edits
+void AdminPanel::onEditSchedule() { /* Implement */ }
+void AdminPanel::onDeleteSchedule() {
+    int row = m_schedulesTable->currentRow();
+    if (row < 0) return;
+    int id = m_schedulesTable->item(row, 0)->text().toInt();
+    if(m_scheduleController.deleteSchedule(id)) refreshSchedulesTable();
+}
+
 void AdminPanel::onRefreshAll() {
     refreshAllData();
     QMessageBox::information(this, "Success", "Application data has been refreshed successfully.");
@@ -424,16 +500,29 @@ void AdminPanel::onTestDatabase() {
 QWidget* AdminPanel::createFacultiesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
-    QPushButton* addBtn = new QPushButton("Add Faculty/College");
-    addBtn->setFixedWidth(200);
+    QHBoxLayout* btns = new QHBoxLayout();
+    QPushButton* addBtn = new QPushButton("Add Faculty");
+    QPushButton* editBtn = new QPushButton("Edit Faculty");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Delete Faculty");
+    deleteBtn->setObjectName("dangerBtn");
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+    
     m_collegesTable = new QTableWidget();
-    m_collegesTable->setColumnCount(3);
-    m_collegesTable->setHorizontalHeaderLabels({"ID", "Faculty Name", "Code"});
+    m_collegesTable->setColumnCount(4);
+    m_collegesTable->setHorizontalHeaderLabels({"ID", "Faculty Name", "Code", "Tuition fees per Year"});
     m_collegesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_collegesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(addBtn);
+    
+    layout->addLayout(btns);
     layout->addWidget(m_collegesTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddCollege);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditCollege);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteCollege);
     return widget;
 }
 
@@ -492,19 +581,31 @@ QWidget* AdminPanel::createRoomsTab() {
     QVBoxLayout* layout = new QVBoxLayout(widget);
     QHBoxLayout* btns = new QHBoxLayout();
     QPushButton* addBtn = new QPushButton("Add Hall/Lab");
-    QPushButton* specBtn = new QPushButton("Manage Specs");
-    specBtn->setObjectName("secondaryBtn");
+    QPushButton* editBtn = new QPushButton("Edit Facility");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Facility");
+    deleteBtn->setObjectName("dangerBtn");
+    QPushButton* specBtn = new QPushButton("Detailed Specs");
+    specBtn->setObjectName("primaryBtn");
+    
     btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
     btns->addWidget(specBtn);
     btns->addStretch();
+    
     m_roomsTable = new QTableWidget();
     m_roomsTable->setColumnCount(8);
     m_roomsTable->setHorizontalHeaderLabels({"ID", "Name", "Type", "Capacity", "ACs", "Fans", "Lighting", "PCs"});
     m_roomsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_roomsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
     layout->addLayout(btns);
     layout->addWidget(m_roomsTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddRoom);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditRoom);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteRoom);
     connect(specBtn, &QPushButton::clicked, this, &AdminPanel::onManageRoomSpecs);
     return widget;
 }
@@ -512,16 +613,62 @@ QWidget* AdminPanel::createRoomsTab() {
 QWidget* AdminPanel::createAcademicSetupTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
-    QPushButton* addBtn = new QPushButton("Add Academic Level");
-    addBtn->setFixedWidth(200);
+    QHBoxLayout* btns = new QHBoxLayout();
+    
+    QPushButton* addBtn = new QPushButton("New Academic Level");
+    QPushButton* editBtn = new QPushButton("Edit Level");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Level");
+    deleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+
     m_levelsTable = new QTableWidget();
     m_levelsTable->setColumnCount(3);
     m_levelsTable->setHorizontalHeaderLabels({"ID", "Level Name", "Level Number"});
     m_levelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_levelsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(addBtn);
+    
+    layout->addLayout(btns);
     layout->addWidget(m_levelsTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddLevel);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditLevel);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteLevel);
+    return widget;
+}
+
+QWidget* AdminPanel::createSectionsTab() {
+    QWidget* widget = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(widget);
+    QHBoxLayout* btns = new QHBoxLayout();
+    
+    QPushButton* addBtn = new QPushButton("New Section/Group");
+    QPushButton* editBtn = new QPushButton("Edit Section");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Section");
+    deleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+
+    m_sectionsTable = new QTableWidget();
+    m_sectionsTable->setColumnCount(5);
+    m_sectionsTable->setHorizontalHeaderLabels({"ID", "Name", "Course", "Capacity", "Semester"});
+    m_sectionsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_sectionsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
+    layout->addLayout(btns);
+    layout->addWidget(m_sectionsTable);
+    
+    connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddSection);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditSection);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteSection);
     return widget;
 }
 
@@ -559,16 +706,31 @@ QWidget* AdminPanel::createProfessorsTab() {
 QWidget* AdminPanel::createSchedulesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
-    QPushButton* addBtn = new QPushButton("Assign Schedule Item");
-    addBtn->setFixedWidth(200);
+    QHBoxLayout* btns = new QHBoxLayout();
+    
+    QPushButton* addBtn = new QPushButton("New Schedule Assignment");
+    QPushButton* editBtn = new QPushButton("Edit Schedule");
+    editBtn->setObjectName("secondaryBtn");
+    QPushButton* deleteBtn = new QPushButton("Remove Slot");
+    deleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(addBtn);
+    btns->addWidget(editBtn);
+    btns->addWidget(deleteBtn);
+    btns->addStretch();
+
     m_schedulesTable = new QTableWidget();
     m_schedulesTable->setColumnCount(7);
     m_schedulesTable->setHorizontalHeaderLabels({"ID", "Course", "Room", "Professor", "Day", "Start", "End"});
     m_schedulesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_schedulesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(addBtn);
+    
+    layout->addLayout(btns);
     layout->addWidget(m_schedulesTable);
+    
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddSchedule);
+    connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditSchedule);
+    connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteSchedule);
     return widget;
 }
 
@@ -586,8 +748,8 @@ QWidget* AdminPanel::createStudentsTab() {
     btns->addWidget(deleteBtn);
     btns->addStretch();
     m_studentsTable = new QTableWidget();
-    m_studentsTable->setColumnCount(7);
-    m_studentsTable->setHorizontalHeaderLabels({"ID", "Student Code", "Name", "National ID", "Department", "Level", "Status"});
+    m_studentsTable->setColumnCount(10);
+    m_studentsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "ID Number", "College", "Dept", "Section", "Level", "Fees", "Status"});
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_studentsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     layout->addLayout(btns);
@@ -623,19 +785,22 @@ void AdminPanel::refreshStudentsTable() {
         m_studentsTable->setItem(r, 1, new QTableWidgetItem(s.studentNumber()));
         m_studentsTable->setItem(r, 2, new QTableWidgetItem(s.fullName()));
         m_studentsTable->setItem(r, 3, new QTableWidgetItem(s.idNumber().isEmpty() ? "---" : s.idNumber()));
-        m_studentsTable->setItem(r, 4, new QTableWidgetItem(s.department().isEmpty() ? "---" : s.department()));
+        m_studentsTable->setItem(r, 4, new QTableWidgetItem(s.collegeName().isEmpty() ? "---" : s.collegeName()));
+        m_studentsTable->setItem(r, 5, new QTableWidgetItem(s.department().isEmpty() ? "---" : s.department()));
         
         QString level = s.levelName();
         if(level.isEmpty()) level = (s.academicLevelId() == 0) ? "---" : QString::number(s.academicLevelId());
-        m_studentsTable->setItem(r, 5, new QTableWidgetItem(level));
+        m_studentsTable->setItem(r, 6, new QTableWidgetItem(level));
         
+        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString("$%1").arg(s.tuitionFees())));
+
         QString status = s.status();
         if (status.isEmpty()) status = (s.id() == 0) ? "Incomplete Profile" : "Pending";
-        m_studentsTable->setItem(r, 6, new QTableWidgetItem(status));
+        m_studentsTable->setItem(r, 8, new QTableWidgetItem(status));
 
         // Color code incomplete records
         if (s.id() == 0) {
-            for (int col = 0; col < 7; ++col) {
+            for (int col = 0; col < 9; ++col) {
                 m_studentsTable->item(r, col)->setForeground(Qt::red);
             }
         }
@@ -651,18 +816,21 @@ void AdminPanel::refreshStudentsTable() {
 
 void AdminPanel::refreshCoursesTable() {
     m_coursesTable->setRowCount(0);
+    m_coursesTable->setColumnCount(10);
+    m_coursesTable->setHorizontalHeaderLabels({"ID", "Name", "Department", "Professor", "Type", "Max Grade", "Credits", "Level", "Semester", "Description"});
     for (const auto& c : m_courseController.getAllCourses()) {
         int r = m_coursesTable->rowCount();
         m_coursesTable->insertRow(r);
         m_coursesTable->setItem(r, 0, new QTableWidgetItem(QString::number(c.id())));
         m_coursesTable->setItem(r, 1, new QTableWidgetItem(c.name()));
-        m_coursesTable->setItem(r, 2, new QTableWidgetItem(c.assignedProfessor().isEmpty() ? "---" : c.assignedProfessor()));
-        m_coursesTable->setItem(r, 3, new QTableWidgetItem(c.courseType()));
-        m_coursesTable->setItem(r, 4, new QTableWidgetItem(QString::number(c.maxGrade())));
-        m_coursesTable->setItem(r, 5, new QTableWidgetItem(QString::number(c.creditHours())));
-        m_coursesTable->setItem(r, 6, new QTableWidgetItem(QString::number(c.yearLevel())));
-        m_coursesTable->setItem(r, 7, new QTableWidgetItem(c.semesterName()));
-        m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.description()));
+        m_coursesTable->setItem(r, 2, new QTableWidgetItem(c.departmentName().isEmpty() ? "General" : c.departmentName()));
+        m_coursesTable->setItem(r, 3, new QTableWidgetItem(c.assignedProfessor().isEmpty() ? "---" : c.assignedProfessor()));
+        m_coursesTable->setItem(r, 4, new QTableWidgetItem(c.courseType()));
+        m_coursesTable->setItem(r, 5, new QTableWidgetItem(QString::number(c.maxGrade())));
+        m_coursesTable->setItem(r, 6, new QTableWidgetItem(QString::number(c.creditHours())));
+        m_coursesTable->setItem(r, 7, new QTableWidgetItem(QString::number(c.yearLevel())));
+        m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.semesterName()));
+        m_coursesTable->setItem(r, 9, new QTableWidgetItem(c.description()));
     }
 }
 
@@ -674,6 +842,7 @@ void AdminPanel::refreshCollegesTable() {
         m_collegesTable->setItem(r, 0, new QTableWidgetItem(QString::number(c.id())));
         m_collegesTable->setItem(r, 1, new QTableWidgetItem(c.name()));
         m_collegesTable->setItem(r, 2, new QTableWidgetItem(c.code()));
+        m_collegesTable->setItem(r, 3, new QTableWidgetItem(QString("$%1").arg(c.tuitionFees())));
     }
 }
 
@@ -765,17 +934,48 @@ void AdminPanel::onAddStudent() {
     nationalId->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
     
     QLineEdit* code = new QLineEdit();
+    
+    QComboBox* college = new QComboBox();
+    QList<College> colleges = m_collegeController.getAllColleges();
+    for(const auto& c : colleges) college->addItem(c.name(), c.id());
+    
     QComboBox* dept = new QComboBox();
-    for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
+    auto updateDepts = [this, college, dept, colleges]() {
+        dept->clear();
+        int cid = college->currentData().toInt();
+        for(const auto& d : m_departmentController.getAllDepartments()) {
+            if(d.collegeId() == cid) dept->addItem(d.name(), d.id());
+        }
+    };
+    connect(college, &QComboBox::currentIndexChanged, updateDepts);
+    updateDepts();
     
     QComboBox* level = new QComboBox();
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
 
+    QDoubleSpinBox* tuition = new QDoubleSpinBox();
+    tuition->setRange(0, 1000000);
+    tuition->setPrefix("$");
+    
+    auto updateTuition = [college, tuition, colleges]() {
+        int cid = college->currentData().toInt();
+        for(const auto& c : colleges) {
+            if(c.id() == cid) {
+                tuition->setValue(c.tuitionFees());
+                break;
+            }
+        }
+    };
+    connect(college, &QComboBox::currentIndexChanged, updateTuition);
+    updateTuition();
+
     layout->addRow("Full Name:", name);
     layout->addRow("National ID:", nationalId);
     layout->addRow("Student Code:", code);
+    layout->addRow("College/Faculty:", college);
     layout->addRow("Department:", dept);
     layout->addRow("Academic Level:", level);
+    layout->addRow("Assigned Tuition Fees:", tuition);
 
     QPushButton* btn = new QPushButton("Register Student");
     layout->addRow(btn);
@@ -822,6 +1022,8 @@ void AdminPanel::onAddStudent() {
             sd.setIdNumber(nationalId->text()); 
             sd.setDepartmentId(dept->currentData().toInt());
             sd.setAcademicLevelId(level->currentData().toInt());
+            sd.setCollegeId(college->currentData().toInt());
+            sd.setTuitionFees(tuition->value());
             sd.setStatus("active");
 
             if (m_studentController.addStudent(sd)) {
@@ -856,22 +1058,38 @@ void AdminPanel::onEditStudent() {
     idEdit->setMaxLength(14);
     idEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{14}"), &dialog));
     
+    QComboBox* collegeEdit = new QComboBox();
+    QList<College> colleges = m_collegeController.getAllColleges();
+    for(const auto& c : colleges) collegeEdit->addItem(c.name(), c.id());
+    collegeEdit->setCurrentIndex(collegeEdit->findData(student.collegeId()));
+
     QComboBox* deptEdit = new QComboBox();
-    for(const auto& d : m_departmentController.getAllDepartments()) {
-        deptEdit->addItem(d.name(), d.id());
-        if (d.id() == student.departmentId()) deptEdit->setCurrentIndex(deptEdit->count() - 1);
-    }
+    auto updateDepts = [this, collegeEdit, deptEdit]() {
+        deptEdit->clear();
+        int cid = collegeEdit->currentData().toInt();
+        for(const auto& d : m_departmentController.getAllDepartments()) {
+            if(d.collegeId() == cid) deptEdit->addItem(d.name(), d.id());
+        }
+    };
+    connect(collegeEdit, &QComboBox::currentIndexChanged, updateDepts);
+    updateDepts();
+    deptEdit->setCurrentIndex(deptEdit->findData(student.departmentId()));
 
     QComboBox* levelEdit = new QComboBox();
-    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) {
-        levelEdit->addItem(l.name(), l.id());
-        if (l.id() == student.academicLevelId()) levelEdit->setCurrentIndex(levelEdit->count() - 1);
-    }
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) levelEdit->addItem(l.name(), l.id());
+    levelEdit->setCurrentIndex(levelEdit->findData(student.academicLevelId()));
+
+    QDoubleSpinBox* tuitionEdit = new QDoubleSpinBox();
+    tuitionEdit->setRange(0, 1000000);
+    tuitionEdit->setPrefix("$");
+    tuitionEdit->setValue(student.tuitionFees());
 
     layout->addRow("Full Name:", nameEdit);
     layout->addRow("National ID:", idEdit);
+    layout->addRow("College/Faculty:", collegeEdit);
     layout->addRow("Department:", deptEdit);
     layout->addRow("Academic Level:", levelEdit);
+    layout->addRow("Tuition Fees:", tuitionEdit);
 
     QPushButton* ok = new QPushButton("Save Changes");
     layout->addRow(ok);
@@ -884,8 +1102,10 @@ void AdminPanel::onEditStudent() {
         }
         student.setFullName(nameEdit->text());
         student.setIdNumber(idEdit->text());
+        student.setCollegeId(collegeEdit->currentData().toInt());
         student.setDepartmentId(deptEdit->currentData().toInt());
         student.setAcademicLevelId(levelEdit->currentData().toInt());
+        student.setTuitionFees(tuitionEdit->value());
 
         if (m_studentController.updateStudent(student)) {
             QMessageBox::information(this, "Success", "Student records updated successfully.");
@@ -928,12 +1148,21 @@ void AdminPanel::onAddCourse() {
         semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
     }
 
+    QComboBox* dept = new QComboBox();
+    for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
+
+    QComboBox* prof = new QComboBox();
+    prof->addItem("None (Assign later)", 0);
+    for(const auto& p : m_professorController.getAllProfessors()) prof->addItem(p.fullName(), p.id());
+
     layout->addRow("Course Name:", name);
+    layout->addRow("Department (Mandatory):", dept);
     layout->addRow("Type:", type);
     layout->addRow("Max Points:", maxG);
     layout->addRow("Credit Hours:", credits);
     layout->addRow("Academic Level:", level);
     layout->addRow("Semester:", semester);
+    layout->addRow("Assign Professor:", prof);
 
     QPushButton* btn = new QPushButton("Create Course");
     layout->addRow(btn);
@@ -951,8 +1180,23 @@ void AdminPanel::onAddCourse() {
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
         c.setSemesterId(semester->currentData().toInt());
+        c.setDepartmentId(dept->currentData().toInt());
+
+        if (c.departmentId() <= 0) {
+            QMessageBox::warning(this, "Constraint Error", "A Course MUST be linked to a Department.");
+            return;
+        }
 
         if (m_courseController.addCourse(c)) {
+            if (prof->currentData().toInt() > 0) {
+                QSqlQuery idQ(DBConnection::instance().database());
+                idQ.exec("SELECT LAST_INSERT_ID()");
+                int nid = 0;
+                if (idQ.next()) {
+                    nid = idQ.value(0).toInt();
+                }
+                m_scheduleController.assignProfessorToCourse(nid, prof->currentData().toInt());
+            }
             QMessageBox::information(this, "Success", "Course created successfully.");
             refreshCoursesTable();
         } else {
@@ -986,19 +1230,32 @@ void AdminPanel::onEditCourse() {
         level->addItem(l.name(), l.id());
         if (l.id() == c.yearLevel()) level->setCurrentIndex(level->count()-1);
     }
-    
+
     QComboBox* semester = new QComboBox();
     for(const auto& s : m_semesterController.getAllSemesters()) {
         semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
         if (s.id() == c.semesterId()) semester->setCurrentIndex(semester->count()-1);
     }
+    
+    QComboBox* dept = new QComboBox();
+    for(const auto& d : m_departmentController.getAllDepartments()) {
+        dept->addItem(d.name(), d.id());
+        if (d.id() == c.departmentId()) dept->setCurrentIndex(dept->count()-1);
+    }
+
+    QComboBox* prof = new QComboBox();
+    prof->addItem("Unchanged", -1);
+    prof->addItem("None", 0);
+    for(const auto& p : m_professorController.getAllProfessors()) prof->addItem(p.fullName(), p.id());
 
     layout->addRow("Course Name:", name);
+    layout->addRow("Department (Mandatory):", dept);
     layout->addRow("Type:", type);
     layout->addRow("Max Grade:", maxG);
     layout->addRow("Credits:", credits);
     layout->addRow("Academic Level:", level);
     layout->addRow("Semester:", semester);
+    layout->addRow("Assign Professor:", prof);
 
     QPushButton* ok = new QPushButton("Save Changes");
     layout->addRow(ok);
@@ -1011,8 +1268,17 @@ void AdminPanel::onEditCourse() {
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
         c.setSemesterId(semester->currentData().toInt());
+        c.setDepartmentId(dept->currentData().toInt());
+
+        if (c.departmentId() <= 0) {
+            QMessageBox::warning(this, "Constraint Error", "A Course MUST be linked to a Department.");
+            return;
+        }
 
         if (m_courseController.updateCourse(c)) {
+            if (prof->currentData().toInt() >= 0) {
+                m_scheduleController.assignProfessorToCourse(c.id(), prof->currentData().toInt());
+            }
             QMessageBox::information(this, "Success", "Course updated successfully.");
             refreshCoursesTable();
         } else {
@@ -1060,8 +1326,21 @@ void AdminPanel::onAddRoom() {
     layout->addRow("AC Units:", ac);
     layout->addRow("Fans:", fans);
     layout->addRow("Lighting Points:", lights);
-    layout->addRow("Computers (for Labs):", pcs);
-    layout->addRow("Seating Description:", desc);
+    
+    QLabel* pcLabel = new QLabel("Computers (for Labs):");
+    layout->addRow(pcLabel, pcs);
+    QLabel* seatLabel = new QLabel("Seating Description:");
+    layout->addRow(seatLabel, desc);
+
+    auto updateVisibility = [type, pcs, pcLabel, desc, seatLabel]() {
+        bool isLab = (type->currentText() == "Lab");
+        pcs->setVisible(isLab);
+        pcLabel->setVisible(isLab);
+        desc->setVisible(!isLab);
+        seatLabel->setVisible(!isLab);
+    };
+    connect(type, &QComboBox::currentIndexChanged, updateVisibility);
+    updateVisibility();
 
     QPushButton* btn = new QPushButton("Save Room");
     layout->addRow(btn);
@@ -1092,14 +1371,90 @@ void AdminPanel::onAddRoom() {
     }
 }
 
+void AdminPanel::onEditRoom() {
+    int row = m_roomsTable->currentRow();
+    if (row < 0) return;
+    int id = m_roomsTable->item(row, 0)->text().toInt();
+    Room r = m_roomController.getRoomById(id);
+    if (r.id() == 0) return;
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Edit Faculty Facility");
+    QFormLayout* layout = new QFormLayout(&dialog);
+    
+    QLineEdit* name = new QLineEdit(r.name());
+    QComboBox* type = new QComboBox(); type->addItems({"Hall", "Lab"});
+    type->setCurrentText(r.type());
+    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 1000); cap->setValue(r.capacity());
+    QSpinBox* ac = new QSpinBox(); ac->setRange(0, 50); ac->setValue(r.acUnits());
+    QSpinBox* pcs = new QSpinBox(); pcs->setRange(0, 100); pcs->setValue(r.computersCount());
+    QTextEdit* desc = new QTextEdit(r.seatingDescription());
+    desc->setMaximumHeight(60);
+
+    layout->addRow("Name:", name);
+    layout->addRow("Type:", type);
+    layout->addRow("Capacity:", cap);
+    layout->addRow("AC Units:", ac);
+    
+    QLabel* pcLabel = new QLabel("Computers:");
+    layout->addRow(pcLabel, pcs);
+    QLabel* seatLabel = new QLabel("Seating:");
+    layout->addRow(seatLabel, desc);
+
+    auto updateVis = [type, pcs, pcLabel, desc, seatLabel]() {
+        bool isLab = (type->currentText() == "Lab");
+        pcs->setVisible(isLab);
+        pcLabel->setVisible(isLab);
+        desc->setVisible(!isLab);
+        seatLabel->setVisible(!isLab);
+    };
+    connect(type, &QComboBox::currentIndexChanged, updateVis);
+    updateVis();
+
+    QPushButton* btn = new QPushButton("Update Facility");
+    layout->addRow(btn);
+    connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        r.setName(name->text());
+        r.setType(type->currentText());
+        r.setCapacity(cap->value());
+        r.setAcUnits(ac->value());
+        r.setComputersCount(type->currentText() == "Lab" ? pcs->value() : 0);
+        r.setSeatingDescription(type->currentText() == "Lab" ? "" : desc->toPlainText());
+
+        if (m_roomController.updateRoom(r)) {
+            QMessageBox::information(this, "Success", "Facility details updated.");
+            refreshRoomsTable();
+        }
+    }
+}
+
+void AdminPanel::onDeleteRoom() {
+    int row = m_roomsTable->currentRow();
+    if (row < 0) return;
+    int id = m_roomsTable->item(row, 0)->text().toInt();
+
+    if (QMessageBox::question(this, "Confirm Removal", "Are you sure you want to remove this facility?") == QMessageBox::Yes) {
+        if (m_roomController.deleteRoom(id)) {
+            refreshRoomsTable();
+        }
+    }
+}
+
 void AdminPanel::onAddCollege() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add College");
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit();
     QLineEdit* code = new QLineEdit();
+    QDoubleSpinBox* fees = new QDoubleSpinBox();
+    fees->setRange(0, 1000000);
+    fees->setPrefix("$");
+    
     layout->addRow("College Name:", name);
     layout->addRow("Code:", code);
+    layout->addRow("Yearly Tuition Fees:", fees);
     QPushButton* btn = new QPushButton("Add");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
@@ -1109,6 +1464,7 @@ void AdminPanel::onAddCollege() {
             return;
         }
         College c; c.setName(name->text()); c.setCode(code->text());
+        c.setTuitionFees(fees->value());
         if (m_collegeController.addCollege(c)) {
             QMessageBox::information(this, "Success", "College/Faculty added.");
             refreshCollegesTable();
@@ -1117,6 +1473,87 @@ void AdminPanel::onAddCollege() {
         }
     }
 }
+
+void AdminPanel::onEditCollege() {
+    int row = m_collegesTable->currentRow();
+    if (row < 0) return;
+    int id = m_collegesTable->item(row, 0)->text().toInt();
+    
+    QList<College> all = m_collegeController.getAllColleges();
+    College target;
+    for(const auto& c : all) if(c.id() == id) { target = c; break; }
+    if(target.id() == 0) return;
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Edit Faculty Info");
+    QFormLayout* layout = new QFormLayout(&dialog);
+    QLineEdit* name = new QLineEdit(target.name());
+    QLineEdit* code = new QLineEdit(target.code());
+    QDoubleSpinBox* fees = new QDoubleSpinBox();
+    fees->setRange(0, 1000000);
+    fees->setValue(target.tuitionFees());
+    
+    layout->addRow("Name:", name);
+    layout->addRow("Code:", code);
+    layout->addRow("Tuition Fees:", fees);
+    
+    QPushButton* btn = new QPushButton("Save");
+    layout->addRow(btn);
+    connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        target.setName(name->text());
+        target.setCode(code->text());
+        target.setTuitionFees(fees->value());
+        if (m_collegeController.updateCollege(target)) {
+            refreshCollegesTable();
+        }
+    }
+}
+
+void AdminPanel::onDeleteCollege() {
+    int row = m_collegesTable->currentRow();
+    if (row < 0) return;
+    int id = m_collegesTable->item(row, 0)->text().toInt();
+
+    if (QMessageBox::question(this, "Confirm", "Deleting a Faculty will NOT remove its departments automatically. Proceed?") == QMessageBox::Yes) {
+        if (m_collegeController.deleteCollege(id)) {
+            refreshCollegesTable();
+        }
+    }
+}
+
+void AdminPanel::onPrintData() {
+    QString content = "=== UNIMANAGE SYSTEM DATA EXPORT ===\n";
+    content += "Generated on: " + QDateTime::currentDateTime().toString() + "\n\n";
+
+    content += "--- COLLEGES/FACULTIES ---\n";
+    for(const auto& c : m_collegeController.getAllColleges()) {
+        content += QString("ID: %1 | Name: %2 | Code: %3 | Tuition: $%4\n")
+                   .arg(c.id()).arg(c.name()).arg(c.code()).arg(c.tuitionFees());
+    }
+
+    content += "\n--- COURSES ---\n";
+    for(const auto& crs : m_courseController.getAllCourses()) {
+        content += QString("ID: %1 | Name: %2 | Dept: %3 | Prof: %4\n")
+                   .arg(crs.id()).arg(crs.name()).arg(crs.departmentName()).arg(crs.assignedProfessor());
+    }
+
+    content += "\n--- STUDENTS ---\n";
+    for(const auto& s : m_studentController.getAllStudents()) {
+        content += QString("Num: %1 | Name: %2 | College: %3 | Tuition Paid/Fees: %4\n")
+                   .arg(s.studentNumber()).arg(s.fullName()).arg(s.collegeName()).arg(s.tuitionFees());
+    }
+
+    if (Persistence::exportData("unimanage_full_report.txt", content)) {
+        QMessageBox::information(this, "Export Success", "Full system report saved to D:/unimanage_full_report.txt");
+    } else {
+        QMessageBox::critical(this, "Export Failed", "Could not write to D:/. Please check permissions.");
+    }
+}
+
+void AdminPanel::onEditDepartment() { /* UI implementation similar to others */ }
+void AdminPanel::onDeleteDepartment() { /* UI implementation similar to others */ }
 
 void AdminPanel::onAddDepartment() {
     QDialog dialog(this);
@@ -1395,6 +1832,7 @@ void AdminPanel::onManageRoomSpecs() {
     connect(addBtn, &QPushButton::clicked, [&]() {
         if(pId->text().isEmpty() || pName->text().isEmpty()) return;
         m_roomController.addRoomSpec(roomId, pId->text(), pName->text(), pDesc->text());
+        Persistence::logChange("RoomSpec", "Add", roomId, pName->text() + " (" + pId->text() + ")");
         
         // Refresh local table
         int r = table->rowCount();

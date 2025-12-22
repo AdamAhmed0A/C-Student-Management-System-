@@ -7,7 +7,7 @@ class College
 {
 public:
     College();
-    College(int id, const QString& name, const QString& code);
+    College(int id, const QString& name, const QString& code, double tuitionFees = 0.0);
 
     int id() const;
     void setId(int id);
@@ -18,10 +18,14 @@ public:
     QString code() const;
     void setCode(const QString& code);
 
+    double tuitionFees() const;
+    void setTuitionFees(double fees);
+
 private:
     int m_id;
     QString m_name;
     QString m_code;
+    double m_tuitionFees;
 };
 
 #endif // COLLEGE_H
