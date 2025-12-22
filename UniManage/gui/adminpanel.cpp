@@ -968,7 +968,7 @@ void AdminPanel::refreshStudentsTable() {
         if(level.isEmpty()) level = (s.academicLevelId() == 0) ? "---" : QString::number(s.academicLevelId());
         m_studentsTable->setItem(r, 7, new QTableWidgetItem(level));
         
-        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString("$%1").arg(s.tuitionFees())));
+        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString("%1").arg(s.tuitionFees())));
 
         QString status = s.status();
         if (status.isEmpty()) status = (s.id() == 0) ? "Incomplete Profile" : "Pending";
@@ -1018,7 +1018,7 @@ void AdminPanel::refreshCollegesTable() {
         m_collegesTable->setItem(r, 0, new QTableWidgetItem(QString::number(c.id())));
         m_collegesTable->setItem(r, 1, new QTableWidgetItem(c.name()));
         m_collegesTable->setItem(r, 2, new QTableWidgetItem(c.code()));
-        m_collegesTable->setItem(r, 3, new QTableWidgetItem(QString("$%1").arg(c.tuitionFees())));
+        m_collegesTable->setItem(r, 3, new QTableWidgetItem(QString("%1").arg(c.tuitionFees())));
     }
 }
 
@@ -1277,7 +1277,7 @@ void AdminPanel::onEditStudent() {
 
     QDoubleSpinBox* tuitionEdit = new QDoubleSpinBox();
     tuitionEdit->setRange(0, 1000000);
-    tuitionEdit->setPrefix("$");
+    // tuitionEdit->setPrefix("");
     tuitionEdit->setValue(student.tuitionFees());
 
     layout->addRow("Full Name:", nameEdit);
@@ -1727,7 +1727,7 @@ void AdminPanel::onPrintData() {
 
     content += "--- COLLEGES/FACULTIES ---\n";
     for(const auto& c : m_collegeController.getAllColleges()) {
-        content += QString("ID: %1 | Name: %2 | Code: %3 | Tuition: $%4\n")
+        content += QString("ID: %1 | Name: %2 | Code: %3 | Tuition: %4\n")
                    .arg(c.id()).arg(c.name()).arg(c.code()).arg(c.tuitionFees());
     }
 
