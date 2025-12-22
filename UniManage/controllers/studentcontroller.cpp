@@ -178,6 +178,8 @@ StudentData StudentController::getStudentById(int id)
         student.setDepartmentId(query.value("department_id").toInt());
         student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
+        student.setCollegeId(query.value("college_id").toInt());
+        student.setTuitionFees(query.value("tuition_fees").toDouble());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
@@ -211,6 +213,8 @@ StudentData StudentController::getStudentByUserId(int userId)
         student.setDepartmentId(query.value("department_id").toInt());
         student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
+        student.setCollegeId(query.value("college_id").toInt());
+        student.setTuitionFees(query.value("tuition_fees").toDouble());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
@@ -241,6 +245,8 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
         student.setDepartmentId(query.value("department_id").toInt());
         student.setAcademicLevelId(query.value("academic_level_id").toInt());
         student.setSectionId(query.value("section_id").toInt());
+        student.setCollegeId(query.value("college_id").toInt());
+        student.setTuitionFees(query.value("tuition_fees").toDouble());
         student.setSeatNumber(query.value("seat_number").toString());
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
