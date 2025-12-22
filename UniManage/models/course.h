@@ -47,6 +47,12 @@ public:
     QString assignedProfessor() const;
     void setAssignedProfessor(const QString& name);
 
+    QString semesterYear() const;
+    void setSemesterYear(const QString& year);
+
+    int semesterNumber() const;
+    void setSemesterNumber(int number);
+
     int departmentId() const;
     void setDepartmentId(int departmentId);
 
@@ -68,6 +74,8 @@ private:
     int m_maxGrade;
     QString m_courseType;
     QString m_assignedProfessor;
+    QString m_semesterYear;
+    int m_semesterNumber;
 };
 
 #endif // COURSE_H

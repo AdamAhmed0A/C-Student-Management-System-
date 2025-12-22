@@ -30,6 +30,7 @@ public:
 
 private slots:
     void onCourseSelected(int index);
+    void onYearSelected(int index);
     void onSaveGrades();
     void onRefreshStudents();
     void onRefreshAll();
@@ -64,6 +65,7 @@ private:
     QTabWidget* m_tabWidget;
     
     // Attendance & Grading
+    QComboBox* m_yearSelector;
     QComboBox* m_courseSelector;
     QDateEdit* m_attendanceDate;
     QTableWidget* m_studentsTable;
@@ -80,6 +82,8 @@ private:
     
     // Calendar
     QTableWidget* m_calendarTable;
+    
+    QList<Course> m_allProfessorCourses;
     
     ProfessorController m_professorController;
     EnrollmentController m_enrollmentController;

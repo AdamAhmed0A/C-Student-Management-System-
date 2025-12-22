@@ -243,6 +243,9 @@ QList<Course> CourseController::getCoursesByProfessor(int professorId)
 
         QString semesterYear = query.value("semester_year").toString();
         QString semesterNumber = query.value("semester_number").toString();
+        c.setSemesterYear(semesterYear);
+        c.setSemesterNumber(semesterNumber.toInt());
+        
         if (!semesterYear.isEmpty() || !semesterNumber.isEmpty()) {
             QString semName = QString("%1 - Sem %2").arg(semesterYear).arg(semesterNumber);
             c.setSemesterName(semName);

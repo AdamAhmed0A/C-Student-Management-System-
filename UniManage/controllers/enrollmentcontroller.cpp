@@ -116,6 +116,8 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
             e.setLetterGrade(query.value("letter_grade").toString());
             e.setStudentName(query.value("full_name").toString());
             e.setStudentSection(query.value("section_name").toString());
+            e.setStudentCode(query.value("student_number").toString());
+            e.setAcademicYear(query.value("academic_year").toString());
             list.append(e);
         }
     }
@@ -144,7 +146,7 @@ void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& 
     else if (percentage >= 75) grade = "Very Good";
     else if (percentage >= 65) grade = "Good";
     else if (percentage >= 60) grade = "Pass";
-    else grade = "Fail";
+    else grade = "Fail/Re-sit";
 
     e.setLetterGrade(grade);
 }

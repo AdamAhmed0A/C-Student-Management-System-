@@ -117,6 +117,12 @@ void Course::setCourseType(const QString& courseType) { m_courseType = courseTyp
 QString Course::assignedProfessor() const { return m_assignedProfessor; }
 void Course::setAssignedProfessor(const QString& name) { m_assignedProfessor = name; }
 
+QString Course::semesterYear() const { return m_semesterYear; }
+void Course::setSemesterYear(const QString& year) { m_semesterYear = year; }
+
+int Course::semesterNumber() const { return m_semesterNumber; }
+void Course::setSemesterNumber(int number) { m_semesterNumber = number; }
+
 int Course::departmentId() const { return m_departmentId; }
 void Course::setDepartmentId(int departmentId) { m_departmentId = departmentId; }
 
