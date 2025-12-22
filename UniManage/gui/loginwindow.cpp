@@ -1,6 +1,6 @@
 #include "loginwindow.h"
 #include "adminpanel.h"
-#include "studentportal.h"
+#include "studentPortal.h"
 #include "professorpanel.h"
 #include "stylehelper.h"
 #include "../database/dbconnection.h"
