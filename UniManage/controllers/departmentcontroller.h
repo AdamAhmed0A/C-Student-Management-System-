@@ -12,6 +12,7 @@ public:
     bool updateDepartment(const Department& department);
     bool deleteDepartment(int id);
     QList<Department> getAllDepartments();
+    Department getDepartmentById(int id);
     QList<Department> getDepartmentsByCollege(int collegeId);
 };
 

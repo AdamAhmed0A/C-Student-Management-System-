@@ -63,6 +63,9 @@ public:
     
     QString courseType() const;
     void setCourseType(const QString& type);
+    
+    QString studentSection() const;
+    void setStudentSection(const QString& section);
 
 private:
     int m_id;
@@ -84,6 +87,7 @@ private:
     QString m_courseName;
     int m_courseMaxGrade;
     QString m_courseType;
+    QString m_studentSection;
 };
 
 #endif // ENROLLMENT_H

@@ -89,9 +89,11 @@ namespace Queries {
     const QString DELETE_ENROLLMENT = "DELETE FROM enrollments WHERE id = ?";
     const QString SELECT_ENROLLMENTS_BY_STUDENT = "SELECT e.*, c.name as course_name, c.course_type, c.max_grade FROM enrollments e "
                                                  "JOIN courses c ON e.course_id = c.id WHERE e.student_id = ?";
-    const QString SELECT_ENROLLMENTS_BY_COURSE = "SELECT e.*, sd.student_number, u.full_name FROM enrollments e "
+    const QString SELECT_ENROLLMENTS_BY_COURSE = "SELECT e.*, sd.student_number, u.full_name, s.name as section_name FROM enrollments e "
                                                 "JOIN students_data sd ON e.student_id = sd.id "
-                                                "JOIN users u ON sd.user_id = u.id WHERE e.course_id = ?";
+                                                "JOIN users u ON sd.user_id = u.id "
+                                                "LEFT JOIN sections s ON sd.section_id = s.id "
+                                                "WHERE e.course_id = ?";
 
     // Payment queries
     const QString INSERT_PAYMENT = "INSERT INTO payments (student_id, amount, date, year, method, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -117,6 +119,8 @@ namespace Queries {
     const QString UPDATE_DEPARTMENT = "UPDATE departments SET name = ?, college_id = ?, code = ? WHERE id = ?";
     const QString DELETE_DEPARTMENT = "DELETE FROM departments WHERE id = ?";
     const QString SELECT_ALL_DEPARTMENTS = "SELECT d.*, c.name as college_name FROM departments d JOIN colleges c ON d.college_id = c.id ORDER BY d.name";
+    const QString SELECT_DEPARTMENT_BY_ID = "SELECT * FROM departments WHERE id = ?";
+    const QString SELECT_DEPARTMENTS_BY_COLLEGE = "SELECT * FROM departments WHERE college_id = ?";
 
     // Academic Level queries
     const QString INSERT_ACADEMIC_LEVEL = "INSERT INTO academic_levels (name, level_number) VALUES (?, ?)";

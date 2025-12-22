@@ -64,3 +64,6 @@ void Enrollment::setCourseMaxGrade(int maxGrade) { m_courseMaxGrade = maxGrade; 
 
 QString Enrollment::courseType() const { return m_courseType; }
 void Enrollment::setCourseType(const QString& type) { m_courseType = type; }
+
+QString Enrollment::studentSection() const { return m_studentSection; }
+void Enrollment::setStudentSection(const QString& section) { m_studentSection = section; }

@@ -115,7 +115,7 @@ QWidget* ProfessorPanel::createAttendanceTab() {
 
     // Combined table for attendance and grades - all editable
     m_studentsTable = new QTableWidget();
-    QStringList headers = {"EnrID", "Student", "Today Status", "Att Total", "Abs Total", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
+    QStringList headers = {"EnrID", "Student", "Section", "Today Status", "Att Total", "Abs Total", "Ass. 1", "Ass. 2", "CW", "Final", "Total", "Grade"};
     m_studentsTable->setColumnCount(headers.size());
     m_studentsTable->setHorizontalHeaderLabels(headers);
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -339,6 +339,10 @@ void ProfessorPanel::onRefreshStudents() {
         nameItem->setFlags(nameItem->flags() & ~(Qt::ItemIsEditable)); // Remove editable flag
         m_studentsTable->setItem(r, 1, nameItem);
         
+        QTableWidgetItem* sectItem = new QTableWidgetItem(e.studentSection().isEmpty() ? "---" : e.studentSection());
+        sectItem->setFlags(sectItem->flags() & ~(Qt::ItemIsEditable));
+        m_studentsTable->setItem(r, 2, sectItem);
+        
         // Today's Status Selector
         QComboBox* cb = new QComboBox();
         cb->addItems({"---", "Present", "Absent", "Late", "Excused"});
@@ -350,23 +354,23 @@ void ProfessorPanel::onRefreshStudents() {
                 break;
             }
         }
-        m_studentsTable->setCellWidget(r, 2, cb);
+        m_studentsTable->setCellWidget(r, 3, cb);
         
-        m_studentsTable->setItem(r, 3, new QTableWidgetItem(QString::number(e.attendanceCount())));
-        m_studentsTable->setItem(r, 4, new QTableWidgetItem(QString::number(e.absenceCount())));
+        m_studentsTable->setItem(r, 4, new QTableWidgetItem(QString::number(e.attendanceCount())));
+        m_studentsTable->setItem(r, 5, new QTableWidgetItem(QString::number(e.absenceCount())));
         
-        m_studentsTable->setItem(r, 5, new QTableWidgetItem(QString::number(e.assignment1Grade())));
-        m_studentsTable->setItem(r, 6, new QTableWidgetItem(QString::number(e.assignment2Grade())));
-        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString::number(e.courseworkGrade())));
-        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString::number(e.finalExamGrade())));
+        m_studentsTable->setItem(r, 6, new QTableWidgetItem(QString::number(e.assignment1Grade())));
+        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString::number(e.assignment2Grade())));
+        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString::number(e.courseworkGrade())));
+        m_studentsTable->setItem(r, 9, new QTableWidgetItem(QString::number(e.finalExamGrade())));
         
         QTableWidgetItem* total = new QTableWidgetItem(QString::number(e.totalGrade()));
         total->setFlags(total->flags() & ~(Qt::ItemIsEditable));
-        m_studentsTable->setItem(r, 9, total);
+        m_studentsTable->setItem(r, 10, total);
         
         QTableWidgetItem* grade = new QTableWidgetItem(e.letterGrade());
         grade->setFlags(grade->flags() & ~(Qt::ItemIsEditable));
-        m_studentsTable->setItem(r, 10, grade);
+        m_studentsTable->setItem(r, 11, grade);
     }
 }
 
@@ -377,7 +381,7 @@ void ProfessorPanel::onSubmitAttendance() {
     bool allOk = true;
     for(int i=0; i<m_studentsTable->rowCount(); ++i) {
         int eid = m_studentsTable->item(i, 0)->text().toInt();
-        QComboBox* cb = qobject_cast<QComboBox*>(m_studentsTable->cellWidget(i, 2));
+        QComboBox* cb = qobject_cast<QComboBox*>(m_studentsTable->cellWidget(i, 3));
         QString status = cb->currentText();
         
         if(status == "---") continue;
@@ -411,12 +415,12 @@ void ProfessorPanel::onSaveGrades() {
         Enrollment e;
         e.setId(m_studentsTable->item(i, 0)->text().toInt());
         
-        e.setAttendanceCount(m_studentsTable->item(i, 3)->text().toInt());
-        e.setAbsenceCount(m_studentsTable->item(i, 4)->text().toInt());
-        e.setAssignment1Grade(m_studentsTable->item(i, 5)->text().toDouble());
-        e.setAssignment2Grade(m_studentsTable->item(i, 6)->text().toDouble());
-        e.setCourseworkGrade(m_studentsTable->item(i, 7)->text().toDouble());
-        e.setFinalExamGrade(m_studentsTable->item(i, 8)->text().toDouble());
+        e.setAttendanceCount(m_studentsTable->item(i, 4)->text().toInt());
+        e.setAbsenceCount(m_studentsTable->item(i, 5)->text().toInt());
+        e.setAssignment1Grade(m_studentsTable->item(i, 6)->text().toDouble());
+        e.setAssignment2Grade(m_studentsTable->item(i, 7)->text().toDouble());
+        e.setCourseworkGrade(m_studentsTable->item(i, 8)->text().toDouble());
+        e.setFinalExamGrade(m_studentsTable->item(i, 9)->text().toDouble());
         e.setStatus("active");
         
         m_enrollmentController.calculateTotalAndGrade(e, course.courseType(), course.maxGrade());

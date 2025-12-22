@@ -52,3 +52,34 @@ QList<Department> DepartmentController::getAllDepartments()
     }
     return list;
 }
+
+Department DepartmentController::getDepartmentById(int id)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_DEPARTMENT_BY_ID);
+    query.addBindValue(id);
+    if (query.exec() && query.next()) {
+        return Department(query.value("id").toInt(),
+                         query.value("name").toString(),
+                         query.value("college_id").toInt(),
+                         query.value("code").toString());
+    }
+    return Department();
+}
+
+QList<Department> DepartmentController::getDepartmentsByCollege(int collegeId)
+{
+    QList<Department> list;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_DEPARTMENTS_BY_COLLEGE);
+    query.addBindValue(collegeId);
+    if (query.exec()) {
+        while (query.next()) {
+            list.append(Department(query.value("id").toInt(),
+                                 query.value("name").toString(),
+                                 query.value("college_id").toInt(),
+                                 query.value("code").toString()));
+        }
+    }
+    return list;
+}

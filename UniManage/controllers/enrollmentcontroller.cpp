@@ -115,6 +115,7 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
             e.setTotalGrade(query.value("total_grade").toDouble());
             e.setLetterGrade(query.value("letter_grade").toString());
             e.setStudentName(query.value("full_name").toString());
+            e.setStudentSection(query.value("section_name").toString());
             list.append(e);
         }
     }

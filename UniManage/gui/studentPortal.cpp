@@ -88,8 +88,11 @@ QWidget* StudentPortal::createDashboardTab() {
     fl->addRow("Student Code:", new QLabel(m_student.studentNumber()));
     fl->addRow("National ID:", new QLabel(m_student.idNumber()));
     fl->addRow("Faculty/Dept:", new QLabel(m_student.department()));
-    fl->addRow("Academic Level:", new QLabel(QString::number(m_student.academicLevelId())));
-    fl->addRow("Section Number:", new QLabel(QString::number(m_student.sectionId())));
+    QString lvl = m_student.levelName().isEmpty() ? (m_student.academicLevelId() == 0 ? "Not Assigned" : QString::number(m_student.academicLevelId())) : m_student.levelName();
+    fl->addRow("Academic Level:", new QLabel(lvl));
+    
+    QString sect = m_student.sectionName().isEmpty() ? (m_student.sectionId() == 0 ? "Not Assigned" : QString::number(m_student.sectionId())) : m_student.sectionName();
+    fl->addRow("Assigned Group/Section:", new QLabel(sect));
     
     layout->addWidget(profile);
     layout->addStretch();
