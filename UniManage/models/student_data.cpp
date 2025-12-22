@@ -1,7 +1,8 @@
 #include "student_data.h"
 
 StudentData::StudentData()
-    : m_id(0), m_userId(0), m_departmentId(0), m_collegeId(0), m_academicLevelId(0), m_sectionId(0), m_tuitionFees(0.0)
+    : m_id(0), m_userId(0), m_departmentId(0), m_collegeId(0), m_academicLevelId(0), m_sectionId(0), m_tuitionFees(0.0),
+      m_levelName(""), m_sectionName("")
 {
 }
 
@@ -21,6 +22,8 @@ StudentData::StudentData(int id, int userId, const QString &studentNumber, const
     m_status = status;
     m_academicLevelId = 0;
     m_tuitionFees = 0.0;
+    m_levelName = "";
+    m_sectionName = "";
     m_createdAt = QDateTime::currentDateTime();
     m_updatedAt = QDateTime::currentDateTime();
 }
@@ -87,3 +90,6 @@ void StudentData::setTuitionFees(double fees) { m_tuitionFees = fees; }
 
 QString StudentData::levelName() const { return m_levelName; }
 void StudentData::setLevelName(const QString &levelName) { m_levelName = levelName; }
+
+QString StudentData::sectionName() const { return m_sectionName; }
+void StudentData::setSectionName(const QString &sectionName) { m_sectionName = sectionName; }

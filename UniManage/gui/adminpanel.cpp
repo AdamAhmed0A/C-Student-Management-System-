@@ -97,6 +97,15 @@ void AdminPanel::setupUI()
     mainLayout->addWidget(m_tabWidget);
 }
 
+void AdminPanel::refreshAllData() {
+    refreshCollegesTable();
+    refreshCoursesTable();
+    refreshDepartmentsTable();
+    refreshRoomsTable();
+    refreshLevelsTable();
+    refreshProfessorsTable();
+    refreshSchedulesTable();
+    refreshStudentsTable();
     refreshCalendarTable();
     refreshSectionsTable();
 }
@@ -786,21 +795,22 @@ void AdminPanel::refreshStudentsTable() {
         m_studentsTable->setItem(r, 2, new QTableWidgetItem(s.fullName()));
         m_studentsTable->setItem(r, 3, new QTableWidgetItem(s.idNumber().isEmpty() ? "---" : s.idNumber()));
         m_studentsTable->setItem(r, 4, new QTableWidgetItem(s.collegeName().isEmpty() ? "---" : s.collegeName()));
-        m_studentsTable->setItem(r, 5, new QTableWidgetItem(s.department().isEmpty() ? "---" : s.department()));
+        m_studentsTable->setItem(r, 5, new QTableWidgetItem(s.departmentName().isEmpty() ? "---" : s.departmentName())); // Added Department column
+        m_studentsTable->setItem(r, 6, new QTableWidgetItem(s.sectionName().isEmpty() ? "---" : s.sectionName()));
         
         QString level = s.levelName();
         if(level.isEmpty()) level = (s.academicLevelId() == 0) ? "---" : QString::number(s.academicLevelId());
-        m_studentsTable->setItem(r, 6, new QTableWidgetItem(level));
+        m_studentsTable->setItem(r, 7, new QTableWidgetItem(level));
         
-        m_studentsTable->setItem(r, 7, new QTableWidgetItem(QString("$%1").arg(s.tuitionFees())));
+        m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString("$%1").arg(s.tuitionFees())));
 
         QString status = s.status();
         if (status.isEmpty()) status = (s.id() == 0) ? "Incomplete Profile" : "Pending";
-        m_studentsTable->setItem(r, 8, new QTableWidgetItem(status));
+        m_studentsTable->setItem(r, 9, new QTableWidgetItem(status));
 
         // Color code incomplete records
         if (s.id() == 0) {
-            for (int col = 0; col < 9; ++col) {
+            for (int col = 0; col < 10; ++col) {
                 m_studentsTable->item(r, col)->setForeground(Qt::red);
             }
         }
@@ -953,6 +963,17 @@ void AdminPanel::onAddStudent() {
     QComboBox* level = new QComboBox();
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
 
+    QComboBox* section = new QComboBox();
+    section->addItem("--- No Section ---", 0);
+    auto updateSections = [this, section]() {
+        section->clear();
+        section->addItem("--- No Section ---", 0);
+        for(const auto& s : m_sectionController.getAllSections()) {
+            section->addItem(s.name() + " (" + s.courseName() + ")", s.id());
+        }
+    };
+    updateSections();
+
     QDoubleSpinBox* tuition = new QDoubleSpinBox();
     tuition->setRange(0, 1000000);
     tuition->setPrefix("$");
@@ -975,6 +996,7 @@ void AdminPanel::onAddStudent() {
     layout->addRow("College/Faculty:", college);
     layout->addRow("Department:", dept);
     layout->addRow("Academic Level:", level);
+    layout->addRow("Section/Group:", section);
     layout->addRow("Assigned Tuition Fees:", tuition);
 
     QPushButton* btn = new QPushButton("Register Student");
@@ -1022,6 +1044,7 @@ void AdminPanel::onAddStudent() {
             sd.setIdNumber(nationalId->text()); 
             sd.setDepartmentId(dept->currentData().toInt());
             sd.setAcademicLevelId(level->currentData().toInt());
+            sd.setSectionId(section->currentData().toInt());
             sd.setCollegeId(college->currentData().toInt());
             sd.setTuitionFees(tuition->value());
             sd.setStatus("active");
@@ -1079,6 +1102,13 @@ void AdminPanel::onEditStudent() {
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) levelEdit->addItem(l.name(), l.id());
     levelEdit->setCurrentIndex(levelEdit->findData(student.academicLevelId()));
 
+    QComboBox* sectionEdit = new QComboBox();
+    sectionEdit->addItem("--- No Section ---", 0);
+    for(const auto& sect : m_sectionController.getAllSections()) {
+        sectionEdit->addItem(sect.name() + " (" + sect.courseName() + ")", sect.id());
+    }
+    sectionEdit->setCurrentIndex(sectionEdit->findData(student.sectionId()));
+
     QDoubleSpinBox* tuitionEdit = new QDoubleSpinBox();
     tuitionEdit->setRange(0, 1000000);
     tuitionEdit->setPrefix("$");
@@ -1089,6 +1119,7 @@ void AdminPanel::onEditStudent() {
     layout->addRow("College/Faculty:", collegeEdit);
     layout->addRow("Department:", deptEdit);
     layout->addRow("Academic Level:", levelEdit);
+    layout->addRow("Section/Group:", sectionEdit);
     layout->addRow("Tuition Fees:", tuitionEdit);
 
     QPushButton* ok = new QPushButton("Save Changes");
@@ -1105,6 +1136,7 @@ void AdminPanel::onEditStudent() {
         student.setCollegeId(collegeEdit->currentData().toInt());
         student.setDepartmentId(deptEdit->currentData().toInt());
         student.setAcademicLevelId(levelEdit->currentData().toInt());
+        student.setSectionId(sectionEdit->currentData().toInt());
         student.setTuitionFees(tuitionEdit->value());
 
         if (m_studentController.updateStudent(student)) {

@@ -1,4 +1,4 @@
-#include "studentportal.h"
+#include "studentPortal.h"
 #include "stylehelper.h"
 #include "loginwindow.h"
 #include <QVBoxLayout>
