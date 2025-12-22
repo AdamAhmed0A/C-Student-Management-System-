@@ -187,6 +187,12 @@ StudentData StudentController::getStudentById(int id)
         // Additional user info
         student.setFullName(query.value("full_name").toString());
         student.setUsername(query.value("username").toString());
+        
+        QString dName = query.value("dept_name").toString();
+        if(!dName.isEmpty()) student.setDepartment(dName);
+        student.setLevelName(query.value("level_name").toString());
+        student.setCollegeName(query.value("college_name").toString());
+        student.setSectionName(query.value("section_name").toString());
 	}
 	return student;
 }
@@ -219,6 +225,15 @@ StudentData StudentController::getStudentByUserId(int userId)
         student.setStatus(query.value("status").toString());
         student.setCreatedAt(query.value("created_at").toDateTime());
         student.setUpdatedAt(query.value("updated_at").toDateTime());
+        // Additional user info
+        student.setFullName(query.value("full_name").toString());
+        student.setUsername(query.value("username").toString());
+        
+        QString dName = query.value("dept_name").toString();
+        if(!dName.isEmpty()) student.setDepartment(dName);
+        student.setLevelName(query.value("level_name").toString());
+        student.setCollegeName(query.value("college_name").toString());
+        student.setSectionName(query.value("section_name").toString());
 	}
 	return student;
 }
@@ -254,6 +269,12 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
         // Additional user info
         student.setFullName(query.value("full_name").toString());
         student.setUsername(query.value("username").toString());
+
+        QString dName = query.value("dept_name").toString();
+        if(!dName.isEmpty()) student.setDepartment(dName);
+        student.setLevelName(query.value("level_name").toString());
+        student.setCollegeName(query.value("college_name").toString());
+        student.setSectionName(query.value("section_name").toString());
     }
     return student;
 }

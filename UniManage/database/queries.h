@@ -35,14 +35,40 @@ namespace Queries {
                                              "LEFT JOIN courses c_sec ON sec.course_id = c_sec.id "
                                              "WHERE u.role = 'student' "
                                              "ORDER BY u.id";
-    const QString SELECT_STUDENT_DATA_BY_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
-                                              "JOIN users u ON sd.user_id = u.id WHERE sd.id = ?";
-    const QString SELECT_STUDENT_DATA_BY_USER_ID = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
-                                                   "JOIN users u ON sd.user_id = u.id WHERE sd.user_id = ?";
-    const QString SELECT_STUDENT_DATA_BY_STUDENT_NUMBER = "SELECT sd.*, u.full_name, u.username FROM students_data sd "
-		"JOIN users u ON sd.user_id = u.id WHERE sd.student_number = ?";
-    const QString SELECT_STUDENT_BY_ID_NUMBER = "SELECT sd.*, u.full_name, u.role, u.password FROM students_data sd "
-                                                "JOIN users u ON sd.user_id = u.id WHERE sd.id_number = ?";
+    const QString SELECT_STUDENT_COMMON_JOIN = "FROM users u "
+                                               "LEFT JOIN students_data sd ON u.id = sd.user_id "
+                                               "LEFT JOIN departments d ON sd.department_id = d.id "
+                                               "LEFT JOIN academic_levels al ON sd.academic_level_id = al.id "
+                                               "LEFT JOIN colleges col ON sd.college_id = col.id "
+                                               "LEFT JOIN sections sec ON sd.section_id = sec.id ";
+
+    const QString SELECT_STUDENT_DATA_BY_ID = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
+                                              "COALESCE(sd.student_number, u.username) AS student_number, "
+                                              "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                              "sd.section_id, sd.college_id, sd.tuition_fees, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                              "d.name AS dept_name, al.name AS level_name, col.name AS college_name, sec.name AS section_name "
+                                              + SELECT_STUDENT_COMMON_JOIN + " WHERE sd.id = ?";
+
+    const QString SELECT_STUDENT_DATA_BY_USER_ID = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
+                                                   "COALESCE(sd.student_number, u.username) AS student_number, "
+                                                   "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                                   "sd.section_id, sd.college_id, sd.tuition_fees, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                                   "d.name AS dept_name, al.name AS level_name, col.name AS college_name, sec.name AS section_name "
+                                                   + SELECT_STUDENT_COMMON_JOIN + " WHERE u.id = ?";
+
+    const QString SELECT_STUDENT_DATA_BY_STUDENT_NUMBER = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
+                                                          "COALESCE(sd.student_number, u.username) AS student_number, "
+                                                          "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                                          "sd.section_id, sd.college_id, sd.tuition_fees, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                                          "d.name AS dept_name, al.name AS level_name, col.name AS college_name, sec.name AS section_name "
+                                                          + SELECT_STUDENT_COMMON_JOIN + " WHERE sd.student_number = ?";
+
+    const QString SELECT_STUDENT_BY_ID_NUMBER = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
+                                                "COALESCE(sd.student_number, u.username) AS student_number, "
+                                                "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                                "sd.section_id, sd.college_id, sd.tuition_fees, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                                "d.name AS dept_name, al.name AS level_name, col.name AS college_name, sec.name AS section_name "
+                                                + SELECT_STUDENT_COMMON_JOIN + " WHERE sd.id_number = ?";
 
     // Semester queries
     const QString INSERT_SEMESTER = "INSERT INTO semester (year, semester) VALUES (?, ?)";

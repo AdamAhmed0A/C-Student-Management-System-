@@ -359,10 +359,10 @@ void AdminPanel::onAddSection() {
     QComboBox* sem = new QComboBox();
     for(const auto& s : m_semesterController.getAllSemesters()) sem->addItem(QString::number(s.id()), s.id());
     
-    layout->addRow("Section Name:", name);
-    layout->addRow("Course:", course);
-    layout->addRow("Max Capacity:", cap);
-    layout->addRow("Semester ID:", sem);
+    layout->addRow("Section:", name);
+    // layout->addRow("Course:", course);
+    layout->addRow("Capacity:", cap);
+    // layout->addRow("Semester ID:", sem);
     
     QPushButton* btn = new QPushButton("Create");
     layout->addRow(btn);
@@ -371,9 +371,9 @@ void AdminPanel::onAddSection() {
     if (dialog.exec() == QDialog::Accepted) {
         Section s;
         s.setName(name->text());
-        s.setCourseId(course->currentData().toInt());
+        // s.setCourseId(course->currentData().toInt());
         s.setCapacity(cap->value());
-        s.setSemesterId(sem->currentData().toInt());
+        // s.setSemesterId(sem->currentData().toInt());
         if(m_sectionController.addSection(s)) {
             refreshSectionsTable();
         }
@@ -1160,7 +1160,7 @@ void AdminPanel::onAddStudent() {
     layout->addRow("National ID:", nationalId);
     layout->addRow("Student Code:", code);
     layout->addRow("College/Faculty:", college);
-    layout->addRow("Department:", dept);
+    // layout->addRow("Department:", dept);
     layout->addRow("Academic Level:", level);
     layout->addRow("Section/Group:", section);
     layout->addRow("Assigned Tuition Fees:", tuition);
@@ -1209,6 +1209,7 @@ void AdminPanel::onAddStudent() {
             sd.setStudentNumber(code->text()); 
             sd.setIdNumber(nationalId->text()); 
             sd.setDepartmentId(dept->currentData().toInt());
+            sd.setDepartment(dept->currentText());
             sd.setAcademicLevelId(level->currentData().toInt());
             sd.setSectionId(section->currentData().toInt());
             sd.setCollegeId(college->currentData().toInt());
@@ -1283,7 +1284,7 @@ void AdminPanel::onEditStudent() {
     layout->addRow("Full Name:", nameEdit);
     layout->addRow("National ID:", idEdit);
     layout->addRow("College/Faculty:", collegeEdit);
-    layout->addRow("Department:", deptEdit);
+    // layout->addRow("Department:", deptEdit);
     layout->addRow("Academic Level:", levelEdit);
     layout->addRow("Section/Group:", sectionEdit);
     layout->addRow("Tuition Fees:", tuitionEdit);
@@ -1301,6 +1302,7 @@ void AdminPanel::onEditStudent() {
         student.setIdNumber(idEdit->text());
         student.setCollegeId(collegeEdit->currentData().toInt());
         student.setDepartmentId(deptEdit->currentData().toInt());
+        student.setDepartment(deptEdit->currentText());
         student.setAcademicLevelId(levelEdit->currentData().toInt());
         student.setSectionId(sectionEdit->currentData().toInt());
         student.setTuitionFees(tuitionEdit->value());
@@ -1346,15 +1348,15 @@ void AdminPanel::onAddCourse() {
         semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
     }
 
-    QComboBox* dept = new QComboBox();
-    for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
+     QComboBox* dept = new QComboBox();
+     for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
 
-    QComboBox* prof = new QComboBox();
-    prof->addItem("None (Assign later)", 0);
-    for(const auto& p : m_professorController.getAllProfessors()) prof->addItem(p.fullName(), p.id());
+     QComboBox* prof = new QComboBox();
+     prof->addItem("None (Assign later)", 0);
+     for(const auto& p : m_professorController.getAllProfessors()) prof->addItem(p.fullName(), p.id());
 
     layout->addRow("Course Name:", name);
-    layout->addRow("Department (Mandatory):", dept);
+    layout->addRow("Department:", dept);
     layout->addRow("Type:", type);
     layout->addRow("Max Points:", maxG);
     layout->addRow("Credit Hours:", credits);
