@@ -21,9 +21,11 @@ SOURCES += main.cpp \
     ../../controllers/semestercontroller.cpp \
     ../../controllers/calendarcontroller.cpp \
     ../../controllers/sectioncontroller.cpp \
+    ../../controllers/newscontroller.cpp \
+    ../../controllers/paymentcontroller.cpp \
     ../../models/user.cpp \
     ../../models/professor.cpp \
-    ../../models/student.cpp \
+    ../../models/student_data.cpp \
     ../../models/enrollment.cpp \
     ../../models/course.cpp \
     ../../models/schedule.cpp \
@@ -33,7 +35,10 @@ SOURCES += main.cpp \
     ../../models/college.cpp \
     ../../models/semester.cpp \
     ../../models/calendar_event.cpp \
-    ../../models/attendance_log.cpp
+    ../../models/attendance_log.cpp \
+    ../../models/section.cpp \
+    ../../models/news.cpp \
+    ../../models/payment.cpp
 
 HEADERS += \
     ../../database/dbconnection.h \
@@ -51,9 +56,11 @@ HEADERS += \
     ../../controllers/semestercontroller.h \
     ../../controllers/calendarcontroller.h \
     ../../controllers/sectioncontroller.h \
+    ../../controllers/newscontroller.h \
+    ../../controllers/paymentcontroller.h \
     ../../models/user.h \
     ../../models/professor.h \
-    ../../models/student.h \
+    ../../models/student_data.h \
     ../../models/enrollment.h \
     ../../models/course.h \
     ../../models/schedule.h \
@@ -63,6 +70,9 @@ HEADERS += \
     ../../models/college.h \
     ../../models/semester.h \
     ../../models/calendar_event.h \
-    ../../models/attendance_log.h
+    ../../models/attendance_log.h \
+    ../../models/section.h \
+    ../../models/news.h \
+    ../../models/payment.h
 
 INCLUDEPATH += ../../controllers ../../models ../../database
