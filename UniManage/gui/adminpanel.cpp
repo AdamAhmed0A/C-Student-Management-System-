@@ -333,16 +333,18 @@ void AdminPanel::onEditLevel() {
     int row = m_levelsTable->currentRow();
     if (row < 0) return;
     int id = m_levelsTable->item(row, 0)->text().toInt();
-    QString currentName = m_levelsTable->item(row, 1)->text();
-    int currentNum = m_levelsTable->item(row, 2)->text().toInt();
+    
+    // Fetch from database instead of table to ensure accuracy
+    AcademicLevel al = m_academicLevelController.getAcademicLevelById(id);
+    if (al.id() == 0) return; // Not found
 
     QDialog dialog(this);
     dialog.setWindowTitle("Edit Academic Level");
     QFormLayout* layout = new QFormLayout(&dialog);
-    QLineEdit* name = new QLineEdit(currentName);
+    QLineEdit* name = new QLineEdit(al.name());
     QSpinBox* num = new QSpinBox();
     num->setRange(1, 10);
-    num->setValue(currentNum);
+    num->setValue(al.levelNumber());
 
     layout->addRow("Level Name:", name);
     layout->addRow("Level Number:", num);
@@ -352,8 +354,8 @@ void AdminPanel::onEditLevel() {
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
 
     if (dialog.exec() == QDialog::Accepted) {
-        AcademicLevel al(id, name->text(), num->value());
-        if (m_academicLevelController.updateAcademicLevel(al)) {
+        AcademicLevel updated(id, name->text(), num->value());
+        if (m_academicLevelController.updateAcademicLevel(updated)) {
             refreshLevelsTable();
         }
     }

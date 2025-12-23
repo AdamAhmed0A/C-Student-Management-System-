@@ -128,3 +128,31 @@ QList<Section> SectionController::getSectionsByCourse(int courseId)
 	}
 	return sections;
 }
+
+//function to get section by id
+Section SectionController::getSectionById(int id)
+{
+    Section section;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_SECTION_BY_ID);
+    query.addBindValue(id);
+    
+    if (!query.exec()) {
+        qDebug() << "Error retrieving section by ID:" << query.lastError().text();
+        return section;
+    }
+    
+    if (query.next()) {
+        section.setId(query.value("id").toInt());
+        section.setName(query.value("name").toString());
+        section.setCourseId(query.value("course_id").toInt());
+        section.setCapacity(query.value("capacity").toInt());
+        section.setSemesterId(query.value("semester_id").toInt());
+        section.setAcademicLevelId(query.value("academic_level_id").toInt());
+        section.setCreatedAt(query.value("created_at").toDateTime());
+        section.setUpdatedAt(query.value("updated_at").toDateTime());
+        section.setCourseName(query.value("course_name").toString());
+    }
+    
+    return section;
+}

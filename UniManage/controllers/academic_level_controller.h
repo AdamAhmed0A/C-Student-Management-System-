@@ -12,6 +12,7 @@ public:
     bool updateAcademicLevel(const AcademicLevel& level);
     bool deleteAcademicLevel(int id);
     QList<AcademicLevel> getAllAcademicLevels();
+    AcademicLevel getAcademicLevelById(int id);
 };
 
 #endif // ACADEMICLEVELCONTROLLER_H

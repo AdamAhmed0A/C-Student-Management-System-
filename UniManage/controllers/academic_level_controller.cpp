@@ -47,3 +47,19 @@ QList<AcademicLevel> AcademicLevelController::getAllAcademicLevels()
     }
     return list;
 }
+
+AcademicLevel AcademicLevelController::getAcademicLevelById(int id)
+{
+    AcademicLevel level;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_ACADEMIC_LEVEL_BY_ID);
+    query.addBindValue(id);
+    
+    if (query.exec() && query.next()) {
+        level.setId(query.value("id").toInt());
+        level.setName(query.value("name").toString());
+        level.setLevelNumber(query.value("level_number").toInt());
+    }
+    
+    return level;
+}

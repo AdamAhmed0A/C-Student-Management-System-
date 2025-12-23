@@ -15,6 +15,7 @@ public:
     
     QList<Section> getAllSections();
     QList<Section> getSectionsByCourse(int courseId);
+    Section getSectionById(int id);
 };
 
 #endif // SECTIONCONTROLLER_H

@@ -106,6 +106,8 @@ namespace Queries {
     const QString SELECT_ALL_SECTIONS = "SELECT sec.*, c.name as course_name FROM sections sec "
                                         "LEFT JOIN courses c ON sec.course_id = c.id ORDER BY sec.name"; // LEFT JOIN because course_id can be NULL/0
     const QString SELECT_SECTIONS_BY_COURSE = "SELECT * FROM sections WHERE course_id = ?";
+    const QString SELECT_SECTION_BY_ID = "SELECT sec.*, c.name as course_name FROM sections sec "
+                                         "LEFT JOIN courses c ON sec.course_id = c.id WHERE sec.id = ?";
 
     // Enrollment queries
     const QString INSERT_ENROLLMENT = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, total_grade, letter_grade) "
@@ -158,6 +160,7 @@ namespace Queries {
     const QString UPDATE_ACADEMIC_LEVEL = "UPDATE academic_levels SET name = ?, level_number = ? WHERE id = ?";
     const QString DELETE_ACADEMIC_LEVEL = "DELETE FROM academic_levels WHERE id = ?";
     const QString SELECT_ALL_ACADEMIC_LEVELS = "SELECT * FROM academic_levels ORDER BY level_number";
+    const QString SELECT_ACADEMIC_LEVEL_BY_ID = "SELECT * FROM academic_levels WHERE id = ?";
 
     // Room queries
     const QString INSERT_ROOM = "INSERT INTO rooms (name, type, capacity, ac_units, fans_count, lighting_points, computers_count, seating_description, code) "
