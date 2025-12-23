@@ -5,7 +5,7 @@
 #include <QSqlDatabase>
 #include <QProcessEnvironment>
 #include <QDebug>
-
+// University Student Information System
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

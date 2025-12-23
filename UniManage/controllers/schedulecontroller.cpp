@@ -55,11 +55,32 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
     } else {
         // Insert new entry with default values for day/time/room
         // We need a roomId. We'll pick the first room or leave it 0 if DB allows (FK might fail if 0)
-        // Let's find a valid room id
-        int roomId = 1; // Default
+        
+        int roomId = 0;
         QSqlQuery roomQuery("SELECT id FROM rooms LIMIT 1", db);
         if (roomQuery.exec() && roomQuery.next()) {
             roomId = roomQuery.value(0).toInt();
+        } else {
+            // No rooms exist! Create a default one to allow assignment
+            QSqlQuery createRoom(db);
+            createRoom.prepare("INSERT INTO rooms (name, type, capacity, ac_units, fans_count, lighting_points, computers_count, seating_description, code) "
+                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            createRoom.addBindValue("Virtual/TBA");
+            createRoom.addBindValue("Hall");
+            createRoom.addBindValue(100);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue("Standard");
+            createRoom.addBindValue("TBA"); // Code
+            
+            if (createRoom.exec()) {
+                roomId = createRoom.lastInsertId().toInt();
+            } else {
+                 qDebug() << "Failed to create default room:" << createRoom.lastError().text();
+                 return false; 
+            }
         }
         
         QSqlQuery insert(db);
@@ -70,7 +91,12 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
         insert.addBindValue("Monday");
         insert.addBindValue("09:00:00");
         insert.addBindValue("11:00:00");
-        return insert.exec();
+        
+        if (!insert.exec()) {
+             qDebug() << "assignProfessorToCourse insert failed:" << insert.lastError().text();
+             return false;
+        }
+        return true;
     }
 }
 

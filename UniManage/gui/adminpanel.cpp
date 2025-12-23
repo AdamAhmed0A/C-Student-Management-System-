@@ -55,11 +55,7 @@ void AdminPanel::setupUI()
     header->addWidget(titleLabel);
     header->addStretch();
     
-    QPushButton* testDbBtn = new QPushButton("Test Database");
-    testDbBtn->setObjectName("primaryBtn");
-    testDbBtn->setFixedWidth(150);
-    connect(testDbBtn, &QPushButton::clicked, this, &AdminPanel::onTestDatabase);
-    header->addWidget(testDbBtn);
+
     
     QPushButton* refreshBtn = new QPushButton("Refresh System");
     refreshBtn->setObjectName("secondaryBtn");
@@ -1068,7 +1064,10 @@ void AdminPanel::refreshCoursesTable() {
         QString levelStr = levelMap.value(c.yearLevel(), "---");
         m_coursesTable->setItem(r, 7, new QTableWidgetItem(levelStr));
         
-        m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.semesterName()));
+        // Simplified Semester Display
+        QString semStr = (c.semesterNumber() > 0) ? QString("Semester %1").arg(c.semesterNumber()) : "---";
+        m_coursesTable->setItem(r, 8, new QTableWidgetItem(semStr));
+        
         m_coursesTable->setItem(r, 9, new QTableWidgetItem(c.description()));
     }
 }
@@ -1526,9 +1525,8 @@ void AdminPanel::onAddCourse() {
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
     
     QComboBox* semester = new QComboBox();
-    for(const auto& s : m_semesterController.getAllSemesters()) {
-        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
-    }
+    semester->addItem("Semester 1", 1);
+    semester->addItem("Semester 2", 2);
 
      QComboBox* dept = new QComboBox();
      for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
@@ -1555,13 +1553,31 @@ void AdminPanel::onAddCourse() {
             QMessageBox::warning(this, "Input Error", "Course name cannot be empty.");
             return;
         }
+        
+        // Find or Create Semester ID
+        int targetSemNum = semester->currentData().toInt();
+        int finalSemId = 0;
+        
+        QSqlQuery semQ(DBConnection::instance().database());
+        semQ.prepare("SELECT id FROM semester WHERE semester = ? LIMIT 1");
+        semQ.addBindValue(targetSemNum);
+        if (semQ.exec() && semQ.next()) {
+            finalSemId = semQ.value(0).toInt();
+        } else {
+            // Create new generic semester
+            QSqlQuery createSem(DBConnection::instance().database());
+            createSem.prepare("INSERT INTO semester (year, semester) VALUES (NOW(), ?)");
+            createSem.addBindValue(targetSemNum);
+            if(createSem.exec()) finalSemId = createSem.lastInsertId().toInt();
+        }
+
         Course c; 
         c.setName(name->text()); 
         c.setCourseType(type->currentText()); 
         c.setMaxGrade(maxG->currentText().toInt()); 
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
-        c.setSemesterId(semester->currentData().toInt());
+        c.setSemesterId(finalSemId);
         c.setDepartmentId(dept->currentData().toInt());
 
         if (c.departmentId() <= 0) {
@@ -1616,12 +1632,14 @@ void AdminPanel::onEditCourse() {
     if (lvlIdx >= 0) level->setCurrentIndex(lvlIdx);
 
     QComboBox* semester = new QComboBox();
-    for(const auto& s : m_semesterController.getAllSemesters()) {
-        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
-    }
+    semester->addItem("Semester 1", 1);
+    semester->addItem("Semester 2", 2);
+    
     // Correctly set current index
-    int semIdx = semester->findData(c.semesterId());
-    if (semIdx >= 0) semester->setCurrentIndex(semIdx);
+    int currentSem = c.semesterNumber();
+    if (currentSem == 1) semester->setCurrentIndex(0);
+    else if (currentSem == 2) semester->setCurrentIndex(1);
+    else semester->setCurrentIndex(0); // Default
 
     QComboBox* dept = new QComboBox();
     for(const auto& d : m_departmentController.getAllDepartments()) {
@@ -1650,12 +1668,29 @@ void AdminPanel::onEditCourse() {
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
 
     if (dialog.exec() == QDialog::Accepted) {
+        // Find or Create Semester ID
+        int targetSemNum = semester->currentData().toInt();
+        int finalSemId = 0;
+        
+        QSqlQuery semQ(DBConnection::instance().database());
+        semQ.prepare("SELECT id FROM semester WHERE semester = ? LIMIT 1");
+        semQ.addBindValue(targetSemNum);
+        if (semQ.exec() && semQ.next()) {
+            finalSemId = semQ.value(0).toInt();
+        } else {
+            // Create new generic semester
+            QSqlQuery createSem(DBConnection::instance().database());
+            createSem.prepare("INSERT INTO semester (year, semester) VALUES (NOW(), ?)");
+            createSem.addBindValue(targetSemNum);
+            if(createSem.exec()) finalSemId = createSem.lastInsertId().toInt();
+        }
+    
         c.setName(name->text());
         c.setCourseType(type->currentText());
         c.setMaxGrade(maxG->currentText().toInt());
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
-        c.setSemesterId(semester->currentData().toInt());
+        c.setSemesterId(finalSemId);
         c.setDepartmentId(dept->currentData().toInt());
 
         if (c.departmentId() <= 0) {

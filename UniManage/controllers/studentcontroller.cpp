@@ -128,7 +128,23 @@ bool StudentController::hardDeleteStudent(int id)
         userId = query.value(0).toInt();
     }
 
-    // 2. Delete student profile
+    // 2. Cascade Delete Dependencies (Payments, Attendance, Enrollments)
+    // Delete payments
+    query.prepare("DELETE FROM payments WHERE student_id = ?");
+    query.addBindValue(id);
+    query.exec();
+    
+    // Delete attendance logs (via enrollments)
+    query.prepare("DELETE FROM attendance_logs WHERE enrollment_id IN (SELECT id FROM enrollments WHERE student_id = ?)");
+    query.addBindValue(id);
+    query.exec();
+    
+    // Delete enrollments
+    query.prepare("DELETE FROM enrollments WHERE student_id = ?");
+    query.addBindValue(id);
+    query.exec();
+
+    // 3. Delete student profile
     query.prepare(Queries::DELETE_STUDENT_DATA);
     query.addBindValue(id);
     if (!query.exec()) {
@@ -136,7 +152,7 @@ bool StudentController::hardDeleteStudent(int id)
         return false;
     }
 
-    // 3. Delete user account if found
+    // 4. Delete user account if found
     if (userId > 0) {
         query.prepare(Queries::DELETE_USER);
         query.addBindValue(userId);
