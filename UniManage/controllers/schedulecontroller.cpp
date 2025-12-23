@@ -131,3 +131,53 @@ QList<Schedule> ScheduleController::getAllSchedules()
     }
     return list;
 }
+
+QList<Schedule> ScheduleController::getScheduleByCourse(int courseId)
+{
+    QList<Schedule> list;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_SCHEDULE_BY_COURSE);
+    query.addBindValue(courseId);
+    
+    if (query.exec()) {
+        while (query.next()) {
+            Schedule s;
+            s.setId(query.value("id").toInt());
+            s.setCourseId(query.value("course_id").toInt());
+            s.setRoomId(query.value("room_id").toInt());
+            s.setProfessorId(query.value("professor_id").toInt());
+            s.setDayOfWeek(query.value("day_of_week").toString());
+            s.setStartTime(query.value("start_time").toTime());
+            s.setEndTime(query.value("end_time").toTime());
+            s.setCourseName(query.value("course_name").toString());
+            s.setRoomName(query.value("room_name").toString());
+            list.append(s);
+        }
+    }
+    return list;
+}
+
+QList<Schedule> ScheduleController::getScheduleByLevel(int levelId)
+{
+    QList<Schedule> list;
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::SELECT_SCHEDULE_BY_LEVEL);
+    query.addBindValue(levelId);
+    
+    if (query.exec()) {
+        while (query.next()) {
+            Schedule s;
+            s.setId(query.value("id").toInt());
+            s.setCourseId(query.value("course_id").toInt());
+            s.setRoomId(query.value("room_id").toInt());
+            s.setProfessorId(query.value("professor_id").toInt());
+            s.setDayOfWeek(query.value("day_of_week").toString());
+            s.setStartTime(query.value("start_time").toTime());
+            s.setEndTime(query.value("end_time").toTime());
+            s.setCourseName(query.value("course_name").toString());
+            s.setRoomName(query.value("room_name").toString());
+            list.append(s);
+        }
+    }
+    return list;
+}

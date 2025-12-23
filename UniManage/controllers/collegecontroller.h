@@ -12,6 +12,7 @@ public:
     bool updateCollege(const College& college);
     bool deleteCollege(int id);
     QList<College> getAllColleges();
+    College getCollegeById(int id);
 };
 
 #endif // COLLEGECONTROLLER_H

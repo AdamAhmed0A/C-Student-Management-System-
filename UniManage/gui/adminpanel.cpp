@@ -94,6 +94,7 @@ void AdminPanel::setupUI()
     m_tabWidget->addTab(createSchedulesTab(), "Academic Schedules");
     m_tabWidget->addTab(createSectionsTab(), "Sections/Groups");
     m_tabWidget->addTab(createCalendarTab(), "Calendar Management");
+    m_tabWidget->addTab(createDraftTab(), "Students Draft (Trash)");
     
     mainLayout->addWidget(m_tabWidget);
 }
@@ -109,6 +110,7 @@ void AdminPanel::refreshAllData() {
     refreshStudentsTable();
     refreshCalendarTable();
     refreshSectionsTable();
+    refreshDraftTable();
 }
 
 void AdminPanel::refreshSectionsTable() {
@@ -136,8 +138,8 @@ void AdminPanel::refreshSectionsTable() {
                  }
              }
         } else if (s.semesterId() > 0) { 
-             // Legacy fallback if data migrated purely to semesterId before
-             levelName = "Year " + QString::number(s.semesterId()) + " (Legacy)";
+             // Legacy fallback
+             levelName = "Year " + QString::number(s.semesterId());
         }
         
         m_sectionsTable->setItem(r, 3, new QTableWidgetItem(levelName));
@@ -346,8 +348,8 @@ void AdminPanel::onEditLevel() {
     num->setRange(1, 10);
     num->setValue(al.levelNumber());
 
-    layout->addRow("Level Name:", name);
-    layout->addRow("Level Number:", num);
+    layout->addRow("Internal Label (e.g. ICT):", name);
+    layout->addRow("Year Number (1-5):", num);
 
     QPushButton* btn = new QPushButton("Update");
     layout->addRow(btn);
@@ -831,7 +833,7 @@ QWidget* AdminPanel::createAcademicSetupTab() {
 
     m_levelsTable = new QTableWidget();
     m_levelsTable->setColumnCount(3);
-    m_levelsTable->setHorizontalHeaderLabels({"ID", "Level Name", "Level Number"});
+    m_levelsTable->setHorizontalHeaderLabels({"ID", "Year/Level", "Internal Name (e.g. ICT)"});
     m_levelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_levelsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     
@@ -977,6 +979,10 @@ void AdminPanel::refreshStudentsTable() {
     QList<StudentData> allStudents = m_studentController.getAllStudents();
     qDebug() << "Received" << allStudents.size() << "students from controller";
     
+    QMap<int, QString> levelMap;
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) 
+        levelMap[l.id()] = QString("Year %1").arg(l.levelNumber());
+    
     for (const auto& s : allStudents) {
         int r = m_studentsTable->rowCount();
         m_studentsTable->insertRow(r);
@@ -992,9 +998,8 @@ void AdminPanel::refreshStudentsTable() {
         m_studentsTable->setItem(r, 5, new QTableWidgetItem(s.department().isEmpty() ? "---" : s.department())); // Added Department column
         m_studentsTable->setItem(r, 6, new QTableWidgetItem(s.sectionName().isEmpty() ? "---" : s.sectionName()));
         
-        QString level = s.levelName();
-        if(level.isEmpty()) level = (s.academicLevelId() == 0) ? "---" : QString::number(s.academicLevelId());
-        m_studentsTable->setItem(r, 7, new QTableWidgetItem(level));
+        QString levelStr = levelMap.value(s.academicLevelId(), "---");
+        m_studentsTable->setItem(r, 7, new QTableWidgetItem(levelStr));
         
         m_studentsTable->setItem(r, 8, new QTableWidgetItem(QString("%1").arg(s.tuitionFees())));
 
@@ -1038,7 +1043,7 @@ void AdminPanel::refreshCoursesTable() {
         m_coursesTable->setItem(r, 6, new QTableWidgetItem(QString::number(c.creditHours())));
         
         // Use name lookup from map
-        QString levelStr = levelMap.value(c.yearLevel(), QString::number(c.yearLevel()));
+        QString levelStr = levelMap.value(c.yearLevel(), "---");
         m_coursesTable->setItem(r, 7, new QTableWidgetItem(levelStr));
         
         m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.semesterName()));
@@ -1076,8 +1081,9 @@ void AdminPanel::refreshLevelsTable() {
         int r = m_levelsTable->rowCount();
         m_levelsTable->insertRow(r);
         m_levelsTable->setItem(r, 0, new QTableWidgetItem(QString::number(l.id())));
-        m_levelsTable->setItem(r, 1, new QTableWidgetItem(l.name()));
-        m_levelsTable->setItem(r, 2, new QTableWidgetItem(QString::number(l.levelNumber())));
+        // Even in the management table, emphasize the Year X identity
+        m_levelsTable->setItem(r, 1, new QTableWidgetItem(QString("Year %1").arg(l.levelNumber())));
+        m_levelsTable->setItem(r, 2, new QTableWidgetItem(l.name())); // Move internal name to column 2
     }
 }
 
@@ -1360,13 +1366,108 @@ void AdminPanel::onEditStudent() {
 void AdminPanel::onDeleteStudent() {
     int row = m_studentsTable->currentRow();
     if (row < 0) return;
-    int id = m_studentsTable->item(row, 0)->text().toInt();
-    if (QMessageBox::question(this, "Confirm", "Are you sure you want to delete this student?") == QMessageBox::Yes) {
-        if (m_studentController.deleteStudent(id)) {
-            QMessageBox::information(this, "Deleted", "Student has been removed from the system.");
-            refreshStudentsTable();
+    
+    QString idText = m_studentsTable->item(row, 0)->text();
+    
+    if (QMessageBox::question(this, "Confirm Removal", "Are you sure you want to remove this student account?") == QMessageBox::Yes) {
+        if (idText.startsWith("U-")) {
+            // Handle incomplete profile (User only)
+            int userId = idText.mid(2).toInt();
+            if (m_userController.deleteUser(userId)) {
+                QMessageBox::information(this, "Success", "Incomplete profile removed permanently.");
+                refreshStudentsTable();
+            } else {
+                QMessageBox::critical(this, "Error", "Failed to remove user account.");
+            }
         } else {
-            QMessageBox::critical(this, "Error", "Failed to delete student.");
+            // Handle regular student profile (Soft Delete)
+            int id = idText.toInt();
+            if (m_studentController.deleteStudent(id)) {
+                QMessageBox::information(this, "Moved to Draft", "Student has been moved to the draft tab. You can restore or permanently delete them from there.");
+                refreshStudentsTable();
+                refreshDraftTable();
+            } else {
+                QMessageBox::critical(this, "Error", "Failed to move student to draft.");
+            }
+        }
+    }
+}
+
+QWidget* AdminPanel::createDraftTab() {
+    QWidget* widget = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(widget);
+    
+    QHBoxLayout* btns = new QHBoxLayout();
+    QPushButton* restoreBtn = new QPushButton("Restore Selected Student");
+    restoreBtn->setObjectName("primaryBtn");
+    QPushButton* hardDeleteBtn = new QPushButton("Permanently Delete Student");
+    hardDeleteBtn->setObjectName("dangerBtn");
+    
+    btns->addWidget(restoreBtn);
+    btns->addWidget(hardDeleteBtn);
+    btns->addStretch();
+    
+    m_draftStudentsTable = new QTableWidget();
+    m_draftStudentsTable->setColumnCount(8);
+    m_draftStudentsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "ID Number", "College", "Dept", "Year/Level", "Status"});
+    m_draftStudentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_draftStudentsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
+    layout->addLayout(btns);
+    layout->addWidget(m_draftStudentsTable);
+    
+    connect(restoreBtn, &QPushButton::clicked, this, &AdminPanel::onRestoreStudent);
+    connect(hardDeleteBtn, &QPushButton::clicked, this, &AdminPanel::onHardDeleteStudent);
+    
+    return widget;
+}
+
+void AdminPanel::refreshDraftTable() {
+    m_draftStudentsTable->setRowCount(0);
+    QList<StudentData> deleted = m_studentController.getDeletedStudents();
+    
+    QMap<int, QString> levelMap;
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) 
+        levelMap[l.id()] = QString("Year %1").arg(l.levelNumber());
+
+    for (const auto& s : deleted) {
+        int r = m_draftStudentsTable->rowCount();
+        m_draftStudentsTable->insertRow(r);
+        
+        m_draftStudentsTable->setItem(r, 0, new QTableWidgetItem(QString::number(s.id())));
+        m_draftStudentsTable->setItem(r, 1, new QTableWidgetItem(s.studentNumber()));
+        m_draftStudentsTable->setItem(r, 2, new QTableWidgetItem(s.fullName()));
+        m_draftStudentsTable->setItem(r, 3, new QTableWidgetItem(s.idNumber()));
+        m_draftStudentsTable->setItem(r, 4, new QTableWidgetItem(s.collegeName()));
+        m_draftStudentsTable->setItem(r, 5, new QTableWidgetItem(s.department()));
+        
+        QString levelStr = levelMap.value(s.academicLevelId(), "---");
+        m_draftStudentsTable->setItem(r, 6, new QTableWidgetItem(levelStr));
+        m_draftStudentsTable->setItem(r, 7, new QTableWidgetItem(s.status()));
+    }
+}
+
+void AdminPanel::onRestoreStudent() {
+    int row = m_draftStudentsTable->currentRow();
+    if (row < 0) return;
+    int id = m_draftStudentsTable->item(row, 0)->text().toInt();
+    
+    if (m_studentController.restoreStudent(id)) {
+        QMessageBox::information(this, "Success", "Student has been restored to the main list.");
+        refreshStudentsTable();
+        refreshDraftTable();
+    }
+}
+
+void AdminPanel::onHardDeleteStudent() {
+    int row = m_draftStudentsTable->currentRow();
+    if (row < 0) return;
+    int id = m_draftStudentsTable->item(row, 0)->text().toInt();
+    
+    if (QMessageBox::question(this, "Permanent Delete", "This will permanently remove the student profile. This cannot be undone. Proceed?") == QMessageBox::Yes) {
+        if (m_studentController.hardDeleteStudent(id)) {
+            QMessageBox::information(this, "Deleted", "Student permanently removed from system.");
+            refreshDraftTable();
         }
     }
 }
@@ -1875,8 +1976,8 @@ void AdminPanel::onAddLevel() {
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit();
     QSpinBox* num = new QSpinBox(); num->setRange(1, 10);
-    layout->addRow("Name:", name);
-    layout->addRow("Number:", num);
+    layout->addRow("Internal Label (e.g. ICT):", name);
+    layout->addRow("Year Number (1-5):", num);
     QPushButton* btn = new QPushButton("Add");
     layout->addRow(btn);
     connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);

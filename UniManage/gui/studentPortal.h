@@ -9,6 +9,9 @@
 #include "../controllers/enrollmentcontroller.h"
 #include "../controllers/paymentcontroller.h"
 #include "../controllers/calendarcontroller.h"
+#include "../controllers/academic_level_controller.h"
+#include "../controllers/schedulecontroller.h"
+#include "../controllers/collegecontroller.h"
 #include "../models/student_data.h"
 
 class StudentPortal : public QWidget
@@ -30,12 +33,14 @@ private:
     void loadStudentData();
     void refreshGrades();
     void refreshPayments();
+    void refreshSchedule();
     void refreshCalendar();
     void calculateGPA();
     
 private slots:
     void onLogout();
     void onRefreshAll();
+    void onMakePayment();
 
 private:
     int m_userId;
@@ -44,6 +49,9 @@ private:
     QTabWidget* m_tabWidget;
     QLabel* m_nameLabel;
     QLabel* m_gpaLabel;
+    QLabel* m_tuitionLabel;
+    QLabel* m_paidLabel;
+    QLabel* m_balanceLabel;
     QTableWidget* m_gradesTable;
     QTableWidget* m_scheduleTable;
     QTableWidget* m_paymentsTable;
@@ -52,6 +60,9 @@ private:
     EnrollmentController m_enrollmentController;
     PaymentController m_paymentController;
     CalendarController m_calendarController;
+    AcademicLevelController m_academicLevelController;
+    ScheduleController m_scheduleController;
+    CollegeController m_collegeController;
     QTableWidget* m_calendarTable;
 };
 

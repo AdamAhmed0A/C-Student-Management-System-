@@ -19,6 +19,8 @@ namespace Queries {
     const QString UPDATE_STUDENT_DATA = "UPDATE students_data SET id_number = ?, dob = ?, department = ?, department_id = ?, academic_level_id = ?, section_id = ?, college_id = ?, tuition_fees = ?, seat_number = ?, status = ? "
                                         "WHERE id = ?";
     const QString DELETE_STUDENT_DATA = "DELETE FROM students_data WHERE id = ?";
+    const QString SOFT_DELETE_STUDENT_DATA = "UPDATE students_data SET status = 'deleted' WHERE id = ?";
+    const QString RESTORE_STUDENT_DATA = "UPDATE students_data SET status = 'active' WHERE id = ?";
     const QString SELECT_ALL_STUDENTS_DATA = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
                                              "COALESCE(sd.student_number, u.username) AS student_number, "
                                              "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
@@ -33,8 +35,24 @@ namespace Queries {
                                              "LEFT JOIN colleges col ON sd.college_id = col.id "
                                              "LEFT JOIN sections sec ON sd.section_id = sec.id "
                                              "LEFT JOIN courses c_sec ON sec.course_id = c_sec.id "
-                                             "WHERE u.role = 'student' "
+                                             "WHERE u.role = 'student' AND sd.id IS NOT NULL AND sd.status != 'deleted' "
                                              "ORDER BY u.id";
+    const QString SELECT_DELETED_STUDENTS_DATA = "SELECT u.id AS user_id, u.full_name, u.username, u.role, sd.id, "
+                                                 "COALESCE(sd.student_number, u.username) AS student_number, "
+                                                 "sd.id_number, sd.dob, sd.department, sd.department_id, sd.academic_level_id, "
+                                                 "sd.section_id, sd.college_id, sd.tuition_fees, sd.seat_number, sd.status, sd.created_at, sd.updated_at, "
+                                                 "d.name AS dept_name, al.name AS level_name, col.name AS college_name, "
+                                                 "sec.name AS section_name, "
+                                                 "c_sec.name AS section_course_name "
+                                                 "FROM users u "
+                                                 "JOIN students_data sd ON u.id = sd.user_id "
+                                                 "LEFT JOIN departments d ON sd.department_id = d.id "
+                                                 "LEFT JOIN academic_levels al ON sd.academic_level_id = al.id "
+                                                 "LEFT JOIN colleges col ON sd.college_id = col.id "
+                                                 "LEFT JOIN sections sec ON sd.section_id = sec.id "
+                                                 "LEFT JOIN courses c_sec ON sec.course_id = c_sec.id "
+                                                 "WHERE u.role = 'student' AND sd.status = 'deleted' "
+                                                 "ORDER BY sd.updated_at DESC";
     const QString SELECT_STUDENT_COMMON_JOIN = "FROM users u "
                                                "LEFT JOIN students_data sd ON u.id = sd.user_id "
                                                "LEFT JOIN departments d ON sd.department_id = d.id "
@@ -197,6 +215,14 @@ namespace Queries {
                                                  "FROM schedules s JOIN courses c ON s.course_id = c.id "
                                                  "JOIN rooms r ON s.room_id = r.id "
                                                  "WHERE s.professor_id = ? ORDER BY s.day_of_week, s.start_time";
+    const QString SELECT_SCHEDULE_BY_COURSE = "SELECT s.*, c.name as course_name, r.name as room_name "
+                                              "FROM schedules s JOIN courses c ON s.course_id = c.id "
+                                              "JOIN rooms r ON s.room_id = r.id "
+                                              "WHERE s.course_id = ? ORDER BY s.day_of_week, s.start_time";
+    const QString SELECT_SCHEDULE_BY_LEVEL = "SELECT s.*, c.name as course_name, r.name as room_name "
+                                             "FROM schedules s JOIN courses c ON s.course_id = c.id "
+                                             "JOIN rooms r ON s.room_id = r.id "
+                                             "WHERE c.year_level = ? ORDER BY s.day_of_week, s.start_time";
 
     // Attendance Log Queries
     const QString INSERT_ATTENDANCE_LOG = "INSERT INTO attendance_logs (enrollment_id, date, status, notes) VALUES (?, ?, ?, ?)";

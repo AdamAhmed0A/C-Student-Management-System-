@@ -63,3 +63,17 @@ QList<College> CollegeController::getAllColleges()
     }
     return list;
 }
+
+College CollegeController::getCollegeById(int id)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare("SELECT * FROM colleges WHERE id = ?");
+    query.addBindValue(id);
+    if (query.exec() && query.next()) {
+        return College(query.value("id").toInt(),
+                      query.value("name").toString(),
+                      query.value("code").toString(),
+                      query.value("tuition_fees").toDouble());
+    }
+    return College();
+}

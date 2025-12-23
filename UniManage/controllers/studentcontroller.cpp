@@ -87,17 +87,63 @@ bool StudentController::updateStudent(const StudentData& student)
 	return true;
 }
 
-//function to delete student data
+//function to delete student data (Soft Delete)
 bool StudentController::deleteStudent(int id)
 {
    QSqlQuery query(DBConnection::instance().database());
-    query.prepare(Queries::DELETE_STUDENT_DATA);
+    query.prepare(Queries::SOFT_DELETE_STUDENT_DATA);
 	query.addBindValue(id);
     if (!query.exec()) {
-        qDebug() << "Error deleting student data:" << query.lastError().text();
+        qDebug() << "Error soft deleting student data:" << query.lastError().text();
         return false;
 	}
-    Persistence::logChange("Student", "Delete", id, "Removed Student");
+    Persistence::logChange("Student", "Trash", id, "Moved to Draft");
+    return true;
+}
+
+// Restore student from draft
+bool StudentController::restoreStudent(int id)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::RESTORE_STUDENT_DATA);
+    query.addBindValue(id);
+    if (!query.exec()) {
+        qDebug() << "Error restoring student data:" << query.lastError().text();
+        return false;
+    }
+    Persistence::logChange("Student", "Restore", id, "Restored from Draft");
+    return true;
+}
+
+// Permanent delete (incl. user account)
+bool StudentController::hardDeleteStudent(int id)
+{
+    QSqlQuery query(DBConnection::instance().database());
+    
+    // 1. Get user_id first
+    int userId = -1;
+    query.prepare("SELECT user_id FROM students_data WHERE id = ?");
+    query.addBindValue(id);
+    if (query.exec() && query.next()) {
+        userId = query.value(0).toInt();
+    }
+
+    // 2. Delete student profile
+    query.prepare(Queries::DELETE_STUDENT_DATA);
+    query.addBindValue(id);
+    if (!query.exec()) {
+        qDebug() << "Error permanently deleting student data:" << query.lastError().text();
+        return false;
+    }
+
+    // 3. Delete user account if found
+    if (userId > 0) {
+        query.prepare(Queries::DELETE_USER);
+        query.addBindValue(userId);
+        query.exec();
+    }
+
+    Persistence::logChange("Student", "HardDelete", id, "Permanently Removed Profile and User");
     return true;
 }
 
@@ -112,16 +158,7 @@ QList<StudentData> StudentController::getAllStudents()
     
     if (!query.exec(Queries::SELECT_ALL_STUDENTS_DATA)) {
         qDebug() << "Error retrieving students data:" << query.lastError().text();
-        // Fallback: Try a simpler query if the complexity is failing due to joins or missing columns
-        // This ensures the admin can still see the user accounts even if profile data has issues
-        QString fallback = "SELECT u.id AS user_id, 0 AS id, u.full_name, u.username, u.role, u.username AS student_number, "
-                           "'' AS id_number, NULL AS dob, '' AS department, 0 AS department_id, 0 AS academic_level_id, "
-                           "0 AS section_id, 0 AS college_id, 0.0 AS tuition_fees, '' AS seat_number, 'Incomplete Profile' AS status, "
-                           "u.created_at, u.updated_at, '' AS dept_name, '' AS level_name, '' AS college_name "
-                           "FROM users u WHERE u.role = 'student'";
-        if (!query.exec(fallback)) {
-            return students;
-        }
+        return students;
     }
     
     qDebug() << "Query executed successfully!";
@@ -162,6 +199,51 @@ QList<StudentData> StudentController::getAllStudents()
     }
     
 	return students;
+}
+
+// Get students in draft/trash
+QList<StudentData> StudentController::getDeletedStudents()
+{
+    QList<StudentData> students;
+    QSqlQuery query(DBConnection::instance().database());
+    
+    if (!query.exec(Queries::SELECT_DELETED_STUDENTS_DATA)) {
+        qDebug() << "Error retrieving deleted students data:" << query.lastError().text();
+        return students;
+    }
+    
+    while (query.next()) {
+        StudentData student;
+        student.setId(query.value("id").toInt());
+        student.setUserId(query.value("user_id").toInt());
+        student.setStudentNumber(query.value("student_number").toString());
+        student.setIdNumber(query.value("id_number").toString());
+        student.setDob(query.value("dob").toDateTime());
+        student.setDepartment(query.value("department").toString());
+        student.setDepartmentId(query.value("department_id").toInt());
+        student.setAcademicLevelId(query.value("academic_level_id").toInt());
+        student.setSectionId(query.value("section_id").toInt());
+        student.setCollegeId(query.value("college_id").toInt());
+        student.setTuitionFees(query.value("tuition_fees").toDouble());
+        student.setSeatNumber(query.value("seat_number").toString());
+        student.setStatus(query.value("status").toString());
+        student.setCreatedAt(query.value("created_at").toDateTime());
+        student.setUpdatedAt(query.value("updated_at").toDateTime());
+        
+        student.setFullName(query.value("full_name").toString());
+        student.setUsername(query.value("username").toString());
+        student.setRole(query.value("role").toString());
+        
+        QString dName = query.value("dept_name").toString();
+        if(!dName.isEmpty()) student.setDepartment(dName);
+        
+        student.setLevelName(query.value("level_name").toString());
+        student.setCollegeName(query.value("college_name").toString());
+        student.setSectionName(query.value("section_name").toString());
+        
+        students.append(student);
+    }
+    return students;
 }
 
 //function to get student data by id

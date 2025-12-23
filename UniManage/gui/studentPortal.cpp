@@ -74,6 +74,7 @@ void StudentPortal::onLogout() {
 void StudentPortal::onRefreshAll() {
     loadStudentData();
     refreshGrades();
+    refreshSchedule();
     refreshPayments();
     refreshCalendar();
     QMessageBox::information(this, "Refreshed", "Your student profile and academic records have been updated.");
@@ -88,8 +89,23 @@ QWidget* StudentPortal::createDashboardTab() {
     fl->addRow("Student Code:", new QLabel(m_student.studentNumber()));
     fl->addRow("National ID:", new QLabel(m_student.idNumber()));
     fl->addRow("Faculty/Dept:", new QLabel(m_student.department()));
-    QString lvl = m_student.levelName().isEmpty() ? (m_student.academicLevelId() == 0 ? "Not Assigned" : QString::number(m_student.academicLevelId())) : m_student.levelName();
-    fl->addRow("Academic Level:", new QLabel(lvl));
+    
+    // Display Year/Level with Enrollment Year
+    QString lvlStr = "Not Assigned";
+    if (m_student.academicLevelId() > 0) {
+        AcademicLevel al = m_academicLevelController.getAcademicLevelById(m_student.academicLevelId());
+        if (al.id() > 0) {
+            QString enrollYear = m_student.createdAt().isValid() ? 
+                                QString::number(m_student.createdAt().date().year()) : "";
+            
+            if (!enrollYear.isEmpty()) {
+                lvlStr = QString("Year %1 (%2)").arg(al.levelNumber()).arg(enrollYear);
+            } else {
+                lvlStr = QString("Year %1").arg(al.levelNumber());
+            }
+        }
+    }
+    fl->addRow("Year/Level:", new QLabel(lvlStr));
     
     QString sect = m_student.sectionName().isEmpty() ? (m_student.sectionId() == 0 ? "Not Assigned" : QString::number(m_student.sectionId())) : m_student.sectionName();
     fl->addRow("Assigned Group/Section:", new QLabel(sect));
@@ -121,6 +137,8 @@ QWidget* StudentPortal::createScheduleTab() {
     m_scheduleTable->setHorizontalHeaderLabels({"Day", "Course", "Room", "Start Time", "End Time"});
     m_scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     layout->addWidget(m_scheduleTable);
+    
+    refreshSchedule();
     return widget;
 }
 
@@ -131,6 +149,25 @@ QWidget* StudentPortal::createPaymentsTab() {
     m_paymentsTable->setColumnCount(5);
     m_paymentsTable->setHorizontalHeaderLabels({"Date", "Amount", "Method", "Status", "Notes"});
     m_paymentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    
+    QGroupBox* summary = new QGroupBox("Financial Summary");
+    QFormLayout* sl = new QFormLayout(summary);
+    
+    m_tuitionLabel = new QLabel("0.00");
+    m_paidLabel = new QLabel("0.00");
+    m_balanceLabel = new QLabel("0.00");
+    m_balanceLabel->setStyleSheet("font-weight: bold; color: #b91c1c;"); // red
+    
+    sl->addRow("Faculty Base Tuition:", m_tuitionLabel);
+    sl->addRow("Total Amount Paid:", m_paidLabel);
+    sl->addRow("Remaining Balance:", m_balanceLabel);
+    
+    QPushButton* payBtn = new QPushButton("Pay Tuition Fees");
+    payBtn->setObjectName("primaryBtn");
+    sl->addRow(payBtn);
+    connect(payBtn, &QPushButton::clicked, this, &StudentPortal::onMakePayment);
+    
+    layout->addWidget(summary);
     layout->addWidget(m_paymentsTable);
     
     refreshPayments();
@@ -182,7 +219,9 @@ void StudentPortal::refreshGrades() {
 
 void StudentPortal::refreshPayments() {
     m_paymentsTable->setRowCount(0);
-    for(const auto& p : m_paymentController.getPaymentsByStudent(m_student.id())) {
+    auto payments = m_paymentController.getPaymentsByStudent(m_student.id());
+    
+    for(const auto& p : payments) {
         int r = m_paymentsTable->rowCount();
         m_paymentsTable->insertRow(r);
         m_paymentsTable->setItem(r, 0, new QTableWidgetItem(p.date().toString("yyyy-MM-dd")));
@@ -190,6 +229,112 @@ void StudentPortal::refreshPayments() {
         m_paymentsTable->setItem(r, 2, new QTableWidgetItem(p.method()));
         m_paymentsTable->setItem(r, 3, new QTableWidgetItem(p.status()));
         m_paymentsTable->setItem(r, 4, new QTableWidgetItem(p.notes()));
+    }
+    
+    // Update summary labels
+    double baseTuition = 0.0;
+    if (m_student.collegeId() > 0) {
+        College c = m_collegeController.getCollegeById(m_student.collegeId());
+        baseTuition = c.tuitionFees();
+    }
+    
+    double totalPaid = 0.0;
+    for (const auto& p : payments) {
+        // Only count paid or completed payments
+        if (p.status().compare("Paid", Qt::CaseInsensitive) == 0 || 
+            p.status().compare("Success", Qt::CaseInsensitive) == 0 || 
+            p.status().compare("Completed", Qt::CaseInsensitive) == 0) {
+            totalPaid += p.amount();
+        }
+    }
+    
+    m_tuitionLabel->setText(QString::number(baseTuition, 'f', 2));
+    m_paidLabel->setText(QString::number(totalPaid, 'f', 2));
+    m_balanceLabel->setText(QString::number(baseTuition - totalPaid, 'f', 2));
+}
+
+void StudentPortal::refreshSchedule() {
+    m_scheduleTable->setRowCount(0);
+    
+    // Strategy: Get all courses the student is enrolled in, then fetch their schedules
+    auto enrollments = m_enrollmentController.getEnrollmentsByStudent(m_student.id());
+    
+    for (const auto& e : enrollments) {
+        auto schedules = m_scheduleController.getScheduleByCourse(e.courseId());
+        for (const auto& s : schedules) {
+            int r = m_scheduleTable->rowCount();
+            m_scheduleTable->insertRow(r);
+            
+            m_scheduleTable->setItem(r, 0, new QTableWidgetItem(s.dayOfWeek()));
+            m_scheduleTable->setItem(r, 1, new QTableWidgetItem(s.courseName()));
+            m_scheduleTable->setItem(r, 2, new QTableWidgetItem(s.roomName()));
+            m_scheduleTable->setItem(r, 3, new QTableWidgetItem(s.startTime().toString("HH:mm")));
+            m_scheduleTable->setItem(r, 4, new QTableWidgetItem(s.endTime().toString("HH:mm")));
+        }
+    }
+    
+    // Also try fetching by Level as fallback if no course-specific schedules found
+    if (m_scheduleTable->rowCount() == 0 && m_student.academicLevelId() > 0) {
+        auto levelSchedules = m_scheduleController.getScheduleByLevel(m_student.academicLevelId());
+        for (const auto& s : levelSchedules) {
+            int r = m_scheduleTable->rowCount();
+            m_scheduleTable->insertRow(r);
+            m_scheduleTable->setItem(r, 0, new QTableWidgetItem(s.dayOfWeek()));
+            m_scheduleTable->setItem(r, 1, new QTableWidgetItem(s.courseName()));
+            m_scheduleTable->setItem(r, 2, new QTableWidgetItem(s.roomName()));
+            m_scheduleTable->setItem(r, 3, new QTableWidgetItem(s.startTime().toString("HH:mm")));
+            m_scheduleTable->setItem(r, 4, new QTableWidgetItem(s.endTime().toString("HH:mm")));
+        }
+    }
+    
+    m_scheduleTable->sortByColumn(0, Qt::AscendingOrder); // Initial sort
+}
+
+void StudentPortal::onMakePayment() {
+    if (m_student.id() == 0) {
+        QMessageBox::warning(this, "Empty Profile", "You cannot make payments until your student profile is setup by an admin.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Process Tuition Payment");
+    QFormLayout* layout = new QFormLayout(&dialog);
+    
+    QDoubleSpinBox* amount = new QDoubleSpinBox();
+    amount->setRange(1.0, 100000.0);
+    amount->setValue(0.0);
+    
+    QComboBox* method = new QComboBox();
+    method->addItems({"Credit Card", "Bank Transfer", "Cash at Office", "Student App Balance"});
+    
+    QLineEdit* notes = new QLineEdit();
+    notes->setPlaceholderText("Optional notes (e.g. Transaction ID)");
+    
+    layout->addRow("Payment Amount:", amount);
+    layout->addRow("Payment Method:", method);
+    layout->addRow("Notes:", notes);
+    
+    QPushButton* btn = new QPushButton("Confirm Payment");
+    btn->setObjectName("primaryBtn");
+    layout->addRow(btn);
+    connect(btn, &QPushButton::clicked, &dialog, &QDialog::accept);
+    
+    if (dialog.exec() == QDialog::Accepted) {
+        Payment p;
+        p.setStudentId(m_student.id());
+        p.setAmount((float)amount->value());
+        p.setMethod(method->currentText());
+        p.setStatus("Paid"); // Automatically set to Paid for simulation
+        p.setNotes(notes->text());
+        p.setDate(QDateTime::currentDateTime());
+        p.setYear(QDateTime::currentDateTime());
+        
+        if (m_paymentController.addPayment(p)) {
+            QMessageBox::information(this, "Payment Successful", QString("Successfully processed payment of %1. Your records have been updated.").arg(amount->value()));
+            refreshPayments();
+        } else {
+            QMessageBox::critical(this, "Transaction Failed", "Could not record the payment in the database. Please contact the finance office.");
+        }
     }
 }
 

@@ -57,6 +57,11 @@
 - **Location**: `refreshSectionsTable()`, line ~134
 - **Fallback**: Legacy data shows "Year X (Legacy)" if using old semester_id field
 
+### 5. Student Dashboard (`gui/studentPortal.cpp`)
+- **Year/Level Display**: Now shows as "Year X (YYYY)" where X is the level number and YYYY is the enrollment year.
+- **Label**: Changed from "Academic Level" to "Year/Level" for clarity.
+- **Impact**: Students can easily see their current year and the year they joined the university.
+
 ## Bug Fixes Included
 
 ### Edit Form Pre-selection Issues (FIXED)

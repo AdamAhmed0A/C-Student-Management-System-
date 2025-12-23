@@ -39,6 +39,7 @@ private:
     QWidget* createAcademicSetupTab();
     QWidget* createSectionsTab();
     QWidget* createCalendarTab();
+    QWidget* createDraftTab();
     
     void refreshStudentsTable();
     void refreshCoursesTable();
@@ -50,6 +51,7 @@ private:
     void refreshSchedulesTable();
     void refreshSectionsTable();
     void refreshCalendarTable();
+    void refreshDraftTable();
     void refreshAllData();
 
 private slots:
@@ -91,6 +93,8 @@ private slots:
     void onDeleteSection();
     void onEditSchedule();
     void onDeleteSchedule();
+    void onRestoreStudent();
+    void onHardDeleteStudent();
 
 private:
     int m_adminId;
@@ -118,6 +122,7 @@ private:
     SectionController m_sectionController;
     QTableWidget* m_calendarTable;
     QTableWidget* m_sectionsTable;
+    QTableWidget* m_draftStudentsTable;
 };
 
 #endif // ADMINPANEL_H

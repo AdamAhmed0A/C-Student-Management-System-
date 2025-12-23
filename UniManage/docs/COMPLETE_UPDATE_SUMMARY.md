@@ -9,6 +9,7 @@
 
 **Changes:**
 - Professor Dashboard year selector
+- Student Dashboard shows "Year X (YYYY)" with enrollment year
 - All Admin Panel forms (Course, Student, Section)
 - All table displays (Courses, Sections)
 - Consistent "Year 1", "Year 2", "Year 3", "Year 4", "Year 5" format
@@ -99,6 +100,11 @@ Changed from unreliable `setCurrentIndex(count()-1)` to proper `findData()` look
 1. Click "New Section/Group"
 2. Check "Academic Year" dropdown
 3. ✅ Expected: Shows "Year 1", "Year 2", "Year 3", "Year 4", "Year 5"
+
+**Test 1.5 - Student Dashboard**
+1. Login as a student (e.g., enrolled in 2024, Level 1)
+2. View "Academic Summary" tab
+3. ✅ Expected: "Year/Level" label shows "Year 1 (2024)"
 
 ### Phase 2: Edit Form Pre-selection (10 min)
 

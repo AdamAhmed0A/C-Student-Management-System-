@@ -14,6 +14,8 @@ public:
     bool updateSchedule(const Schedule& s);
     bool deleteSchedule(int id);
     QList<Schedule> getAllSchedules();
+    QList<Schedule> getScheduleByCourse(int courseId);
+    QList<Schedule> getScheduleByLevel(int levelId);
     bool assignProfessorToCourse(int courseId, int professorId);
 };
 
