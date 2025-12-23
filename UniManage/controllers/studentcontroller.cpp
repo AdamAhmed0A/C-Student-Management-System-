@@ -45,7 +45,15 @@ bool StudentController::addStudent(const StudentData& student, QString* error)
         if (error) *error = errText;
         return false;
 	}
-    Persistence::logChange("Student", "Enroll", query.lastInsertId().toInt(), student.studentNumber());
+
+    int newStudentId = query.lastInsertId().toInt();
+    
+    // Auto-enroll in courses for this academic level
+    if (student.academicLevelId() > 0) {
+        enrollStudentInLevelCourses(newStudentId, student.academicLevelId());
+    }
+
+    Persistence::logChange("Student", "Enroll", newStudentId, student.studentNumber());
 	return true;
 }
 
@@ -277,4 +285,23 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
         student.setSectionName(query.value("section_name").toString());
     }
     return student;
+}
+
+bool StudentController::enrollStudentInLevelCourses(int studentId, int levelId) {
+    if (studentId <= 0 || levelId <= 0) return false;
+    
+    QSqlQuery query(DBConnection::instance().database());
+    query.prepare(Queries::INSERT_ENROLLMENT_BATCH_BY_LEVEL);
+    query.addBindValue(studentId);
+    query.addBindValue(levelId);
+    
+    if (!query.exec()) {
+        QString err = query.lastError().text();
+        // Ignore "Duplicate" errors if the student is already enrolled in some
+        if (!err.contains("Duplicate", Qt::CaseInsensitive)) {
+            qDebug() << "Auto-enrollment failed:" << err;
+            return false;
+        }
+    }
+    return true;
 }

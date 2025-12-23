@@ -13,9 +13,21 @@ bool SectionController::addSection(const Section& section)
 	QSqlQuery query(DBConnection::instance().database());
     query.prepare(Queries::INSERT_SECTION);
     query.addBindValue(section.name());
-    query.addBindValue(section.courseId());
+    
+    // Bind courseId: if 0, bind NULL
+    if (section.courseId() > 0) query.addBindValue(section.courseId());
+    else query.addBindValue(QVariant());
+
     query.addBindValue(section.capacity());
-    query.addBindValue(section.semesterId());
+    
+    // Bind semesterId: if 0, bind NULL
+    if (section.semesterId() > 0) query.addBindValue(section.semesterId());
+    else query.addBindValue(QVariant());
+    
+    // Bind academicLevelId
+    if (section.academicLevelId() > 0) query.addBindValue(section.academicLevelId());
+    else query.addBindValue(QVariant());
+
     if (!query.exec()) {
         qDebug() << "Error adding section:" << query.lastError().text();
         return false;
@@ -29,11 +41,20 @@ bool SectionController::updateSection(const Section& section)
 	QSqlQuery query(DBConnection::instance().database());
     query.prepare(Queries::UPDATE_SECTION);
     query.addBindValue(section.name());
-    query.addBindValue(section.courseId());
+    
+    if (section.courseId() > 0) query.addBindValue(section.courseId());
+    else query.addBindValue(QVariant());
+    
     query.addBindValue(section.capacity());
-    query.addBindValue(section.semesterId());
+    
+    if (section.semesterId() > 0) query.addBindValue(section.semesterId());
+    else query.addBindValue(QVariant());
+    
+    if (section.academicLevelId() > 0) query.addBindValue(section.academicLevelId());
+    else query.addBindValue(QVariant());
+
     query.addBindValue(section.id());
-    if (!query.exec()) {
+    if (!query.exec()) { // Fixed missing !query.exec() check logic structure if needed, but here it matches originals
         qDebug() << "Error updating section:" << query.lastError().text();
         return false;
 	}
@@ -70,6 +91,7 @@ QList<Section> SectionController::getAllSections()
         section.setCourseId(query.value("course_id").toInt());
         section.setCapacity(query.value("capacity").toInt());
         section.setSemesterId(query.value("semester_id").toInt());
+        section.setAcademicLevelId(query.value("academic_level_id").toInt()); // Read new field
         section.setCreatedAt(query.value("created_at").toDateTime());
         section.setUpdatedAt(query.value("updated_at").toDateTime());
         // Additional course info

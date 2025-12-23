@@ -18,6 +18,9 @@ public:
     StudentData getStudentById(int id);
     StudentData getStudentByUserId(int userId);
     StudentData getStudentByIdNumber(int IdNumber);
+    
+private:
+    bool enrollStudentInLevelCourses(int studentId, int levelId);
 };
 
 #endif // STUDENTCONTROLLER_H

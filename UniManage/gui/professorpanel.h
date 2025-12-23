@@ -9,12 +9,14 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QListWidget>
+#include <QStackedWidget>
 
 #include "../controllers/professorcontroller.h"
 #include "../controllers/enrollmentcontroller.h"
 #include "../controllers/coursecontroller.h"
 #include "../controllers/schedulecontroller.h"
 #include "../controllers/calendarcontroller.h"
+#include "../controllers/academic_level_controller.h"
 
 #include "../models/professor.h"
 #include "../models/attendance_log.h"
@@ -32,9 +34,11 @@ private slots:
     void onCourseSelected(int index);
     void onYearSelected(int index);
     void onSaveGrades();
-    void onRefreshStudents();
+    void onSubmitAttendance();
+    void onRefreshStudents(); // Refreshes both tables based on active tab
     void onRefreshAll();
     void onLogout();
+
     
     // Calendar Management
     void onAddCalendarEvent();
@@ -43,7 +47,7 @@ private slots:
 
     // Profile
     void onSaveProfile();
-    void onSubmitAttendance();
+
 
 private:
     void setupUI();
@@ -53,6 +57,7 @@ private:
     void loadCalendarEvents();
     
     // Helpers
+    QWidget* createGradesTab();
     QWidget* createAttendanceTab();
     QWidget* createScheduleTab();
     QWidget* createCoursesTab();
@@ -64,11 +69,18 @@ private:
     
     QTabWidget* m_tabWidget;
     
-    // Attendance & Grading
+    // Shared Selectors
     QComboBox* m_yearSelector;
     QComboBox* m_courseSelector;
+
+    // Grades (Dashboard)
+    QTableWidget* m_gradesTable;
+    QLabel* m_noStudentsLabelGrades;
+
+    // Attendance
     QDateEdit* m_attendanceDate;
-    QTableWidget* m_studentsTable;
+    QTableWidget* m_attendanceTable;
+    QLabel* m_noStudentsLabelAtt;
     
     // Schedule
     QTableWidget* m_scheduleTable;
@@ -90,6 +102,7 @@ private:
     CourseController m_courseController;
     ScheduleController m_scheduleController;
     CalendarController m_calendarController;
+    AcademicLevelController m_academicLevelController;
 };
 
 #endif // PROFESSORPANEL_H

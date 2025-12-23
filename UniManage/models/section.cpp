@@ -1,7 +1,7 @@
 #include "section.h"
 
 Section::Section()
-    : m_id(0), m_name(""), m_courseId(0), m_capacity(40), m_semesterId(0)
+    : m_id(0), m_name(""), m_courseId(0), m_capacity(40), m_semesterId(0), m_academicLevelId(0)
 {
 }
 
@@ -12,6 +12,7 @@ Section::Section(int id, const QString& name, int courseId, int capacity, int se
     m_courseId = courseId;
     m_capacity = capacity;
     m_semesterId = semesterId;
+    m_academicLevelId = 0; // Initialize explicitly
 }
 
 QString Section::name() const {
@@ -76,4 +77,12 @@ QString Section::courseName() const {
 
 void Section::setCourseName(const QString& courseName) {
     m_courseName = courseName;
+}
+
+int Section::academicLevelId() const {
+    return m_academicLevelId;
+}
+
+void Section::setAcademicLevelId(int levelId) {
+    m_academicLevelId = levelId;
 }

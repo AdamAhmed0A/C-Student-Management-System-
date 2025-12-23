@@ -26,6 +26,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QFont>
+#include <QMap>
 
 AdminPanel::AdminPanel(int adminId, QWidget *parent)
     : QWidget(parent), m_adminId(adminId)
@@ -117,10 +118,29 @@ void AdminPanel::refreshSectionsTable() {
         m_sectionsTable->insertRow(r);
         m_sectionsTable->setItem(r, 0, new QTableWidgetItem(QString::number(s.id())));
         m_sectionsTable->setItem(r, 1, new QTableWidgetItem(s.name()));
-        m_sectionsTable->setItem(r, 2, new QTableWidgetItem(s.courseName()));
-        m_sectionsTable->setItem(r, 3, new QTableWidgetItem(QString::number(s.capacity())));
-        // Mapping semester id to string would be better, but we use ID for now
-        m_sectionsTable->setItem(r, 4, new QTableWidgetItem(QString::number(s.semesterId())));
+        m_sectionsTable->setItem(r, 2, new QTableWidgetItem(QString::number(s.capacity())));
+        
+        // Read correctly from academicLevelId() now
+        QString levelName = "---";
+        int lvlId = s.academicLevelId();
+        
+        // If 0, maybe fallback to semesterId or just iterate
+        if (lvlId > 0) {
+            // Find name
+             // Optim: could cache levels map, but this is fine for now
+             QList<AcademicLevel> levels = m_academicLevelController.getAllAcademicLevels();
+             for(const auto& l : levels) {
+                 if (l.id() == lvlId) {
+                     levelName = QString("Year %1").arg(l.levelNumber());
+                     break;
+                 }
+             }
+        } else if (s.semesterId() > 0) { 
+             // Legacy fallback if data migrated purely to semesterId before
+             levelName = "Year " + QString::number(s.semesterId()) + " (Legacy)";
+        }
+        
+        m_sectionsTable->setItem(r, 3, new QTableWidgetItem(levelName));
     }
 }
 
@@ -353,16 +373,22 @@ void AdminPanel::onAddSection() {
     dialog.setWindowTitle("New Section/Group");
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit();
-    QComboBox* course = new QComboBox();
-    for(const auto& c : m_courseController.getAllCourses()) course->addItem(c.name(), c.id());
-    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 400); cap->setValue(40);
-    QComboBox* sem = new QComboBox();
-    for(const auto& s : m_semesterController.getAllSemesters()) sem->addItem(QString::number(s.id()), s.id());
     
-    layout->addRow("Section:", name);
+    // User requested to remove Course selection
+    // QComboBox* course = new QComboBox();
+    // for(const auto& c : m_courseController.getAllCourses()) course->addItem(c.name(), c.id());
+    
+    QSpinBox* cap = new QSpinBox(); cap->setRange(1, 400); cap->setValue(40);
+    
+    // User requested "Semester should be the Year same as student"
+    // So we use Academic Level selector instead of Semester selector
+    QComboBox* level = new QComboBox();
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
+    
+    layout->addRow("Section Name:", name);
     // layout->addRow("Course:", course);
     layout->addRow("Capacity:", cap);
-    // layout->addRow("Semester ID:", sem);
+    layout->addRow("Academic Year:", level);
     
     QPushButton* btn = new QPushButton("Create");
     layout->addRow(btn);
@@ -371,9 +397,10 @@ void AdminPanel::onAddSection() {
     if (dialog.exec() == QDialog::Accepted) {
         Section s;
         s.setName(name->text());
-        // s.setCourseId(course->currentData().toInt());
+        s.setCourseId(0); // No course linked
         s.setCapacity(cap->value());
-        // s.setSemesterId(sem->currentData().toInt());
+        s.setSemesterId(0); // Explicitly 0
+        s.setAcademicLevelId(level->currentData().toInt()); // Correct field
         if(m_sectionController.addSection(s)) {
             refreshSectionsTable();
         }
@@ -384,38 +411,36 @@ void AdminPanel::onEditSection() {
     if (row < 0) return;
     int id = m_sectionsTable->item(row, 0)->text().toInt();
     
+    // Table is now: ID, Name, Capacity, Academic Year Name
     QString currentName = m_sectionsTable->item(row, 1)->text();
-    QString courseName = m_sectionsTable->item(row, 2)->text();
-    int currentCap = m_sectionsTable->item(row, 3)->text().toInt();
-    int currentSem = m_sectionsTable->item(row, 4)->text().toInt();
+    int currentCap = m_sectionsTable->item(row, 2)->text().toInt();
+    QString currentLevelName = m_sectionsTable->item(row, 3)->text();
 
     QDialog dialog(this);
     dialog.setWindowTitle("Edit Section/Group");
     QFormLayout* layout = new QFormLayout(&dialog);
     QLineEdit* name = new QLineEdit(currentName);
-    QComboBox* course = new QComboBox();
-    auto courses = m_courseController.getAllCourses();
-    int courseIdx = -1;
-    for(int i=0; i<courses.size(); ++i) {
-        course->addItem(courses[i].name(), courses[i].id());
-        if(courses[i].name() == courseName) courseIdx = i;
-    }
-    if(courseIdx != -1) course->setCurrentIndex(courseIdx);
-
+    
     QSpinBox* cap = new QSpinBox(); cap->setRange(1, 400); cap->setValue(currentCap);
-    QComboBox* sem = new QComboBox();
-    auto semesters = m_semesterController.getAllSemesters();
-    int semIdx = -1;
-    for(int i=0; i<semesters.size(); ++i) {
-        sem->addItem(QString::number(semesters[i].id()), semesters[i].id());
-        if(semesters[i].id() == currentSem) semIdx = i;
+    
+    QComboBox* level = new QComboBox();
+    int levelIdx = 0;
+    // We can't rely on comparing names if we change display format, rely on ID from Section object?
+    // Section object not fully retrieved here, strictly using table data which might be limiting.
+    // Ideally we fetch section by ID.
+    Section sObj = m_sectionController.getSectionById(id);
+    
+    auto levels = m_academicLevelController.getAllAcademicLevels();
+    for(int i=0; i<levels.size(); ++i) {
+        level->addItem(QString("Year %1").arg(levels[i].levelNumber()), levels[i].id());
     }
-    if(semIdx != -1) sem->setCurrentIndex(semIdx);
+    // Set index by ID
+    levelIdx = level->findData(sObj.academicLevelId());
+    if (levelIdx >= 0) level->setCurrentIndex(levelIdx);
     
     layout->addRow("Section Name:", name);
-    layout->addRow("Course:", course);
     layout->addRow("Max Capacity:", cap);
-    layout->addRow("Semester ID:", sem);
+    layout->addRow("Academic Year:", level);
     
     QPushButton* btn = new QPushButton("Update");
     layout->addRow(btn);
@@ -425,9 +450,10 @@ void AdminPanel::onEditSection() {
         Section s;
         s.setId(id);
         s.setName(name->text());
-        s.setCourseId(course->currentData().toInt());
+        s.setCourseId(0); // No course linked
         s.setCapacity(cap->value());
-        s.setSemesterId(sem->currentData().toInt());
+        s.setSemesterId(0);
+        s.setAcademicLevelId(level->currentData().toInt()); // Correct field
         if(m_sectionController.updateSection(s)) {
             refreshSectionsTable();
         }
@@ -833,8 +859,8 @@ QWidget* AdminPanel::createSectionsTab() {
     btns->addStretch();
 
     m_sectionsTable = new QTableWidget();
-    m_sectionsTable->setColumnCount(5);
-    m_sectionsTable->setHorizontalHeaderLabels({"ID", "Name", "Course", "Capacity", "Semester"});
+    m_sectionsTable->setColumnCount(4);
+    m_sectionsTable->setHorizontalHeaderLabels({"ID", "Name", "Capacity", "Academic Year"});
     m_sectionsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_sectionsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     
@@ -924,7 +950,7 @@ QWidget* AdminPanel::createStudentsTab() {
     btns->addStretch();
     m_studentsTable = new QTableWidget();
     m_studentsTable->setColumnCount(10);
-    m_studentsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "ID Number", "College", "Dept", "Section", "Level", "Fees", "Status"});
+    m_studentsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "ID Number", "College", "Dept", "Section", "Year/Level", "Fees", "Status"});
     m_studentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_studentsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     layout->addLayout(btns);
@@ -994,6 +1020,10 @@ void AdminPanel::refreshCoursesTable() {
     m_coursesTable->setRowCount(0);
     m_coursesTable->setColumnCount(10);
     m_coursesTable->setHorizontalHeaderLabels({"ID", "Name", "Department", "Professor", "Type", "Max Grade", "Credits", "Level", "Semester", "Description"});
+    QMap<int, QString> levelMap;
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) 
+        levelMap[l.id()] = QString("Year %1").arg(l.levelNumber());
+
     for (const auto& c : m_courseController.getAllCourses()) {
         int r = m_coursesTable->rowCount();
         m_coursesTable->insertRow(r);
@@ -1004,7 +1034,11 @@ void AdminPanel::refreshCoursesTable() {
         m_coursesTable->setItem(r, 4, new QTableWidgetItem(c.courseType()));
         m_coursesTable->setItem(r, 5, new QTableWidgetItem(QString::number(c.maxGrade())));
         m_coursesTable->setItem(r, 6, new QTableWidgetItem(QString::number(c.creditHours())));
-        m_coursesTable->setItem(r, 7, new QTableWidgetItem(QString::number(c.yearLevel())));
+        
+        // Use name lookup from map
+        QString levelStr = levelMap.value(c.yearLevel(), QString::number(c.yearLevel()));
+        m_coursesTable->setItem(r, 7, new QTableWidgetItem(levelStr));
+        
         m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.semesterName()));
         m_coursesTable->setItem(r, 9, new QTableWidgetItem(c.description()));
     }
@@ -1127,7 +1161,8 @@ void AdminPanel::onAddStudent() {
     updateDepts();
     
     QComboBox* level = new QComboBox();
-    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
+    level->addItem("--- Select Year ---", 0);
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
 
     QComboBox* section = new QComboBox();
     section->addItem("--- No Section ---", 0);
@@ -1161,7 +1196,7 @@ void AdminPanel::onAddStudent() {
     layout->addRow("Student Code:", code);
     layout->addRow("College/Faculty:", college);
     // layout->addRow("Department:", dept);
-    layout->addRow("Academic Level:", level);
+    layout->addRow("Academic Year (1-5):", level);
     layout->addRow("Section/Group:", section);
     layout->addRow("Tuition Fees:", tuition);
 
@@ -1172,6 +1207,11 @@ void AdminPanel::onAddStudent() {
     if (dialog.exec() == QDialog::Accepted) {
         if (name->text().isEmpty() || code->text().isEmpty() || nationalId->text().length() != 14) {
             QMessageBox::warning(this, "Input Error", "Please fill all fields. National ID must be 14 digits.");
+            return;
+        }
+        
+        if (level->currentData().toInt() == 0) {
+            QMessageBox::warning(this, "Input Error", "Academic Year/Level is mandatory. Please select a year (1-5).");
             return;
         }
 
@@ -1266,7 +1306,7 @@ void AdminPanel::onEditStudent() {
     deptEdit->setCurrentIndex(deptEdit->findData(student.departmentId()));
 
     QComboBox* levelEdit = new QComboBox();
-    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) levelEdit->addItem(l.name(), l.id());
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) levelEdit->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
     levelEdit->setCurrentIndex(levelEdit->findData(student.academicLevelId()));
 
     QComboBox* sectionEdit = new QComboBox();
@@ -1284,7 +1324,7 @@ void AdminPanel::onEditStudent() {
     layout->addRow("National ID:", idEdit);
     layout->addRow("College/Faculty:", collegeEdit);
     // layout->addRow("Department:", deptEdit);
-    layout->addRow("Academic Level:", levelEdit);
+    layout->addRow("Academic Year (1-5):", levelEdit);
     layout->addRow("Section/Group:", sectionEdit);
     layout->addRow("Tuition Fees:", tuitionEdit);
 
@@ -1340,7 +1380,7 @@ void AdminPanel::onAddCourse() {
     QSpinBox* credits = new QSpinBox(); credits->setRange(1, 10);
     
     QComboBox* level = new QComboBox();
-    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(l.name(), l.id());
+    for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
     
     QComboBox* semester = new QComboBox();
     for(const auto& s : m_semesterController.getAllSemesters()) {
@@ -1426,21 +1466,27 @@ void AdminPanel::onEditCourse() {
 
     QComboBox* level = new QComboBox();
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) {
-        level->addItem(l.name(), l.id());
-        if (l.id() == c.yearLevel()) level->setCurrentIndex(level->count()-1);
+        level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
     }
+    // Correctly set current index based on existing data
+    int lvlIdx = level->findData(c.yearLevel());
+    if (lvlIdx >= 0) level->setCurrentIndex(lvlIdx);
 
     QComboBox* semester = new QComboBox();
     for(const auto& s : m_semesterController.getAllSemesters()) {
         semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
-        if (s.id() == c.semesterId()) semester->setCurrentIndex(semester->count()-1);
     }
-    
+    // Correctly set current index
+    int semIdx = semester->findData(c.semesterId());
+    if (semIdx >= 0) semester->setCurrentIndex(semIdx);
+
     QComboBox* dept = new QComboBox();
     for(const auto& d : m_departmentController.getAllDepartments()) {
         dept->addItem(d.name(), d.id());
-        if (d.id() == c.departmentId()) dept->setCurrentIndex(dept->count()-1);
     }
+    // Correctly set current index
+    int deptIdx = dept->findData(c.departmentId());
+    if (deptIdx >= 0) dept->setCurrentIndex(deptIdx);
 
     QComboBox* prof = new QComboBox();
     prof->addItem("Unchanged", -1);

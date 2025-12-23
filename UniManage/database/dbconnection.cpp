@@ -301,7 +301,8 @@ bool DBConnection::createTables()
     addCol("courses", "max_grade", "INT DEFAULT 100");
     addCol("courses", "course_type", "VARCHAR(50) DEFAULT 'Theoretical'");
     addCol("sections", "name", "VARCHAR(100) AFTER `id` ");
-
+    addCol("sections", "academic_level_id", "INT NULL AFTER `semester_id` "); // Added migration
+    
     // Enrollments table (expanded with Grade Distribution)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `enrollments` ("
                     "id INT PRIMARY KEY AUTO_INCREMENT,"

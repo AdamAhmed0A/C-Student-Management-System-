@@ -100,11 +100,11 @@ namespace Queries {
                                                 "WHERE sch.professor_id = ? ORDER BY c.name";
 
     // Section queries
-    const QString INSERT_SECTION = "INSERT INTO sections (name, course_id, capacity, semester_id) VALUES (?, ?, ?, ?)";
-    const QString UPDATE_SECTION = "UPDATE sections SET name = ?, course_id = ?, capacity = ?, semester_id = ? WHERE id = ?";
+    const QString INSERT_SECTION = "INSERT INTO sections (name, course_id, capacity, semester_id, academic_level_id) VALUES (?, ?, ?, ?, ?)";
+    const QString UPDATE_SECTION = "UPDATE sections SET name = ?, course_id = ?, capacity = ?, semester_id = ?, academic_level_id = ? WHERE id = ?";
     const QString DELETE_SECTION = "DELETE FROM sections WHERE id = ?";
     const QString SELECT_ALL_SECTIONS = "SELECT sec.*, c.name as course_name FROM sections sec "
-                                        "JOIN courses c ON sec.course_id = c.id ORDER BY c.name";
+                                        "LEFT JOIN courses c ON sec.course_id = c.id ORDER BY sec.name"; // LEFT JOIN because course_id can be NULL/0
     const QString SELECT_SECTIONS_BY_COURSE = "SELECT * FROM sections WHERE course_id = ?";
 
     // Enrollment queries
@@ -123,6 +123,8 @@ namespace Queries {
                                                 "JOIN courses c ON e.course_id = c.id "
                                                 "LEFT JOIN semester sem ON c.semester_id = sem.id "
                                                 "WHERE e.course_id = ?";
+    const QString INSERT_ENROLLMENT_BATCH_BY_LEVEL = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, total_grade, letter_grade, enrolled_at) "
+                                                     "SELECT ?, id, 'Active', 0, 0, 0, 0, 0, 0, 0, 'N/A', NOW() FROM courses WHERE year_level = ?";
 
     // Payment queries
     const QString INSERT_PAYMENT = "INSERT INTO payments (student_id, amount, date, year, method, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";

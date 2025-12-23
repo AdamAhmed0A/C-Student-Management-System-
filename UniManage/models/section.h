@@ -35,12 +35,16 @@ public:
     QString courseName() const;
     void setCourseName(const QString& courseName);
 
+    int academicLevelId() const;
+    void setAcademicLevelId(int levelId);
+
 private:
     int m_id;
     QString m_name;
     int m_courseId;
     int m_capacity;
     int m_semesterId;
+    int m_academicLevelId;
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
     QString m_courseName;
