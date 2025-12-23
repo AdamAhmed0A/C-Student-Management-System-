@@ -139,32 +139,36 @@ Enrollment EnrollmentController::getEnrollmentById(int id)
 {
     Enrollment e;
     QSqlQuery query(DBConnection::instance().database());
-    // Explicitly select with table prefixes to avoid ambiguity during JOINs
-    query.prepare("SELECT e.id, e.student_id, e.course_id, e.status, "
-                  "e.attendance_count, e.absence_count, e.assignment_1_grade, "
-                  "e.assignment_2_grade, e.coursework_grade, e.final_exam_grade, "
-                  "e.experience_grade, e.total_grade, e.letter_grade, u.full_name "
-                  "FROM enrollments e "
-                  "JOIN students_data sd ON e.student_id = sd.id "
-                  "JOIN users u ON sd.user_id = u.id "
-                  "WHERE e.id = ?");
+    // Use a simpler query first to ensure we get the enrollment data
+    query.prepare("SELECT * FROM enrollments WHERE id = ?");
     query.addBindValue(id);
     
     if (query.exec() && query.next()) {
-        e.setId(query.value(0).toInt());
-        e.setStudentId(query.value(1).toInt());
-        e.setCourseId(query.value(2).toInt());
-        e.setStatus(query.value(3).toString());
-        e.setAttendanceCount(query.value(4).toInt());
-        e.setAbsenceCount(query.value(5).toInt());
-        e.setAssignment1Grade(query.value(6).toDouble());
-        e.setAssignment2Grade(query.value(7).toDouble());
-        e.setCourseworkGrade(query.value(8).toDouble());
-        e.setFinalExamGrade(query.value(9).toDouble());
-        e.setExperienceGrade(query.value(10).toDouble());
-        e.setTotalGrade(query.value(11).toDouble());
-        e.setLetterGrade(query.value(12).toString());
-        e.setStudentName(query.value(13).toString());
+        e.setId(query.value("id").toInt());
+        e.setStudentId(query.value("student_id").toInt());
+        e.setCourseId(query.value("course_id").toInt());
+        e.setStatus(query.value("status").toString());
+        e.setAttendanceCount(query.value("attendance_count").toInt());
+        e.setAbsenceCount(query.value("absence_count").toInt());
+        e.setAssignment1Grade(query.value("assignment_1_grade").toDouble());
+        e.setAssignment2Grade(query.value("assignment_2_grade").toDouble());
+        e.setCourseworkGrade(query.value("coursework_grade").toDouble());
+        e.setFinalExamGrade(query.value("final_exam_grade").toDouble());
+        e.setExperienceGrade(query.value("experience_grade").toDouble());
+        e.setTotalGrade(query.value("total_grade").toDouble());
+        e.setLetterGrade(query.value("letter_grade").toString());
+        
+        // Fetch student name separately for reliability
+        QSqlQuery nameQuery(DBConnection::instance().database());
+        nameQuery.prepare("SELECT u.full_name FROM students_data sd "
+                         "JOIN users u ON sd.user_id = u.id "
+                         "WHERE sd.id = ?");
+        nameQuery.addBindValue(e.studentId());
+        if (nameQuery.exec() && nameQuery.next()) {
+            e.setStudentName(nameQuery.value(0).toString());
+        }
+    } else {
+        qDebug() << "getEnrollmentById failed for ID:" << id << "Error:" << query.lastError().text();
     }
     return e;
 }

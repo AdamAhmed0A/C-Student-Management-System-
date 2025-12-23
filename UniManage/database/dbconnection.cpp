@@ -300,8 +300,8 @@ bool DBConnection::createTables()
     addCol("colleges", "tuition_fees", "DOUBLE DEFAULT 0 AFTER `code` ");
     addCol("courses", "max_grade", "INT DEFAULT 100");
     addCol("courses", "course_type", "VARCHAR(50) DEFAULT 'Theoretical'");
-    addCol("sections", "name", "VARCHAR(100) AFTER `id` ");
     addCol("sections", "academic_level_id", "INT NULL AFTER `semester_id` "); // Added migration
+    addCol("enrollments", "experience_grade", "DOUBLE DEFAULT 0 AFTER `final_exam_grade` ");
     
     // Enrollments table (expanded with Grade Distribution)
     if (!query.exec("CREATE TABLE IF NOT EXISTS `enrollments` ("
@@ -315,6 +315,7 @@ bool DBConnection::createTables()
                     "assignment_2_grade DOUBLE DEFAULT 0,"
                     "coursework_grade DOUBLE DEFAULT 0,"
                     "final_exam_grade DOUBLE DEFAULT 0,"
+                    "experience_grade DOUBLE DEFAULT 0,"
                     "total_grade DOUBLE DEFAULT 0,"
                     "letter_grade VARCHAR(10)," // Excellent, Very Good, etc.
                     "is_rafaa_applied TINYINT(1) DEFAULT 0,"

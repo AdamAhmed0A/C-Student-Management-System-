@@ -784,8 +784,10 @@ QWidget* AdminPanel::createCoursesTab() {
 QWidget* AdminPanel::createRoomsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
+    
+    // Top Controls
     QHBoxLayout* btns = new QHBoxLayout();
-    QPushButton* addBtn = new QPushButton("Add Hall/Lab");
+    QPushButton* addBtn = new QPushButton("Add Facility");
     QPushButton* editBtn = new QPushButton("Edit Facility");
     editBtn->setObjectName("secondaryBtn");
     QPushButton* deleteBtn = new QPushButton("Remove Facility");
@@ -798,20 +800,40 @@ QWidget* AdminPanel::createRoomsTab() {
     btns->addWidget(deleteBtn);
     btns->addWidget(specBtn);
     btns->addStretch();
+    layout->addLayout(btns);
+
+    // Sub Tabs for Halls and Labs
+    m_roomSubTabWidget = new QTabWidget();
     
+    // 1. Lecture Halls Tab
+    QWidget* hallsTab = new QWidget();
+    QVBoxLayout* hallsLayout = new QVBoxLayout(hallsTab);
     m_roomsTable = new QTableWidget();
-    m_roomsTable->setColumnCount(8);
-    m_roomsTable->setHorizontalHeaderLabels({"ID", "Name", "Type", "Capacity", "ACs", "Fans", "Lighting", "PCs"});
+    m_roomsTable->setColumnCount(8); 
+    m_roomsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "Capacity", "ACs", "Fans", "Lighting", "Seating"});
     m_roomsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_roomsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    hallsLayout->addWidget(m_roomsTable);
+    m_roomSubTabWidget->addTab(hallsTab, "Lecture Halls");
     
-    layout->addLayout(btns);
-    layout->addWidget(m_roomsTable);
+    // 2. Computer Labs Tab
+    QWidget* labsTab = new QWidget();
+    QVBoxLayout* labsLayout = new QVBoxLayout(labsTab);
+    m_labsTable = new QTableWidget();
+    m_labsTable->setColumnCount(8);
+    m_labsTable->setHorizontalHeaderLabels({"ID", "Code", "Name", "Capacity", "ACs", "Fans", "Lighting", "PCs"});
+    m_labsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_labsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    labsLayout->addWidget(m_labsTable);
+    m_roomSubTabWidget->addTab(labsTab, "Computer Labs");
+    
+    layout->addWidget(m_roomSubTabWidget);
     
     connect(addBtn, &QPushButton::clicked, this, &AdminPanel::onAddRoom);
     connect(editBtn, &QPushButton::clicked, this, &AdminPanel::onEditRoom);
     connect(deleteBtn, &QPushButton::clicked, this, &AdminPanel::onDeleteRoom);
     connect(specBtn, &QPushButton::clicked, this, &AdminPanel::onManageRoomSpecs);
+    
     return widget;
 }
 
@@ -1088,18 +1110,36 @@ void AdminPanel::refreshLevelsTable() {
 }
 
 void AdminPanel::refreshRoomsTable() {
+    if (!m_roomsTable || !m_labsTable) return;
     m_roomsTable->setRowCount(0);
+    m_labsTable->setRowCount(0);
+    
     for (const auto& r_obj : m_roomController.getAllRooms()) {
-        int r = m_roomsTable->rowCount();
-        m_roomsTable->insertRow(r);
-        m_roomsTable->setItem(r, 0, new QTableWidgetItem(QString::number(r_obj.id())));
-        m_roomsTable->setItem(r, 1, new QTableWidgetItem(r_obj.name()));
-        m_roomsTable->setItem(r, 2, new QTableWidgetItem(r_obj.type()));
-        m_roomsTable->setItem(r, 3, new QTableWidgetItem(QString::number(r_obj.capacity())));
-        m_roomsTable->setItem(r, 4, new QTableWidgetItem(QString::number(r_obj.acUnits())));
-        m_roomsTable->setItem(r, 5, new QTableWidgetItem(QString::number(r_obj.fansCount())));
-        m_roomsTable->setItem(r, 6, new QTableWidgetItem(QString::number(r_obj.lightingPoints())));
-        m_roomsTable->setItem(r, 7, new QTableWidgetItem(QString::number(r_obj.computersCount())));
+        QString type = r_obj.type().trimmed();
+        if (type.compare("Hall", Qt::CaseInsensitive) == 0) {
+            int r = m_roomsTable->rowCount();
+            m_roomsTable->insertRow(r);
+            m_roomsTable->setItem(r, 0, new QTableWidgetItem(QString::number(r_obj.id())));
+            m_roomsTable->setItem(r, 1, new QTableWidgetItem(r_obj.code()));
+            m_roomsTable->setItem(r, 2, new QTableWidgetItem(r_obj.name()));
+            m_roomsTable->setItem(r, 3, new QTableWidgetItem(QString::number(r_obj.capacity())));
+            m_roomsTable->setItem(r, 4, new QTableWidgetItem(QString::number(r_obj.acUnits())));
+            m_roomsTable->setItem(r, 5, new QTableWidgetItem(QString::number(r_obj.fansCount())));
+            m_roomsTable->setItem(r, 6, new QTableWidgetItem(QString::number(r_obj.lightingPoints())));
+            m_roomsTable->setItem(r, 7, new QTableWidgetItem(r_obj.seatingDescription()));
+        } else if (type.compare("Lab", Qt::CaseInsensitive) == 0 || type.isEmpty()) {
+            // Defaulting unknown or "Lab" to Labs tab
+            int r = m_labsTable->rowCount();
+            m_labsTable->insertRow(r);
+            m_labsTable->setItem(r, 0, new QTableWidgetItem(QString::number(r_obj.id())));
+            m_labsTable->setItem(r, 1, new QTableWidgetItem(r_obj.code()));
+            m_labsTable->setItem(r, 2, new QTableWidgetItem(r_obj.name()));
+            m_labsTable->setItem(r, 3, new QTableWidgetItem(QString::number(r_obj.capacity())));
+            m_labsTable->setItem(r, 4, new QTableWidgetItem(QString::number(r_obj.acUnits())));
+            m_labsTable->setItem(r, 5, new QTableWidgetItem(QString::number(r_obj.fansCount())));
+            m_labsTable->setItem(r, 6, new QTableWidgetItem(QString::number(r_obj.lightingPoints())));
+            m_labsTable->setItem(r, 7, new QTableWidgetItem(QString::number(r_obj.computersCount())));
+        }
     }
 }
 
@@ -1657,6 +1697,11 @@ void AdminPanel::onAddRoom() {
     QLineEdit* name = new QLineEdit();
     QLineEdit* code = new QLineEdit();
     QComboBox* type = new QComboBox(); type->addItems({"Hall", "Lab"});
+    
+    if (m_roomSubTabWidget) {
+        type->setCurrentIndex(m_roomSubTabWidget->currentIndex());
+    }
+    
     QSpinBox* cap = new QSpinBox(); cap->setRange(1, 1000);
     
     QSpinBox* ac = new QSpinBox(); ac->setRange(0, 50);
@@ -1720,9 +1765,15 @@ void AdminPanel::onAddRoom() {
 }
 
 void AdminPanel::onEditRoom() {
-    int row = m_roomsTable->currentRow();
-    if (row < 0) return;
-    int id = m_roomsTable->item(row, 0)->text().toInt();
+    if (!m_roomSubTabWidget) return;
+    QTableWidget* table = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;
+    int row = table->currentRow();
+    
+    if (row < 0) {
+        QMessageBox::warning(this, "Select Facility", "Please select a facility from the active tab.");
+        return;
+    }
+    int id = table->item(row, 0)->text().toInt();
     Room r = m_roomController.getRoomById(id);
     if (r.id() == 0) return;
 
@@ -1735,6 +1786,8 @@ void AdminPanel::onEditRoom() {
     type->setCurrentText(r.type());
     QSpinBox* cap = new QSpinBox(); cap->setRange(1, 1000); cap->setValue(r.capacity());
     QSpinBox* ac = new QSpinBox(); ac->setRange(0, 50); ac->setValue(r.acUnits());
+    QSpinBox* fans = new QSpinBox(); fans->setRange(0, 50); fans->setValue(r.fansCount());
+    QSpinBox* lights = new QSpinBox(); lights->setRange(0, 200); lights->setValue(r.lightingPoints());
     QSpinBox* pcs = new QSpinBox(); pcs->setRange(0, 100); pcs->setValue(r.computersCount());
     QTextEdit* desc = new QTextEdit(r.seatingDescription());
     desc->setMaximumHeight(60);
@@ -1743,6 +1796,8 @@ void AdminPanel::onEditRoom() {
     layout->addRow("Type:", type);
     layout->addRow("Capacity:", cap);
     layout->addRow("AC Units:", ac);
+    layout->addRow("Fans:", fans);
+    layout->addRow("Lighting Points:", lights);
     
     QLabel* pcLabel = new QLabel("Computers:");
     layout->addRow(pcLabel, pcs);
@@ -1768,6 +1823,8 @@ void AdminPanel::onEditRoom() {
         r.setType(type->currentText());
         r.setCapacity(cap->value());
         r.setAcUnits(ac->value());
+        r.setFansCount(fans->value());
+        r.setLightingPoints(lights->value());
         r.setComputersCount(type->currentText() == "Lab" ? pcs->value() : 0);
         r.setSeatingDescription(type->currentText() == "Lab" ? "" : desc->toPlainText());
 
@@ -1779,9 +1836,15 @@ void AdminPanel::onEditRoom() {
 }
 
 void AdminPanel::onDeleteRoom() {
-    int row = m_roomsTable->currentRow();
-    if (row < 0) return;
-    int id = m_roomsTable->item(row, 0)->text().toInt();
+    if (!m_roomSubTabWidget) return;
+    QTableWidget* table = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;
+    int row = table->currentRow();
+    
+    if (row < 0) {
+        QMessageBox::warning(this, "Select Facility", "Please select a facility from the active tab.");
+        return;
+    }
+    int id = table->item(row, 0)->text().toInt();
 
     if (QMessageBox::question(this, "Confirm Removal", "Are you sure you want to remove this facility?") == QMessageBox::Yes) {
         if (m_roomController.deleteRoom(id)) {
@@ -2219,13 +2282,16 @@ void AdminPanel::onAddSchedule() {
     }
 }
 void AdminPanel::onManageRoomSpecs() {
-    int row = m_roomsTable->currentRow();
+    if (!m_roomSubTabWidget) return;
+    QTableWidget* table_sel = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;
+    int row = table_sel->currentRow();
+    
     if (row < 0) {
-        QMessageBox::warning(this, "Select Room", "Please select a room first.");
+        QMessageBox::warning(this, "Select Facility", "Please select a facility from the active tab.");
         return;
     }
-    int roomId = m_roomsTable->item(row, 0)->text().toInt();
-    QString roomName = m_roomsTable->item(row, 1)->text();
+    int roomId = table_sel->item(row, 0)->text().toInt();
+    QString roomName = table_sel->item(row, 2)->text(); // Index 2 is Name now (Index 1 is Code)
 
     QDialog dialog(this);
     dialog.setWindowTitle("Manage Specs for " + roomName);

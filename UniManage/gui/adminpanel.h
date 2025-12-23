@@ -99,12 +99,14 @@ private slots:
 private:
     int m_adminId;
     QTabWidget* m_tabWidget;
+    QTabWidget* m_roomSubTabWidget;
     QTableWidget* m_studentsTable;
     QTableWidget* m_coursesTable;
     QTableWidget* m_collegesTable;
     QTableWidget* m_departmentsTable;
     QTableWidget* m_levelsTable;
     QTableWidget* m_roomsTable;
+    QTableWidget* m_labsTable;
     QTableWidget* m_professorsTable;
     QTableWidget* m_schedulesTable;
     

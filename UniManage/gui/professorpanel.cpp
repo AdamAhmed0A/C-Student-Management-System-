@@ -18,6 +18,9 @@
 #include <QDialogButtonBox>
 #include <QSet>
 #include <algorithm>
+#include <QSqlQuery>
+#include <QSqlError>
+#include "../database/dbconnection.h"
 
 ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     : QWidget(parent), m_userId(userId), 
@@ -438,18 +441,14 @@ void ProfessorPanel::loadCourses() {
     
     m_yearSelector->blockSignals(true);
     m_yearSelector->clear();
-    for(int i = 1; i <= 5; ++i) {
-        m_yearSelector->addItem(QString::number(i), i);
+    
+    QList<AcademicLevel> levels = m_academicLevelController.getAllAcademicLevels();
+    for(const auto& l : levels) {
+        m_yearSelector->addItem(l.name(), l.id());
     }
+    
     m_yearSelector->blockSignals(false);
     
-    // Automatically select the first available course for the first available level
-    if(m_yearSelector->count() > 0) {
-        m_yearSelector->setCurrentIndex(0);
-        onYearSelected(0);
-    }
-
-
     // Refresh Courses Table (all assigned courses)
     m_coursesTable->setRowCount(0);
     for(const auto& c : m_allProfessorCourses) {
@@ -471,12 +470,13 @@ void ProfessorPanel::loadCourses() {
 
 void ProfessorPanel::onYearSelected(int index) {
     if (index < 0) return;
-    int selectedLevel = m_yearSelector->currentData().toInt();
+    int selectedLevelId = m_yearSelector->currentData().toInt();
     
     m_courseSelector->blockSignals(true);
     m_courseSelector->clear();
     for(const auto& c : m_allProfessorCourses) {
-        if (c.yearLevel() == selectedLevel) {
+        // Now comparing course's year_level (which stores level ID) with the selected level ID
+        if (c.yearLevel() == selectedLevelId) {
             m_courseSelector->addItem(c.name(), c.id());
         }
     }
@@ -557,83 +557,95 @@ void ProfessorPanel::onRefreshStudents() {
         int r1 = m_as1Table->rowCount();
         m_as1Table->insertRow(r1);
         QTableWidgetItem* iCode1 = new QTableWidgetItem(e.studentCode());
-        iCode1->setData(Qt::UserRole, e.id());
-        iCode1->setFlags(iCode1->flags() & ~Qt::ItemIsEditable);
-        m_as1Table->setItem(r1, 0, iCode1);
+        if(iCode1) {
+            iCode1->setData(Qt::UserRole, e.id());
+            iCode1->setFlags(iCode1->flags().setFlag(Qt::ItemIsEditable, false));
+            m_as1Table->setItem(r1, 0, iCode1);
+        }
         m_as1Table->setItem(r1, 1, new QTableWidgetItem(e.studentName()));
-        m_as1Table->item(r1, 1)->setFlags(m_as1Table->item(r1, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_as1Table->item(r1, 1)) m_as1Table->item(r1, 1)->setFlags(m_as1Table->item(r1, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_as1Table->setItem(r1, 2, new QTableWidgetItem(QString::number(e.assignment1Grade())));
 
         // AS2
         int r2 = m_as2Table->rowCount();
         m_as2Table->insertRow(r2);
         QTableWidgetItem* iCode2 = new QTableWidgetItem(e.studentCode());
-        iCode2->setData(Qt::UserRole, e.id());
-        iCode2->setFlags(iCode2->flags() & ~Qt::ItemIsEditable);
-        m_as2Table->setItem(r2, 0, iCode2);
+        if(iCode2) {
+            iCode2->setData(Qt::UserRole, e.id());
+            iCode2->setFlags(iCode2->flags().setFlag(Qt::ItemIsEditable, false));
+            m_as2Table->setItem(r2, 0, iCode2);
+        }
         m_as2Table->setItem(r2, 1, new QTableWidgetItem(e.studentName()));
-        m_as2Table->item(r2, 1)->setFlags(m_as2Table->item(r2, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_as2Table->item(r2, 1)) m_as2Table->item(r2, 1)->setFlags(m_as2Table->item(r2, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_as2Table->setItem(r2, 2, new QTableWidgetItem(QString::number(e.assignment2Grade())));
 
         // CW
         int r3 = m_cwTable->rowCount();
         m_cwTable->insertRow(r3);
         QTableWidgetItem* iCode3 = new QTableWidgetItem(e.studentCode());
-        iCode3->setData(Qt::UserRole, e.id());
-        iCode3->setFlags(iCode3->flags() & ~Qt::ItemIsEditable);
-        m_cwTable->setItem(r3, 0, iCode3);
+        if(iCode3) {
+            iCode3->setData(Qt::UserRole, e.id());
+            iCode3->setFlags(iCode3->flags().setFlag(Qt::ItemIsEditable, false));
+            m_cwTable->setItem(r3, 0, iCode3);
+        }
         m_cwTable->setItem(r3, 1, new QTableWidgetItem(e.studentName()));
-        m_cwTable->item(r3, 1)->setFlags(m_cwTable->item(r3, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_cwTable->item(r3, 1)) m_cwTable->item(r3, 1)->setFlags(m_cwTable->item(r3, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_cwTable->setItem(r3, 2, new QTableWidgetItem(QString::number(e.courseworkGrade())));
 
         // Final
         int r4 = m_finalTable->rowCount();
         m_finalTable->insertRow(r4);
         QTableWidgetItem* iCode4 = new QTableWidgetItem(e.studentCode());
-        iCode4->setData(Qt::UserRole, e.id());
-        iCode4->setFlags(iCode4->flags() & ~Qt::ItemIsEditable);
-        m_finalTable->setItem(r4, 0, iCode4);
+        if(iCode4) {
+            iCode4->setData(Qt::UserRole, e.id());
+            iCode4->setFlags(iCode4->flags().setFlag(Qt::ItemIsEditable, false));
+            m_finalTable->setItem(r4, 0, iCode4);
+        }
         m_finalTable->setItem(r4, 1, new QTableWidgetItem(e.studentName()));
-        m_finalTable->item(r4, 1)->setFlags(m_finalTable->item(r4, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_finalTable->item(r4, 1)) m_finalTable->item(r4, 1)->setFlags(m_finalTable->item(r4, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_finalTable->setItem(r4, 2, new QTableWidgetItem(QString::number(e.finalExamGrade())));
 
         // Exp
         int r5 = m_expTable->rowCount();
         m_expTable->insertRow(r5);
         QTableWidgetItem* iCode5 = new QTableWidgetItem(e.studentCode());
-        iCode5->setData(Qt::UserRole, e.id());
-        iCode5->setFlags(iCode5->flags() & ~Qt::ItemIsEditable);
-        m_expTable->setItem(r5, 0, iCode5);
+        if(iCode5) {
+            iCode5->setData(Qt::UserRole, e.id());
+            iCode5->setFlags(iCode5->flags().setFlag(Qt::ItemIsEditable, false));
+            m_expTable->setItem(r5, 0, iCode5);
+        }
         m_expTable->setItem(r5, 1, new QTableWidgetItem(e.studentName()));
-        m_expTable->item(r5, 1)->setFlags(m_expTable->item(r5, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_expTable->item(r5, 1)) m_expTable->item(r5, 1)->setFlags(m_expTable->item(r5, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_expTable->setItem(r5, 2, new QTableWidgetItem(QString::number(e.experienceGrade())));
 
         // Evaluation
         int r6 = m_evaluationTable->rowCount();
         m_evaluationTable->insertRow(r6);
         QTableWidgetItem* iCode6 = new QTableWidgetItem(e.studentCode());
-        iCode6->setData(Qt::UserRole, e.id());
-        iCode6->setFlags(iCode6->flags() & ~Qt::ItemIsEditable);
-        m_evaluationTable->setItem(r6, 0, iCode6);
+        if(iCode6) {
+            iCode6->setData(Qt::UserRole, e.id());
+            iCode6->setFlags(iCode6->flags().setFlag(Qt::ItemIsEditable, false));
+            m_evaluationTable->setItem(r6, 0, iCode6);
+        }
         m_evaluationTable->setItem(r6, 1, new QTableWidgetItem(e.studentName()));
-        m_evaluationTable->item(r6, 1)->setFlags(m_evaluationTable->item(r6, 1)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 1)) m_evaluationTable->item(r6, 1)->setFlags(m_evaluationTable->item(r6, 1)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 2, new QTableWidgetItem(e.academicYear()));
-        m_evaluationTable->item(r6, 2)->setFlags(m_evaluationTable->item(r6, 2)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 2)) m_evaluationTable->item(r6, 2)->setFlags(m_evaluationTable->item(r6, 2)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 3, new QTableWidgetItem(e.studentSection()));
-        m_evaluationTable->item(r6, 3)->setFlags(m_evaluationTable->item(r6, 3)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 3)) m_evaluationTable->item(r6, 3)->setFlags(m_evaluationTable->item(r6, 3)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 4, new QTableWidgetItem(QString::number(e.attendanceCount())));
-        m_evaluationTable->item(r6, 4)->setFlags(m_evaluationTable->item(r6, 4)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 4)) m_evaluationTable->item(r6, 4)->setFlags(m_evaluationTable->item(r6, 4)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 5, new QTableWidgetItem(QString::number(e.absenceCount())));
-        m_evaluationTable->item(r6, 5)->setFlags(m_evaluationTable->item(r6, 5)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 5)) m_evaluationTable->item(r6, 5)->setFlags(m_evaluationTable->item(r6, 5)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 6, new QTableWidgetItem(QString::number(e.assignment1Grade())));
         m_evaluationTable->setItem(r6, 7, new QTableWidgetItem(QString::number(e.assignment2Grade())));
         m_evaluationTable->setItem(r6, 8, new QTableWidgetItem(QString::number(e.courseworkGrade())));
         m_evaluationTable->setItem(r6, 9, new QTableWidgetItem(QString::number(e.finalExamGrade())));
         m_evaluationTable->setItem(r6, 10, new QTableWidgetItem(QString::number(e.experienceGrade())));
         m_evaluationTable->setItem(r6, 11, new QTableWidgetItem(QString::number(e.totalGrade())));
-        m_evaluationTable->item(r6, 11)->setFlags(m_evaluationTable->item(r6, 11)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 11)) m_evaluationTable->item(r6, 11)->setFlags(m_evaluationTable->item(r6, 11)->flags().setFlag(Qt::ItemIsEditable, false));
         m_evaluationTable->setItem(r6, 12, new QTableWidgetItem(e.letterGrade()));
-        m_evaluationTable->item(r6, 12)->setFlags(m_evaluationTable->item(r6, 12)->flags() & ~Qt::ItemIsEditable);
+        if(m_evaluationTable->item(r6, 12)) m_evaluationTable->item(r6, 12)->setFlags(m_evaluationTable->item(r6, 12)->flags().setFlag(Qt::ItemIsEditable, false));
 
         // Add Edit Buttons to all tables
         auto addEditBtn = [this](QTableWidget* table, int row, int col, int eid, int tabMode) {
@@ -827,7 +839,10 @@ void ProfessorPanel::showGradeForm(int enrollmentId, int tabIndex) {
             dlg.accept();
             onRefreshStudents();
         } else {
-            QMessageBox::critical(&dlg, "Error", "Failed to update grades in database.");
+            QString error = DBConnection::instance().database().lastError().text();
+            QMessageBox::critical(&dlg, "Database Error", 
+                "Failed to update grades in database.\n\n"
+                "Error Details: " + (error.isEmpty() ? "Unknown Error" : error));
         }
     });
 

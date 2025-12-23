@@ -199,6 +199,13 @@ void StudentPortal::refreshGrades() {
     int courses = 0;
     
     for(const auto& e : m_enrollmentController.getEnrollmentsByStudent(m_student.id())) {
+        // Skip if all grades are zero (unassigned)
+        if (e.assignment1Grade() == 0 && e.assignment2Grade() == 0 && 
+            e.courseworkGrade() == 0 && e.finalExamGrade() == 0 && 
+            e.experienceGrade() == 0) {
+            continue;
+        }
+
         int r = m_gradesTable->rowCount();
         m_gradesTable->insertRow(r);
         m_gradesTable->setItem(r, 0, new QTableWidgetItem(e.courseName()));
