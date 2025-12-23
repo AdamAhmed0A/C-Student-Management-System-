@@ -86,15 +86,15 @@ void AdminPanel::setupUI()
     // Reorganized Tabs as requested
     m_tabWidget->addTab(createStudentsTab(), "Students");
     m_tabWidget->addTab(createFacultiesTab(), "Faculties");
-    m_tabWidget->addTab(createCoursesTab(), "Academic Courses");
     m_tabWidget->addTab(createDepartmentsTab(), "Departments");
-    m_tabWidget->addTab(createRoomsTab(), "Halls Labs");
     m_tabWidget->addTab(createAcademicSetupTab(), "Academic Setup");
+    m_tabWidget->addTab(createCoursesTab(), "Academic Courses");
+    m_tabWidget->addTab(createRoomsTab(), "Halls Labs");
     m_tabWidget->addTab(createProfessorsTab(), "Professor Data");
     m_tabWidget->addTab(createSchedulesTab(), "Academic Schedules");
     m_tabWidget->addTab(createSectionsTab(), "Sections/Groups");
-    m_tabWidget->addTab(createCalendarTab(), "Calendar Management");
-    m_tabWidget->addTab(createDraftTab(), "Students Draft (Trash)");
+    m_tabWidget->addTab(createCalendarTab(), "Events Management");
+    m_tabWidget->addTab(createDraftTab(), "Students Draft");
     
     mainLayout->addWidget(m_tabWidget);
 }

@@ -39,6 +39,9 @@ public:
     double finalExamGrade() const;
     void setFinalExamGrade(double grade);
 
+    double experienceGrade() const;
+    void setExperienceGrade(double grade);
+
     double totalGrade() const;
     void setTotalGrade(double grade);
 
@@ -87,6 +90,7 @@ private:
     double m_assignment2Grade;
     double m_courseworkGrade;
     double m_finalExamGrade;
+    double m_experienceGrade;
     double m_totalGrade;
     QString m_letterGrade;
     bool m_isRafaaApplied;

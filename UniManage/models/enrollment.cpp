@@ -4,7 +4,7 @@ Enrollment::Enrollment()
     : m_id(0), m_studentId(0), m_courseId(0), m_status("active"),
       m_attendanceCount(0), m_absenceCount(0),
       m_assignment1Grade(0.0), m_assignment2Grade(0.0),
-      m_courseworkGrade(0.0), m_finalExamGrade(0.0),
+      m_courseworkGrade(0.0), m_finalExamGrade(0.0), m_experienceGrade(0.0),
       m_totalGrade(0.0), m_isRafaaApplied(false),
       m_courseMaxGrade(100), m_courseType("Theoretical")
 {
@@ -40,6 +40,9 @@ void Enrollment::setCourseworkGrade(double grade) { m_courseworkGrade = grade; }
 
 double Enrollment::finalExamGrade() const { return m_finalExamGrade; }
 void Enrollment::setFinalExamGrade(double grade) { m_finalExamGrade = grade; }
+
+double Enrollment::experienceGrade() const { return m_experienceGrade; }
+void Enrollment::setExperienceGrade(double grade) { m_experienceGrade = grade; }
 
 double Enrollment::totalGrade() const { return m_totalGrade; }
 void Enrollment::setTotalGrade(double grade) { m_totalGrade = grade; }

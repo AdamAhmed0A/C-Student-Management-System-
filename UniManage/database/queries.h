@@ -128,9 +128,9 @@ namespace Queries {
                                          "LEFT JOIN courses c ON sec.course_id = c.id WHERE sec.id = ?";
 
     // Enrollment queries
-    const QString INSERT_ENROLLMENT = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, total_grade, letter_grade) "
-                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    const QString UPDATE_ENROLLMENT = "UPDATE enrollments SET status = ?, attendance_count = ?, absence_count = ?, assignment_1_grade = ?, assignment_2_grade = ?, coursework_grade = ?, final_exam_grade = ?, total_grade = ?, letter_grade = ? "
+    const QString INSERT_ENROLLMENT = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, experience_grade, total_grade, letter_grade) "
+                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const QString UPDATE_ENROLLMENT = "UPDATE enrollments SET status = ?, attendance_count = ?, absence_count = ?, assignment_1_grade = ?, assignment_2_grade = ?, coursework_grade = ?, final_exam_grade = ?, experience_grade = ?, total_grade = ?, letter_grade = ? "
                                       "WHERE id = ?";
     const QString DELETE_ENROLLMENT = "DELETE FROM enrollments WHERE id = ?";
     const QString SELECT_ENROLLMENTS_BY_STUDENT = "SELECT e.*, c.name as course_name, c.course_type, c.max_grade FROM enrollments e "
@@ -143,8 +143,8 @@ namespace Queries {
                                                 "JOIN courses c ON e.course_id = c.id "
                                                 "LEFT JOIN semester sem ON c.semester_id = sem.id "
                                                 "WHERE e.course_id = ?";
-    const QString INSERT_ENROLLMENT_BATCH_BY_LEVEL = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, total_grade, letter_grade, enrolled_at) "
-                                                     "SELECT ?, id, 'Active', 0, 0, 0, 0, 0, 0, 0, 'N/A', NOW() FROM courses WHERE year_level = ?";
+    const QString INSERT_ENROLLMENT_BATCH_BY_LEVEL = "INSERT INTO enrollments (student_id, course_id, status, attendance_count, absence_count, assignment_1_grade, assignment_2_grade, coursework_grade, final_exam_grade, experience_grade, total_grade, letter_grade, enrolled_at) "
+                                                     "SELECT ?, id, 'Active', 0, 0, 0, 0, 0, 0, 0, 0, 'N/A', NOW() FROM courses WHERE year_level = ?";
 
     // Payment queries
     const QString INSERT_PAYMENT = "INSERT INTO payments (student_id, amount, date, year, method, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";

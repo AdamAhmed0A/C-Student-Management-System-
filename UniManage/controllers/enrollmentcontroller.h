@@ -18,6 +18,7 @@ public:
 
     QList<Enrollment> getEnrollmentsByStudent(int studentId);
     QList<Enrollment> getEnrollmentsByCourse(int courseId);
+    Enrollment getEnrollmentById(int id);
 
     void calculateTotalAndGrade(Enrollment& e, const QString& courseType, int maxMarks);
     

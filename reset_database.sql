@@ -31,6 +31,7 @@ CREATE TABLE colleges (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50) UNIQUE,
+    tuition_fees DECIMAL(10,2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -71,6 +72,7 @@ CREATE TABLE students_data (
     user_id INT NOT NULL UNIQUE,
     student_number VARCHAR(50) NOT NULL UNIQUE,
     id_number VARCHAR(14),
+    phone VARCHAR(20),
     dob DATE,
     department VARCHAR(255),
     department_id INT,
@@ -78,6 +80,7 @@ CREATE TABLE students_data (
     section_id INT,
     seat_number VARCHAR(50),
     status VARCHAR(50) DEFAULT 'active',
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -143,13 +146,22 @@ CREATE TABLE sections (
 CREATE TABLE enrollments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
-    section_id INT NOT NULL,
-    grade DECIMAL(5,2),
-    status VARCHAR(50) DEFAULT 'enrolled',
+    course_id INT NOT NULL,
+    section_id INT,
+    status VARCHAR(50) DEFAULT 'active',
+    attendance_count INT DEFAULT 0,
+    absence_count INT DEFAULT 0,
+    assignment_1_grade DOUBLE DEFAULT 0,
+    assignment_2_grade DOUBLE DEFAULT 0,
+    coursework_grade DOUBLE DEFAULT 0,
+    final_exam_grade DOUBLE DEFAULT 0,
+    experience_grade DOUBLE DEFAULT 0,
+    total_grade DOUBLE DEFAULT 0,
+    letter_grade VARCHAR(50) DEFAULT 'N/A',
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students_data(id) ON DELETE CASCADE,
-    FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_enrollment (student_id, section_id)
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_enrollment (student_id, course_id)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -204,9 +216,11 @@ CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    payment_date DATE,
-    payment_type VARCHAR(50),
-    status VARCHAR(50) DEFAULT 'pending',
+    date DATE,
+    year VARCHAR(20),
+    method VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'Success',
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students_data(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

@@ -21,6 +21,7 @@ bool EnrollmentController::addEnrollment(const Enrollment& e)
     query.addBindValue(e.assignment2Grade());
     query.addBindValue(e.courseworkGrade());
     query.addBindValue(e.finalExamGrade());
+    query.addBindValue(e.experienceGrade());
     query.addBindValue(e.totalGrade());
     query.addBindValue(e.letterGrade());
 
@@ -34,17 +35,24 @@ bool EnrollmentController::addEnrollment(const Enrollment& e)
 bool EnrollmentController::updateEnrollment(const Enrollment& e)
 {
     QSqlQuery query(DBConnection::instance().database());
-    query.prepare(Queries::UPDATE_ENROLLMENT);
-    query.addBindValue(e.status());
-    query.addBindValue(e.attendanceCount());
-    query.addBindValue(e.absenceCount());
-    query.addBindValue(e.assignment1Grade());
-    query.addBindValue(e.assignment2Grade());
-    query.addBindValue(e.courseworkGrade());
-    query.addBindValue(e.finalExamGrade());
-    query.addBindValue(e.totalGrade());
-    query.addBindValue(e.letterGrade());
-    query.addBindValue(e.id());
+    query.prepare("UPDATE enrollments SET status = :status, "
+                  "attendance_count = :att, absence_count = :abs, "
+                  "assignment_1_grade = :a1, assignment_2_grade = :a2, "
+                  "coursework_grade = :cw, final_exam_grade = :fi, "
+                  "experience_grade = :exp, total_grade = :tot, "
+                  "letter_grade = :lg WHERE id = :id");
+    
+    query.bindValue(":status", e.status().isEmpty() ? "active" : e.status());
+    query.bindValue(":att", e.attendanceCount());
+    query.bindValue(":abs", e.absenceCount());
+    query.bindValue(":a1", e.assignment1Grade());
+    query.bindValue(":a2", e.assignment2Grade());
+    query.bindValue(":cw", e.courseworkGrade());
+    query.bindValue(":fi", e.finalExamGrade());
+    query.bindValue(":exp", e.experienceGrade());
+    query.bindValue(":tot", e.totalGrade());
+    query.bindValue(":lg", e.letterGrade().isEmpty() ? "N/A" : e.letterGrade());
+    query.bindValue(":id", e.id());
 
     if (!query.exec()) {
         qDebug() << "updateEnrollment failed:" << query.lastError().text();
@@ -81,6 +89,7 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByStudent(int studentId)
             e.setAssignment2Grade(query.value("assignment_2_grade").toDouble());
             e.setCourseworkGrade(query.value("coursework_grade").toDouble());
             e.setFinalExamGrade(query.value("final_exam_grade").toDouble());
+            e.setExperienceGrade(query.value("experience_grade").toDouble());
             e.setTotalGrade(query.value("total_grade").toDouble());
             e.setLetterGrade(query.value("letter_grade").toString());
             e.setEnrolledAt(query.value("enrolled_at").toDateTime());
@@ -112,6 +121,7 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
             e.setAssignment2Grade(query.value("assignment_2_grade").toDouble());
             e.setCourseworkGrade(query.value("coursework_grade").toDouble());
             e.setFinalExamGrade(query.value("final_exam_grade").toDouble());
+            e.setExperienceGrade(query.value("experience_grade").toDouble());
             e.setTotalGrade(query.value("total_grade").toDouble());
             e.setLetterGrade(query.value("letter_grade").toString());
             e.setStudentName(query.value("full_name").toString());
@@ -125,6 +135,40 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
     return list;
 }
 
+Enrollment EnrollmentController::getEnrollmentById(int id)
+{
+    Enrollment e;
+    QSqlQuery query(DBConnection::instance().database());
+    // Explicitly select with table prefixes to avoid ambiguity during JOINs
+    query.prepare("SELECT e.id, e.student_id, e.course_id, e.status, "
+                  "e.attendance_count, e.absence_count, e.assignment_1_grade, "
+                  "e.assignment_2_grade, e.coursework_grade, e.final_exam_grade, "
+                  "e.experience_grade, e.total_grade, e.letter_grade, u.full_name "
+                  "FROM enrollments e "
+                  "JOIN students_data sd ON e.student_id = sd.id "
+                  "JOIN users u ON sd.user_id = u.id "
+                  "WHERE e.id = ?");
+    query.addBindValue(id);
+    
+    if (query.exec() && query.next()) {
+        e.setId(query.value(0).toInt());
+        e.setStudentId(query.value(1).toInt());
+        e.setCourseId(query.value(2).toInt());
+        e.setStatus(query.value(3).toString());
+        e.setAttendanceCount(query.value(4).toInt());
+        e.setAbsenceCount(query.value(5).toInt());
+        e.setAssignment1Grade(query.value(6).toDouble());
+        e.setAssignment2Grade(query.value(7).toDouble());
+        e.setCourseworkGrade(query.value(8).toDouble());
+        e.setFinalExamGrade(query.value(9).toDouble());
+        e.setExperienceGrade(query.value(10).toDouble());
+        e.setTotalGrade(query.value(11).toDouble());
+        e.setLetterGrade(query.value(12).toString());
+        e.setStudentName(query.value(13).toString());
+    }
+    return e;
+}
+
 void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& courseType, int maxMarks)
 {
     // Total is simply the sum of all components
@@ -132,7 +176,8 @@ void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& 
     double total = e.assignment1Grade() + 
                    e.assignment2Grade() + 
                    e.courseworkGrade() + 
-                   e.finalExamGrade();
+                   e.finalExamGrade() +
+                   e.experienceGrade();
 
     e.setTotalGrade(total);
 
@@ -147,7 +192,7 @@ void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& 
     else if (percentage >= 75) grade = "Very Good";
     else if (percentage >= 65) grade = "Good";
     else if (percentage >= 60) grade = "Pass";
-    else grade = "Fail/Re-sit";
+    else grade = "Fail";
 
     e.setLetterGrade(grade);
 }

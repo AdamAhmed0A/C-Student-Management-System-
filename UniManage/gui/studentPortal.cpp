@@ -8,6 +8,10 @@
 #include <QHeaderView>
 #include <QPushButton>
 #include <QMessageBox>
+#include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QDialog>
 
 StudentPortal::StudentPortal(int studentUserId, QWidget *parent)
     : QWidget(parent), m_userId(studentUserId)
@@ -330,7 +334,9 @@ void StudentPortal::onMakePayment() {
         p.setYear(QDateTime::currentDateTime());
         
         if (m_paymentController.addPayment(p)) {
-            QMessageBox::information(this, "Payment Successful", QString("Successfully processed payment of %1. Your records have been updated.").arg(amount->value()));
+            QMessageBox::information(this, "Payment Successful", 
+                QString("Successfully processed payment of %1. Your records have been updated.")
+                .arg(QString::number(amount->value(), 'f', 2)));
             refreshPayments();
         } else {
             QMessageBox::critical(this, "Transaction Failed", "Could not record the payment in the database. Please contact the finance office.");

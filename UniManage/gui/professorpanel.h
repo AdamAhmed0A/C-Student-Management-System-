@@ -33,7 +33,8 @@ public:
 private slots:
     void onCourseSelected(int index);
     void onYearSelected(int index);
-    void onSaveGrades();
+    void onUpdateClicked(); // New slot for the top button
+    void showGradeForm(int enrollmentId, int tabIndex = -1);
     void onSubmitAttendance();
     void onRefreshStudents(); // Refreshes both tables based on active tab
     void onRefreshAll();
@@ -57,7 +58,12 @@ private:
     void loadCalendarEvents();
     
     // Helpers
-    QWidget* createGradesTab();
+    QWidget* createAs1Tab();
+    QWidget* createAs2Tab();
+    QWidget* createCWTab();
+    QWidget* createFinalTab();
+    QWidget* createExpTab();
+    QWidget* createEvaluationTab();
     QWidget* createAttendanceTab();
     QWidget* createScheduleTab();
     QWidget* createCoursesTab();
@@ -73,9 +79,15 @@ private:
     QComboBox* m_yearSelector;
     QComboBox* m_courseSelector;
 
-    // Grades (Dashboard)
-    QTableWidget* m_gradesTable;
-    QLabel* m_noStudentsLabelGrades;
+    // Separate Grade Tables
+    QTableWidget* m_as1Table;
+    QTableWidget* m_as2Table;
+    QTableWidget* m_cwTable;
+    QTableWidget* m_finalTable;
+    QTableWidget* m_expTable;
+    QTableWidget* m_evaluationTable;
+    
+    QLabel* m_noStudentsLabelGrades; // Shared or specific? I'll keep one or add more if needed.
 
     // Attendance
     QDateEdit* m_attendanceDate;
