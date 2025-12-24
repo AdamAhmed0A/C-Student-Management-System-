@@ -5,13 +5,19 @@
 #include <QSqlDatabase>
 #include <QProcessEnvironment>
 #include <QDebug>
-
+/**
+ * Main entry point for the University Student Information System
+ * Initializes the Qt application, sets up database connection, and displays the login window
+ * @param argc - Number of command line arguments
+ * @param argv - Array of command line argument strings
+ * @return Application exit code (0 for success, 1 for database error)
+ */
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     
     // Set application info
-    app.setApplicationName("University SIS");
+    app.setApplicationName("University-SIS");
     app.setOrganizationName("University");
     
     // Debug: print available SQL drivers and DB env vars
@@ -23,6 +29,9 @@ int main(int argc, char *argv[])
              << "DB_NAME=" << env.value("DB_NAME")
              << "(DB_PASSWORD hidden)";
 
+    // Show login window
+    LoginWindow loginWindow;
+    
     // Initialize database
     if (!DBConnection::instance().initialize()) {
         QString error = DBConnection::instance().getLastError();
@@ -32,8 +41,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    // Show login window
-    LoginWindow loginWindow;
     loginWindow.show();
 
     return app.exec();

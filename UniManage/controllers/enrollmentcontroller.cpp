@@ -6,8 +6,16 @@
 #include <QDebug>
 #include <QDateTime>
 
+/**
+ * Constructor for the EnrollmentController class
+ */
 EnrollmentController::EnrollmentController() {}
 
+/**
+ * Adds a new student enrollment to a course
+ * @param e - The Enrollment object containing details
+ * @return True if successful, otherwise false
+ */
 bool EnrollmentController::addEnrollment(const Enrollment& e)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -32,6 +40,11 @@ bool EnrollmentController::addEnrollment(const Enrollment& e)
     return true;
 }
 
+/**
+ * Updates an existing enrollment (grades, attendance, status)
+ * @param e - The Enrollment object with updated details
+ * @return True if successful, otherwise false
+ */
 bool EnrollmentController::updateEnrollment(const Enrollment& e)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -61,6 +74,11 @@ bool EnrollmentController::updateEnrollment(const Enrollment& e)
     return true;
 }
 
+/**
+ * Deletes an enrollment from the database
+ * @param id - The ID of the enrollment to delete
+ * @return True if successful, otherwise false
+ */
 bool EnrollmentController::deleteEnrollment(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -69,6 +87,12 @@ bool EnrollmentController::deleteEnrollment(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all enrollments for a specific student
+ * Includes details about the course and its type/grading scale
+ * @param studentId - The ID of the student
+ * @return A list of Enrollment objects
+ */
 QList<Enrollment> EnrollmentController::getEnrollmentsByStudent(int studentId)
 {
     QList<Enrollment> list;
@@ -102,6 +126,12 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByStudent(int studentId)
     return list;
 }
 
+/**
+ * Retrieves all enrollments for a specific course
+ * Includes detailed student info (name, section, level)
+ * @param courseId - The ID of the course
+ * @return A list of Enrollment objects
+ */
 QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
 {
     QList<Enrollment> list;
@@ -135,6 +165,11 @@ QList<Enrollment> EnrollmentController::getEnrollmentsByCourse(int courseId)
     return list;
 }
 
+/**
+ * Retrieves a single enrollment by its ID
+ * @param id - The ID of the enrollment
+ * @return The Enrollment object if found, otherwise an empty object
+ */
 Enrollment EnrollmentController::getEnrollmentById(int id)
 {
     Enrollment e;
@@ -173,6 +208,13 @@ Enrollment EnrollmentController::getEnrollmentById(int id)
     return e;
 }
 
+/**
+ * Calculates total grades and determines letter grade based on course max marks
+ * Updates the enrollment object in place
+ * @param e - Reference to the Enrollment object to be updated
+ * @param courseType - Type of course (affects grading scale if needed in future)
+ * @param maxMarks - Maximum marks for the course (e.g., 100 or 150)
+ */
 void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& courseType, int maxMarks)
 {
     // Total is simply the sum of all components
@@ -201,6 +243,13 @@ void EnrollmentController::calculateTotalAndGrade(Enrollment& e, const QString& 
     e.setLetterGrade(grade);
 }
 
+/**
+ * records an attendance log for a specific date
+ * Updates existing log if found, otherwise creates a new one
+ * Recalculates total attendance counts and updates the main enrollment record
+ * @param log - The AttendanceLog object containing the record
+ * @return True if successful, otherwise false
+ */
 bool EnrollmentController::addAttendanceLog(const AttendanceLog& log)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -266,6 +315,12 @@ bool EnrollmentController::addAttendanceLog(const AttendanceLog& log)
     return true;
 }
 
+/**
+ * Retrieves attendance logs for a specific course on a given date
+ * @param courseId - The ID of the course
+ * @param date - The date to fetch logs for
+ * @return A list of AttendanceLog objects
+ */
 QList<AttendanceLog> EnrollmentController::getAttendanceLogsByCourse(int courseId, const QDate& date)
 {
     QList<AttendanceLog> list;

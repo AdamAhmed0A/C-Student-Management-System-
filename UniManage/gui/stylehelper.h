@@ -5,6 +5,11 @@
 
 class StyleHelper {
 public:
+/**
+     * Returns the main CSS stylesheet for the application
+     * distinct styles for various UI components like buttons, tables, and inputs
+     * @return QString containing the CSS rules
+     */
     static QString getMainStyle() {
         return R"(
             QWidget {

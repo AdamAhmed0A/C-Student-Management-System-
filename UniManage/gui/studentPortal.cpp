@@ -13,6 +13,12 @@
 #include <QLineEdit>
 #include <QDialog>
 
+/**
+ * Constructor for the StudentPortal class
+ * Initializes the student portal with user data and UI components
+ * @param studentUserId - The user ID of the logged-in student
+ * @param parent - Parent widget (default nullptr)
+ */
 StudentPortal::StudentPortal(int studentUserId, QWidget *parent)
     : QWidget(parent), m_userId(studentUserId)
 {
@@ -23,12 +29,24 @@ StudentPortal::StudentPortal(int studentUserId, QWidget *parent)
     resize(1000, 700);
 }
 
+/**
+ * Destructor for the StudentPortal class
+ * Cleans up resources when the student portal is destroyed
+ */
 StudentPortal::~StudentPortal() {}
 
+/**
+ * Loads the student's data from the database
+ * Retrieves student information using the user ID
+ */
 void StudentPortal::loadStudentData() {
     m_student = m_studentController.getStudentByUserId(m_userId);
 }
 
+/**
+ * Sets up the user interface for the student portal
+ * Creates tabs for dashboard, grades, schedule, payments, and calendar
+ */
 void StudentPortal::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(30, 30, 30, 30);
@@ -69,12 +87,20 @@ void StudentPortal::setupUI() {
     mainLayout->addWidget(m_tabWidget);
 }
 
+/**
+ * Handles the logout button click event
+ * Returns the user to the login window
+ */
 void StudentPortal::onLogout() {
     LoginWindow* login = new LoginWindow();
     login->show();
     this->close();
 }
 
+/**
+ * Refreshes all data displayed in the student portal
+ * Updates grades, schedule, payments, and calendar information
+ */
 void StudentPortal::onRefreshAll() {
     loadStudentData();
     refreshGrades();
@@ -84,6 +110,11 @@ void StudentPortal::onRefreshAll() {
     QMessageBox::information(this, "Refreshed", "Your student profile and academic records have been updated.");
 }
 
+/**
+ * Creates the dashboard tab showing student registration details
+ * Displays student code, national ID, department, year/level, and section
+ * @return Pointer to the dashboard widget
+ */
 QWidget* StudentPortal::createDashboardTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -119,6 +150,11 @@ QWidget* StudentPortal::createDashboardTab() {
     return widget;
 }
 
+/**
+ * Creates the grades tab showing student's academic performance
+ * Displays assignment grades, coursework, final exam, total, and evaluation
+ * @return Pointer to the grades widget
+ */
 QWidget* StudentPortal::createGradesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -133,6 +169,11 @@ QWidget* StudentPortal::createGradesTab() {
     return widget;
 }
 
+/**
+ * Creates the schedule tab showing weekly class schedule
+ * Displays day, course, room, start time, and end time for each class
+ * @return Pointer to the schedule widget
+ */
 QWidget* StudentPortal::createScheduleTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -146,6 +187,11 @@ QWidget* StudentPortal::createScheduleTab() {
     return widget;
 }
 
+/**
+ * Creates the payments tab showing tuition fee information
+ * Displays payment history, financial summary, and payment button
+ * @return Pointer to the payments widget
+ */
 QWidget* StudentPortal::createPaymentsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -178,6 +224,11 @@ QWidget* StudentPortal::createPaymentsTab() {
     return widget;
 }
 
+/**
+ * Creates the calendar tab showing academic events
+ * Displays event title, dates, type, and description
+ * @return Pointer to the calendar widget
+ */
 QWidget* StudentPortal::createCalendarTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -193,6 +244,10 @@ QWidget* StudentPortal::createCalendarTab() {
     return widget;
 }
 
+/**
+ * Refreshes the grades table with current enrollment data
+ * Calculates and updates the student's GPA based on letter grades
+ */
 void StudentPortal::refreshGrades() {
     m_gradesTable->setRowCount(0);
     double totalPoints = 0;
@@ -228,6 +283,10 @@ void StudentPortal::refreshGrades() {
     }
 }
 
+/**
+ * Refreshes the payments table and financial summary
+ * Updates tuition fees, total paid amount, and remaining balance
+ */
 void StudentPortal::refreshPayments() {
     m_paymentsTable->setRowCount(0);
     auto payments = m_paymentController.getPaymentsByStudent(m_student.id());
@@ -264,6 +323,10 @@ void StudentPortal::refreshPayments() {
     m_balanceLabel->setText(QString::number(baseTuition - totalPaid, 'f', 2));
 }
 
+/**
+ * Refreshes the schedule table with current course schedules
+ * Fetches schedules based on enrolled courses or academic level
+ */
 void StudentPortal::refreshSchedule() {
     m_scheduleTable->setRowCount(0);
     
@@ -301,6 +364,10 @@ void StudentPortal::refreshSchedule() {
     m_scheduleTable->sortByColumn(0, Qt::AscendingOrder); // Initial sort
 }
 
+/**
+ * Handles the payment button click event
+ * Opens a dialog for students to make tuition fee payments
+ */
 void StudentPortal::onMakePayment() {
     if (m_student.id() == 0) {
         QMessageBox::warning(this, "Empty Profile", "You cannot make payments until your student profile is setup by an admin.");
@@ -351,6 +418,10 @@ void StudentPortal::onMakePayment() {
     }
 }
 
+/**
+ * Refreshes the calendar table with all academic events
+ * Displays upcoming events, exams, holidays, and important dates
+ */
 void StudentPortal::refreshCalendar() {
     m_calendarTable->setRowCount(0);
     for(const auto& e : m_calendarController.getAllEvents()) {
@@ -364,4 +435,8 @@ void StudentPortal::refreshCalendar() {
     }
 }
 
+/**
+ * Placeholder function for GPA calculation
+ * Currently not implemented - GPA is calculated in refreshGrades()
+ */
 void StudentPortal::calculateGPA() {}

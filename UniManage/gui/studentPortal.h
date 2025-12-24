@@ -5,14 +5,14 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QLabel>
-#include "../controllers/studentcontroller.h"
-#include "../controllers/enrollmentcontroller.h"
-#include "../controllers/paymentcontroller.h"
-#include "../controllers/calendarcontroller.h"
-#include "../controllers/academic_level_controller.h"
-#include "../controllers/schedulecontroller.h"
-#include "../controllers/collegecontroller.h"
-#include "../models/student_data.h"
+#include "controllers/studentcontroller.h"
+#include "controllers/enrollmentcontroller.h"
+#include "controllers/paymentcontroller.h"
+#include "controllers/calendarcontroller.h"
+#include "controllers/academic_level_controller.h"
+#include "controllers/schedulecontroller.h"
+#include "controllers/collegecontroller.h"
+#include "models/student_data.h"
 
 class StudentPortal : public QWidget
 {

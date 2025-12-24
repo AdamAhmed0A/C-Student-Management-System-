@@ -6,8 +6,16 @@
 #include <QDebug>
 #include <QTime>
 
+/**
+ * Constructor for the ScheduleController class
+ */
 ScheduleController::ScheduleController() {}
 
+/**
+ * Retrieves the schedule for a specific professor
+ * @param professorId - The ID of the professor
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByProfessor(int professorId)
 {
     QList<Schedule> list;
@@ -36,6 +44,13 @@ QList<Schedule> ScheduleController::getScheduleByProfessor(int professorId)
     return list;
 }
 
+/**
+ * Assigns a professor to a course, effectively creating or updating a schedule slot
+ * If no schedule exists, it creates one with default timing and a default/virtual room
+ * @param courseId - The ID of the course
+ * @param professorId - The ID of the professor
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -55,11 +70,32 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
     } else {
         // Insert new entry with default values for day/time/room
         // We need a roomId. We'll pick the first room or leave it 0 if DB allows (FK might fail if 0)
-        // Let's find a valid room id
-        int roomId = 1; // Default
+        
+        int roomId = 0;
         QSqlQuery roomQuery("SELECT id FROM rooms LIMIT 1", db);
         if (roomQuery.exec() && roomQuery.next()) {
             roomId = roomQuery.value(0).toInt();
+        } else {
+            // No rooms exist! Create a default one to allow assignment
+            QSqlQuery createRoom(db);
+            createRoom.prepare("INSERT INTO rooms (name, type, capacity, ac_units, fans_count, lighting_points, computers_count, seating_description, code) "
+                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            createRoom.addBindValue("Virtual/TBA");
+            createRoom.addBindValue("Hall");
+            createRoom.addBindValue(100);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue(0);
+            createRoom.addBindValue("Standard");
+            createRoom.addBindValue("TBA"); // Code
+            
+            if (createRoom.exec()) {
+                roomId = createRoom.lastInsertId().toInt();
+            } else {
+                 qDebug() << "Failed to create default room:" << createRoom.lastError().text();
+                 return false; 
+            }
         }
         
         QSqlQuery insert(db);
@@ -70,10 +106,20 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
         insert.addBindValue("Monday");
         insert.addBindValue("09:00:00");
         insert.addBindValue("11:00:00");
-        return insert.exec();
+        
+        if (!insert.exec()) {
+             qDebug() << "assignProfessorToCourse insert failed:" << insert.lastError().text();
+             return false;
+        }
+        return true;
     }
 }
 
+/**
+ * Adds a new schedule slot to the database
+ * @param s - The Schedule object containing details
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::addSchedule(const Schedule& s)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -87,6 +133,11 @@ bool ScheduleController::addSchedule(const Schedule& s)
     return query.exec();
 }
 
+/**
+ * Updates an existing schedule slot in the database
+ * @param s - The Schedule object with updated details
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::updateSchedule(const Schedule& s)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -101,6 +152,11 @@ bool ScheduleController::updateSchedule(const Schedule& s)
     return query.exec();
 }
 
+/**
+ * Deletes a schedule slot from the database
+ * @param id - The ID of the schedule to delete
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::deleteSchedule(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -109,6 +165,10 @@ bool ScheduleController::deleteSchedule(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all schedule slots from the database
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getAllSchedules()
 {
     QList<Schedule> list;
@@ -132,6 +192,11 @@ QList<Schedule> ScheduleController::getAllSchedules()
     return list;
 }
 
+/**
+ * Retrieves schedule slots for a specific course
+ * @param courseId - The ID of the course
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByCourse(int courseId)
 {
     QList<Schedule> list;
@@ -157,6 +222,11 @@ QList<Schedule> ScheduleController::getScheduleByCourse(int courseId)
     return list;
 }
 
+/**
+ * Retrieves schedule slots for a specific academic level/year
+ * @param levelId - The ID of the academic level
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByLevel(int levelId)
 {
     QList<Schedule> list;

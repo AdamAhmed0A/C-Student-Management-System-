@@ -6,8 +6,16 @@
 #include <QDebug>
 #include <QDateTime>
 
+/**
+ * Constructor for the NewsController class
+ */
 NewsController::NewsController() {}
 
+/**
+ * Adds a new news/announcement item to the database
+ * @param news - The News object containing the content
+ * @return True if successful, otherwise false
+ */
 bool NewsController::addNews(const News& news)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -23,6 +31,11 @@ bool NewsController::addNews(const News& news)
     return true;
 }
 
+/**
+ * Updates an existing news item in the database
+ * @param news - The News object with updated content
+ * @return True if successful, otherwise false
+ */
 bool NewsController::updateNews(const News& news)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -39,6 +52,11 @@ bool NewsController::updateNews(const News& news)
     return true;
 }
 
+/**
+ * Deletes a news item from the database
+ * @param id - The ID of the news item to delete
+ * @return True if successful, otherwise false
+ */
 bool NewsController::deleteNews(int id)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -53,6 +71,11 @@ bool NewsController::deleteNews(int id)
     return true;
 }
 
+/**
+ * Retrieves all news items from the database
+ * Orders them by date descending (implied by query usually)
+ * @return A list of News objects
+ */
 QList<News> NewsController::getAllNews()
 {
     QList<News> list;

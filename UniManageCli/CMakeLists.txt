@@ -1,48 +1,31 @@
-cmake_minimum_required(VERSION 3.20)
-project(UniManageCli LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+project(UniManageCLI LANGUAGES CXX)
 
-# Use C++17 (adjust if needed)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Find necessary Qt components for a CLI application
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
-# Enable Qt automoc/autouic/autorcc
-# set(CMAKE_AUTOMOC ON)
-# set(CMAKE_AUTOUIC ON)
-# set(CMAKE_AUTORCC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# Find Qt6 modules you need
-# find_package(Qt6 COMPONENTS Core Widgets Sql REQUIRED)
+# Automatically discover sources in the current folder
+file(GLOB CLI_SOURCES "*.cpp")
+file(GLOB CLI_HEADERS "*.h")
+file(GLOB_RECURSE CLI_PERSISTENCE_SOURCES "persistence/*.cpp")
 
-# Only scan YOUR project
-file(GLOB_RECURSE UM_SOURCES
-  "${CMAKE_SOURCE_DIR}/../UniManage/controllers/*.cpp"
-  "${CMAKE_SOURCE_DIR}/../UniManage/models/*.cpp"
-  "${CMAKE_SOURCE_DIR}/../UniManage/database/*.cpp"
+# Add the executable for the CLI
+add_executable(unimanage_cli
+    ${CLI_SOURCES}
+    ${CLI_HEADERS}
+    ${CLI_PERSISTENCE_SOURCES}
 )
 
-file(GLOB_RECURSE UM_HEADERS
-  "${CMAKE_SOURCE_DIR}/../UniManage/controllers/*.h"
-  "${CMAKE_SOURCE_DIR}/../UniManage/models/*.h"
-  "${CMAKE_SOURCE_DIR}/../UniManage/database/*.h"
+# Link against the core library
+link_directories(${CMAKE_BINARY_DIR}/../UniManage)
+target_link_libraries(unimanage_cli PRIVATE
+    Qt6::Core
+    unimanagecore
 )
 
-add_executable(UniManageCli
-  ${UM_SOURCES}
-  ${UM_HEADERS}
-)
+# Add the directory containing the core library for the CLI controller to find the data files
+target_include_directories(unimanage_cli PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ../UniManage)
 
-# Add include dirs to match your source include style (adjust paths if needed)
-target_include_directories(UniManage PRIVATE
-  "${CMAKE_SOURCE_DIR}/../UniManage/controllers"
-  "${CMAKE_SOURCE_DIR}/../UniManage/models"
-  "${CMAKE_SOURCE_DIR}/../UniManage/database"
-)
-
-# Link Qt libraries
-target_link_libraries(UniManage PRIVATE
-  Qt6::Core
-  Qt6::Widgets
-  Qt6::Sql
-)
-
+# Copy the FileDB folder to the build directory alongside the executable
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/FileDB" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/FileDB")

@@ -11,15 +11,15 @@
 #include <QListWidget>
 #include <QStackedWidget>
 
-#include "../controllers/professorcontroller.h"
-#include "../controllers/enrollmentcontroller.h"
-#include "../controllers/coursecontroller.h"
-#include "../controllers/schedulecontroller.h"
-#include "../controllers/calendarcontroller.h"
-#include "../controllers/academic_level_controller.h"
+#include "controllers/professorcontroller.h"
+#include "controllers/enrollmentcontroller.h"
+#include "controllers/coursecontroller.h"
+#include "controllers/schedulecontroller.h"
+#include "controllers/calendarcontroller.h"
+#include "controllers/academic_level_controller.h"
 
-#include "../models/professor.h"
-#include "../models/attendance_log.h"
+#include "models/professor.h"
+#include "models/attendance_log.h"
 #include <QDateEdit>
 
 class ProfessorPanel : public QWidget

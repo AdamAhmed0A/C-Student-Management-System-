@@ -11,17 +11,20 @@
 ## ✅ Fixes Applied
 
 ### Fix 1: Removed `phone` from Query ✓
+
 **File**: `UniManage/database/queries.h`
 **Change**: Removed `sd.phone` from `SELECT_ALL_STUDENTS_DATA` query
 
 The query will now execute successfully!
 
 ### Fix 2: Create Missing Student Profiles
+
 **File**: `fix_orphaned_students.sql`
 
 ## 🚀 Steps to Complete the Fix
 
 ### Step 1: Rebuild the Application
+
 ```batch
 cd C:\Users\Adam\C-Student-Management-System-\UniManage
 qmake
@@ -31,28 +34,32 @@ mingw32-make
 ### Step 2: Fix the Orphaned Students in Database
 
 **Option A: Run the SQL Script**
+
 ```batch
 mysql -u your_username -p university < fix_orphaned_students.sql
 ```
 
 **Option B: Run in MySQL Workbench**
+
 1. Open MySQL Workbench
 2. Connect to your database
 3. Open `fix_orphaned_students.sql`
 4. Execute it
 
 **Option C: Run Manually**
+
 ```sql
 USE university;
 
 INSERT INTO students_data (user_id, student_number, id_number, status)
-VALUES 
+VALUES
   (2, '651', '', 'active'),
   (3, '516', '', 'active'),
   (9, '20240594', '', 'active');
 ```
 
 ### Step 3: Test Again
+
 1. Run the application
 2. Log in as admin
 3. Click "Test Database" button
@@ -66,6 +73,7 @@ VALUES
 ## 📊 Expected Results After Fix
 
 ### Test Database Results:
+
 ```
 1. CONNECTION STATUS:
    ✓ Database is CONNECTED
@@ -83,7 +91,7 @@ VALUES
    1. Adam (Student#: 516, Role: student, UserID: 3, ProfileID: 1)
    2. Adam (Student#: 651, Role: student, UserID: 2, ProfileID: 2)
    3. Adam (Student#: 20240594, Role: student, UserID: 9, ProfileID: 3)
-   
+
    Total records returned: 3
 
 5. ORPHANED RECORDS CHECK:
@@ -91,12 +99,13 @@ VALUES
 ```
 
 ### Students Tab:
+
 You should see a table with 3 rows:
 | ID | Student# | Name | National ID | Department | Level | Status |
 |----|----------|------|-------------|------------|-------|--------|
-| 1  | 516      | Adam | ---         | ---        | ---   | active |
-| 2  | 651      | Adam | ---         | ---        | ---   | active |
-| 3  | 20240594 | Adam | ---         | ---        | ---   | active |
+| 1 | 516 | Adam | --- | --- | --- | active |
+| 2 | 651 | Adam | --- | --- | --- | active |
+| 3 | 20240594 | Adam | --- | --- | --- | active |
 
 ## 🔧 Why This Happened
 
@@ -106,6 +115,7 @@ You should see a table with 3 rows:
 ## ✅ Future Prevention
 
 The "Database Healing" mechanism in `onAddStudent()` will now:
+
 1. Detect if a user exists without a profile
 2. Create the missing profile instead of failing
 3. Show clear error messages if something goes wrong
@@ -113,11 +123,13 @@ The "Database Healing" mechanism in `onAddStudent()` will now:
 ## 🎉 Summary
 
 **Before Fix:**
+
 - ❌ Query failed (missing column)
 - ❌ 0 students showing
 - ❌ 3 orphaned users
 
 **After Fix:**
+
 - ✅ Query works
 - ✅ 3 students showing
 - ✅ No orphaned users

@@ -1,52 +1,37 @@
-cmake_minimum_required(VERSION 3.20)
-project(UniManage LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+project(unimanagecore LANGUAGES CXX)
 
-# Use C++17 (adjust if needed)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Find necessary Qt components
+find_package(Qt6 REQUIRED COMPONENTS Core Sql)
 
-# Enable Qt automoc/autouic/autorcc
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# Find Qt6 modules you need
-find_package(Qt6 COMPONENTS Core Widgets Sql REQUIRED)
-
-# Only scan YOUR project
-file(GLOB_RECURSE UM_SOURCES
-  "${CMAKE_SOURCE_DIR}/gui/*.cpp"
-  "${CMAKE_SOURCE_DIR}/controllers/*.cpp"
-  "${CMAKE_SOURCE_DIR}/models/*.cpp"
-  "${CMAKE_SOURCE_DIR}/database/*.cpp"
+# Automatically discover sources
+file(GLOB_RECURSE CORE_SOURCES
+    "controllers/*.cpp"
+    "models/*.cpp"
+    "database/*.cpp"
+)
+file(GLOB_RECURSE CORE_HEADERS
+    "controllers/*.h"
+    "models/*.h"
+    "database/*.h"
 )
 
-file(GLOB_RECURSE UM_HEADERS
-  "${CMAKE_SOURCE_DIR}/gui/*.h"
-  "${CMAKE_SOURCE_DIR}/controllers/*.h"
-  "${CMAKE_SOURCE_DIR}/models/*.h"
-  "${CMAKE_SOURCE_DIR}/database/*.h"
+# Add the core library
+add_library(unimanagecore
+    ${CORE_SOURCES}
+    ${CORE_HEADERS}
 )
 
-add_executable(UniManage
-  ${UM_SOURCES}
-  ${UM_HEADERS}
+# Link against Qt components
+target_link_libraries(unimanagecore PRIVATE
+    Qt6::Core
+    Qt6::Sql
 )
 
-# Add include dirs to match your source include style (adjust paths if needed)
-target_include_directories(UniManage PRIVATE
-  "${CMAKE_SOURCE_DIR}/"
-  "${CMAKE_SOURCE_DIR}/gui"
-  "${CMAKE_SOURCE_DIR}/controllers"
-  "${CMAKE_SOURCE_DIR}/models"
-  "${CMAKE_SOURCE_DIR}/database"
+# Include the current source dir for headers
+target_include_directories(unimanagecore PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Link Qt libraries
-target_link_libraries(UniManage PRIVATE
-  Qt6::Core
-  Qt6::Widgets
-  Qt6::Sql
-)
-
+# Add the GUI application as a subdirectory
+add_subdirectory(gui)

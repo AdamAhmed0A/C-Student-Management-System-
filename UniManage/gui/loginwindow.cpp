@@ -3,8 +3,8 @@
 #include "studentPortal.h"
 #include "professorpanel.h"
 #include "stylehelper.h"
-#include "../database/dbconnection.h"
-#include "../database/queries.h"
+#include "database/dbconnection.h"
+#include "database/queries.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -16,6 +16,11 @@
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 
+/**
+ * Constructor for the LoginWindow class
+ * Initializes the login window with default styling and UI setup
+ * @param parent - Parent widget (default nullptr)
+ */
 LoginWindow::LoginWindow(QWidget *parent)
     : QWidget(parent), m_currentUserId(0)
 {
@@ -25,8 +30,16 @@ LoginWindow::LoginWindow(QWidget *parent)
     resize(460, 480);
 }
 
+/**
+ * Destructor for the LoginWindow class
+ * Cleans up resources when the login window is destroyed
+ */
 LoginWindow::~LoginWindow() {}
 
+/**
+ * Sets up the user interface for the login window
+ * Creates and arranges all UI elements including labels, input fields, and buttons
+ */
 void LoginWindow::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(50, 50, 50, 50);
@@ -70,6 +83,11 @@ void LoginWindow::setupUI() {
     connect(m_testConnButton, &QPushButton::clicked, this, &LoginWindow::onTestConnectionClicked);
 }
 
+/**
+ * Handles the login button click event
+ * Validates user input and attempts to authenticate the user
+ * Redirects to appropriate panel (Admin, Student, or Professor) based on user role
+ */
 void LoginWindow::onLoginClicked() {
     QString code = m_usernameEdit->text().trimmed();
     QString natId = m_passwordEdit->text().trimmed(); // Allow logic to use this directly
@@ -96,6 +114,17 @@ void LoginWindow::onLoginClicked() {
     }
 }
 
+/**
+ * Attempts to authenticate a user with the provided credentials
+ * @param code - User's code (student code, professor code, or admin code)
+ * @param natId - User's national ID number (used as password)
+ * @return true if authentication successful, false otherwise
+ * 
+ * Authentication logic:
+ * - Students: Validates against id_number in students_data table
+ * - Professors: Validates against id_number in professors table
+ * - Admin: Validates against hashed password or special admin credentials
+ */
 bool LoginWindow::tryLogin(const QString& code, const QString& natId) {
     QSqlQuery query(DBConnection::instance().database());
     
@@ -169,6 +198,10 @@ bool LoginWindow::tryLogin(const QString& code, const QString& natId) {
     return false;
 }
 
+/**
+ * Tests the database connection status
+ * Displays a message box indicating whether the database is accessible
+ */
 void LoginWindow::onTestConnectionClicked() {
     if (DBConnection::instance().database().isOpen()) {
         QMessageBox::information(this, "System Status", "University servers are online and responsive.");

@@ -4,20 +4,20 @@
 #include <QWidget>
 #include <QTabWidget>
 #include <QTableWidget>
-#include "../controllers/studentcontroller.h"
-#include "../controllers/coursecontroller.h"
-#include "../controllers/usercontroller.h"
-#include "../controllers/semestercontroller.h"
-#include "../controllers/collegecontroller.h"
-#include "../controllers/departmentcontroller.h"
-#include "../controllers/academic_level_controller.h"
-#include "../controllers/roomcontroller.h"
+#include "controllers/studentcontroller.h"
+#include "controllers/coursecontroller.h"
+#include "controllers/usercontroller.h"
+#include "controllers/semestercontroller.h"
+#include "controllers/collegecontroller.h"
+#include "controllers/departmentcontroller.h"
+#include "controllers/academic_level_controller.h"
+#include "controllers/roomcontroller.h"
 #include <QComboBox>
-#include "../controllers/professorcontroller.h"
-#include "../controllers/calendarcontroller.h"
-#include "../controllers/schedulecontroller.h"
-#include "../controllers/sectioncontroller.h"
-#include "../models/semester.h"
+#include "controllers/professorcontroller.h"
+#include "controllers/calendarcontroller.h"
+#include "controllers/schedulecontroller.h"
+#include "controllers/sectioncontroller.h"
+#include "models/semester.h"
 
 class AdminPanel : public QWidget
 {

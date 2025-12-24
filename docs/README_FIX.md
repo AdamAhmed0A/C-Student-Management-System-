@@ -28,20 +28,23 @@ I've created a complete solution to fix all your issues:
 ### Step 1: Reset Database (Choose One Method)
 
 **Method A - Easy (Double-click):**
+
 ```
 Double-click: reset_db.bat
 Enter your MySQL root password
 ```
 
 **Method B - Command Line:**
+
 ```batch
 cd C:\Users\Adam\C-Student-Management-System-
 mysql -u root -p < reset_database.sql
 ```
 
 **Method C - MySQL Workbench:**
+
 1. Open MySQL Workbench
-2. File → Open SQL Script
+2. File -> Open SQL Script
 3. Select `reset_database.sql`
 4. Execute
 
@@ -54,6 +57,7 @@ mingw32-make
 ```
 
 Then run the application and:
+
 1. Login with: `admin` / `admin123`
 2. Click "Test Database" button
 3. Try adding a student
@@ -62,6 +66,7 @@ Then run the application and:
 ## 📊 What the Database Reset Does
 
 ### Creates Fresh Database:
+
 - Drops old `university` database
 - Creates new `university` database
 - Creates 14 tables with correct schema
@@ -69,6 +74,7 @@ Then run the application and:
 - Adds indexes for performance
 
 ### Adds Default Data:
+
 - 1 Admin user (admin/admin123)
 - 4 Academic levels (First-Fourth Year)
 - 3 Sample colleges
@@ -76,6 +82,7 @@ Then run the application and:
 - 1 Current semester
 
 ### Fixes Schema Issues:
+
 - ❌ Removes non-existent `phone` column
 - ✅ Matches application code exactly
 - ✅ Proper data types
@@ -85,6 +92,7 @@ Then run the application and:
 ## 🎯 Expected Results
 
 ### After Database Reset:
+
 ```
 ✓ Database is CONNECTED
 ✓ Total users: 1
@@ -96,6 +104,7 @@ Then run the application and:
 ```
 
 ### After Adding First Student:
+
 ```
 ✓ Query executed successfully!
 ✓ Total records returned: 1
@@ -104,6 +113,7 @@ Then run the application and:
 ```
 
 ### After Adding First Professor:
+
 ```
 ✓ Professor created successfully
 ✓ Professor appears in table
@@ -137,21 +147,25 @@ Then run the application and:
 ## 🐛 If Something Goes Wrong
 
 ### Database reset fails:
+
 - Check MySQL is running
 - Verify root password
 - Ensure you have CREATE DATABASE permission
 
 ### Application won't compile:
+
 - Run `qmake` first
 - Check Qt is installed
 - Verify all includes are present
 
 ### Can't connect to database:
+
 - Check .env file
 - Verify database name is `university`
 - Check MySQL credentials
 
 ### Students still don't show:
+
 - Click "Test Database" button
 - Share the full output with me
 - I'll diagnose the exact issue
@@ -159,12 +173,14 @@ Then run the application and:
 ## 📝 Summary
 
 **Before Fix:**
+
 - ❌ Query fails (phone column)
 - ❌ 3 orphaned students
 - ❌ 0 students showing
 - ❌ Can't add students
 
 **After Fix:**
+
 - ✅ Query works perfectly
 - ✅ No orphaned records
 - ✅ Fresh clean database

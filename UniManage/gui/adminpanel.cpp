@@ -1,8 +1,8 @@
 #include "adminpanel.h"
 #include "stylehelper.h"
 #include "loginwindow.h"
-#include "../database/dbconnection.h"
-#include "../database/queries.h"
+#include "database/dbconnection.h"
+#include "database/queries.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -19,7 +19,7 @@
 #include <QTextEdit>
 #include <QTabWidget>
 #include <QDoubleSpinBox>
-#include "../database/persistence.h"
+#include "database/persistence.h"
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
 #include <QSqlQuery>
@@ -28,6 +28,12 @@
 #include <QFont>
 #include <QMap>
 
+/**
+ * Constructor for the AdminPanel class
+ * Initializes the admin panel with user data, UI setup, and initial data loading
+ * @param adminId - The user ID of the logged-in admin
+ * @param parent - Parent widget (default nullptr)
+ */
 AdminPanel::AdminPanel(int adminId, QWidget *parent)
     : QWidget(parent), m_adminId(adminId)
 {
@@ -40,8 +46,16 @@ AdminPanel::AdminPanel(int adminId, QWidget *parent)
     refreshAllData();
 }
 
+/**
+ * Destructor for the AdminPanel class
+ * Cleans up resources when the admin panel is destroyed
+ */
 AdminPanel::~AdminPanel() {}
 
+/**
+ * Sets up the user interface for the admin panel
+ * Creates the main layout, header with actions, and tab widget with all management sections
+ */
 void AdminPanel::setupUI()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
@@ -55,11 +69,7 @@ void AdminPanel::setupUI()
     header->addWidget(titleLabel);
     header->addStretch();
     
-    QPushButton* testDbBtn = new QPushButton("Test Database");
-    testDbBtn->setObjectName("primaryBtn");
-    testDbBtn->setFixedWidth(150);
-    connect(testDbBtn, &QPushButton::clicked, this, &AdminPanel::onTestDatabase);
-    header->addWidget(testDbBtn);
+    
     
     QPushButton* refreshBtn = new QPushButton("Refresh System");
     refreshBtn->setObjectName("secondaryBtn");
@@ -99,6 +109,10 @@ void AdminPanel::setupUI()
     mainLayout->addWidget(m_tabWidget);
 }
 
+/**
+ * Refreshes all data tables in the admin panel
+ * Reloads data for every entity: colleges, departments, courses, students, professors, etc.
+ */
 void AdminPanel::refreshAllData() {
     refreshCollegesTable();
     refreshCoursesTable();
@@ -113,6 +127,10 @@ void AdminPanel::refreshAllData() {
     refreshDraftTable();
 }
 
+/**
+ * Refreshes the sections table with current data
+ * Retrieves all sections and populates the table with their details including academic year
+ */
 void AdminPanel::refreshSectionsTable() {
     m_sectionsTable->setRowCount(0);
     for (const auto& s : m_sectionController.getAllSections()) {
@@ -146,6 +164,10 @@ void AdminPanel::refreshSectionsTable() {
     }
 }
 
+/**
+ * Refreshes the calendar table with current events
+ * Retrieves all events and populates the table
+ */
 void AdminPanel::refreshCalendarTable() {
     m_calendarTable->setRowCount(0);
     for (const auto& e : m_calendarController.getAllEvents()) {
@@ -160,6 +182,11 @@ void AdminPanel::refreshCalendarTable() {
     }
 }
 
+/**
+ * Creates the Calendar & Events management tab
+ * Provides interface for viewing, adding, editing, and deleting academic events
+ * @return Pointer to the calendar tab widget
+ */
 QWidget* AdminPanel::createCalendarTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -193,6 +220,10 @@ QWidget* AdminPanel::createCalendarTab() {
     return widget;
 }
 
+/**
+ * Assigns a professor to a selected course
+ * Opens a dialog to select a professor and updates the assignment in the database
+ */
 void AdminPanel::onAssignProfessor() {
     int cur = m_coursesTable->currentRow();
     if (cur < 0) {
@@ -238,6 +269,10 @@ void AdminPanel::onAssignProfessor() {
     }
 }
 
+/**
+ * Adds a new calendar event
+ * Opens a dialog to enter event details and saves to database
+ */
 void AdminPanel::onAddCalendarEvent() {
     QDialog dlg(this);
     dlg.setWindowTitle("Add Calendar Event");
@@ -273,6 +308,10 @@ void AdminPanel::onAddCalendarEvent() {
     }
 }
 
+/**
+ * Edits an existing calendar event
+ * Opens a dialog to modify event details and updates the database
+ */
 void AdminPanel::onEditCalendarEvent() {
     int cur = m_calendarTable->currentRow();
     if(cur < 0) return;
@@ -318,6 +357,10 @@ void AdminPanel::onEditCalendarEvent() {
     }
 }
 
+/**
+ * Deletes a selected calendar event
+ * Removes the event from the database after confirmation
+ */
 void AdminPanel::onDeleteCalendarEvent() {
     int cur = m_calendarTable->currentRow();
     if(cur < 0) return;
@@ -372,6 +415,10 @@ void AdminPanel::onDeleteLevel() {
 }
 
 // Section Management
+/**
+ * Adds a new section/group
+ * Opens a dialog to enter section details and saves to database
+ */
 void AdminPanel::onAddSection() {
     QDialog dialog(this);
     dialog.setWindowTitle("New Section/Group");
@@ -410,6 +457,10 @@ void AdminPanel::onAddSection() {
         }
     }
 }
+/**
+ * Edits an existing section/group
+ * Opens a dialog to modify section details and updates the database
+ */
 void AdminPanel::onEditSection() {
     int row = m_sectionsTable->currentRow();
     if (row < 0) return;
@@ -463,6 +514,10 @@ void AdminPanel::onEditSection() {
         }
     }
 }
+/**
+ * Deletes a selected section/group
+ * Removes the section from the database
+ */
 void AdminPanel::onDeleteSection() {
     int row = m_sectionsTable->currentRow();
     if (row < 0) return;
@@ -471,6 +526,10 @@ void AdminPanel::onDeleteSection() {
 }
 
 // Schedule Edits
+/**
+ * Edits an existing schedule assignment
+ * Opens a dialog to modify schedule details and updates the database
+ */
 void AdminPanel::onEditSchedule() {
     int row = m_schedulesTable->currentRow();
     if (row < 0) return;
@@ -542,6 +601,10 @@ void AdminPanel::onEditSchedule() {
         }
     }
 }
+/**
+ * Deletes a schedule assignment
+ * Removes the schedule slot from the database
+ */
 void AdminPanel::onDeleteSchedule() {
     int row = m_schedulesTable->currentRow();
     if (row < 0) return;
@@ -549,11 +612,20 @@ void AdminPanel::onDeleteSchedule() {
     if(m_scheduleController.deleteSchedule(id)) refreshSchedulesTable();
 }
 
+/**
+ * User-invoked refresh function
+ * Calls refreshAllData() and displays a success message
+ */
 void AdminPanel::onRefreshAll() {
     refreshAllData();
     QMessageBox::information(this, "Success", "Application data has been refreshed successfully.");
 }
 
+/**
+ * Performs a comprehensive database connection test
+ * Checks connection status, table counts, and query execution
+ * Displays a detailed report of the findings
+ */
 void AdminPanel::onTestDatabase() {
     QString report = "=== DATABASE CONNECTION TEST ===\n\n";
     
@@ -687,6 +759,11 @@ void AdminPanel::onTestDatabase() {
     dialog->exec();
 }
 
+/**
+ * Creates the Faculties/Colleges management tab
+ * Provides interface for adding, editing, and deleting faculties
+ * @return Pointer to the faculties tab widget
+ */
 QWidget* AdminPanel::createFacultiesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -716,6 +793,11 @@ QWidget* AdminPanel::createFacultiesTab() {
     return widget;
 }
 
+/**
+ * Creates the Departments management tab
+ * Provides interface for adding, editing, and deleting departments
+ * @return Pointer to the departments tab widget
+ */
 QWidget* AdminPanel::createDepartmentsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -747,6 +829,11 @@ QWidget* AdminPanel::createDepartmentsTab() {
     return widget;
 }
 
+/**
+ * Creates the Courses management tab
+ * Provides interface for managing academic courses, including professor assignment
+ * @return Pointer to the courses tab widget
+ */
 QWidget* AdminPanel::createCoursesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -781,6 +868,11 @@ QWidget* AdminPanel::createCoursesTab() {
     return widget;
 }
 
+/**
+ * Creates the Rooms/Facilities management tab
+ * Provides sub-tabs for lecture halls and computer labs management
+ * @return Pointer to the rooms tab widget
+ */
 QWidget* AdminPanel::createRoomsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -837,6 +929,11 @@ QWidget* AdminPanel::createRoomsTab() {
     return widget;
 }
 
+/**
+ * Creates the Academic Setup tab
+ * Provides interface for managing academic levels/years
+ * @return Pointer to the academic setup tab widget
+ */
 QWidget* AdminPanel::createAcademicSetupTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -868,6 +965,11 @@ QWidget* AdminPanel::createAcademicSetupTab() {
     return widget;
 }
 
+/**
+ * Creates the Sections/Groups management tab
+ * Provides interface for managing student sections
+ * @return Pointer to the sections tab widget
+ */
 QWidget* AdminPanel::createSectionsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -899,6 +1001,11 @@ QWidget* AdminPanel::createSectionsTab() {
     return widget;
 }
 
+/**
+ * Creates the Professors management tab
+ * Provides interface for registering and managing professor accounts
+ * @return Pointer to the professors tab widget
+ */
 QWidget* AdminPanel::createProfessorsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -930,6 +1037,11 @@ QWidget* AdminPanel::createProfessorsTab() {
     return widget;
 }
 
+/**
+ * Creates the Class Schedules management tab
+ * Provides interface for assigning courses to time slots and rooms
+ * @return Pointer to the schedules tab widget
+ */
 QWidget* AdminPanel::createSchedulesTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -961,6 +1073,11 @@ QWidget* AdminPanel::createSchedulesTab() {
     return widget;
 }
 
+/**
+ * Creates the Students management tab
+ * Provides interface for enrolling and managing students
+ * @return Pointer to the students tab widget
+ */
 QWidget* AdminPanel::createStudentsTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -988,12 +1105,20 @@ QWidget* AdminPanel::createStudentsTab() {
 }
 
 // Slot Implementations
+/**
+ * Handles logout action
+ * Closes admin panel and returns to login screen
+ */
 void AdminPanel::onLogout() {
     LoginWindow* login = new LoginWindow();
     login->show();
     this->close();
 }
 
+/**
+ * Refreshes the students table
+ * Fetches latest student data and populates the table
+ */
 void AdminPanel::refreshStudentsTable() {
     qDebug() << "=== REFRESHING STUDENTS TABLE ===";
     m_studentsTable->setRowCount(0);
@@ -1045,6 +1170,10 @@ void AdminPanel::refreshStudentsTable() {
     qDebug() << "=== END REFRESH STUDENTS TABLE ===";
 }
 
+/**
+ * Refreshes the courses table
+ * Fetches latest course data and populates the table
+ */
 void AdminPanel::refreshCoursesTable() {
     m_coursesTable->setRowCount(0);
     m_coursesTable->setColumnCount(10);
@@ -1068,11 +1197,18 @@ void AdminPanel::refreshCoursesTable() {
         QString levelStr = levelMap.value(c.yearLevel(), "---");
         m_coursesTable->setItem(r, 7, new QTableWidgetItem(levelStr));
         
-        m_coursesTable->setItem(r, 8, new QTableWidgetItem(c.semesterName()));
+        // Simplified Semester Display
+        QString semStr = (c.semesterNumber() > 0) ? QString("Semester %1").arg(c.semesterNumber()) : "---";
+        m_coursesTable->setItem(r, 8, new QTableWidgetItem(semStr));
+        
         m_coursesTable->setItem(r, 9, new QTableWidgetItem(c.description()));
     }
 }
 
+/**
+ * Refreshes the colleges table
+ * Fetches latest college data and populates the table
+ */
 void AdminPanel::refreshCollegesTable() {
     m_collegesTable->setRowCount(0);
     for (const auto& c : m_collegeController.getAllColleges()) {
@@ -1085,6 +1221,10 @@ void AdminPanel::refreshCollegesTable() {
     }
 }
 
+/**
+ * Refreshes the departments table
+ * Fetches latest department data and populates the table
+ */
 void AdminPanel::refreshDepartmentsTable() {
     m_departmentsTable->setRowCount(0);
     for (const auto& d : m_departmentController.getAllDepartments()) {
@@ -1097,6 +1237,10 @@ void AdminPanel::refreshDepartmentsTable() {
     }
 }
 
+/**
+ * Refreshes the academic levels table
+ * Fetches latest academic level data and populates the table
+ */
 void AdminPanel::refreshLevelsTable() {
     m_levelsTable->setRowCount(0);
     for (const auto& l : m_academicLevelController.getAllAcademicLevels()) {
@@ -1109,6 +1253,10 @@ void AdminPanel::refreshLevelsTable() {
     }
 }
 
+/**
+ * Refreshes the rooms tables (Halls and Labs)
+ * Fetches latest room data and separates them into appropriate tables based on type
+ */
 void AdminPanel::refreshRoomsTable() {
     if (!m_roomsTable || !m_labsTable) return;
     m_roomsTable->setRowCount(0);
@@ -1143,6 +1291,10 @@ void AdminPanel::refreshRoomsTable() {
     }
 }
 
+/**
+ * Refreshes the professors table
+ * Fetches latest professor data and populates the table
+ */
 void AdminPanel::refreshProfessorsTable() {
     m_professorsTable->setRowCount(0);
     for (const auto& p : m_professorController.getAllProfessors()) {
@@ -1160,6 +1312,10 @@ void AdminPanel::refreshProfessorsTable() {
     }
 }
 
+/**
+ * Refreshes the schedules table
+ * Fetches latest schedule data with joined details and populates the table
+ */
 void AdminPanel::refreshSchedulesTable() {
     m_schedulesTable->setRowCount(0);
     QSqlQuery query("SELECT s.id, c.name, r.name, u.full_name, s.day_of_week, s.start_time, s.end_time "
@@ -1181,6 +1337,10 @@ void AdminPanel::refreshSchedulesTable() {
     }
 }
 
+/**
+ * Handles adding a new student
+ * Opens a registration dialog and creates new student user and profile
+ */
 void AdminPanel::onAddStudent() {
     QDialog dialog(this);
     dialog.setWindowTitle("Student Registration");
@@ -1320,6 +1480,10 @@ void AdminPanel::onAddStudent() {
     }
 }
 
+/**
+ * Handles editing an existing student
+ * Opens a dialog to modify student profile details
+ */
 void AdminPanel::onEditStudent() {
     int row = m_studentsTable->currentRow();
     if (row < 0) return;
@@ -1403,6 +1567,10 @@ void AdminPanel::onEditStudent() {
     }
 }
 
+/**
+ * Handles deleting a student
+ * Moves student to draft (soft delete) or removes incomplete profiles permanently
+ */
 void AdminPanel::onDeleteStudent() {
     int row = m_studentsTable->currentRow();
     if (row < 0) return;
@@ -1433,6 +1601,11 @@ void AdminPanel::onDeleteStudent() {
     }
 }
 
+/**
+ * Creates the Student Draft/Recycle Bin tab
+ * Allows restoring or permanently deleting removed students
+ * @return Pointer to the draft tab widget
+ */
 QWidget* AdminPanel::createDraftTab() {
     QWidget* widget = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(widget);
@@ -1462,6 +1635,10 @@ QWidget* AdminPanel::createDraftTab() {
     return widget;
 }
 
+/**
+ * Refreshes the draft students table
+ * Fetches soft-deleted students and populates the table
+ */
 void AdminPanel::refreshDraftTable() {
     m_draftStudentsTable->setRowCount(0);
     QList<StudentData> deleted = m_studentController.getDeletedStudents();
@@ -1487,6 +1664,10 @@ void AdminPanel::refreshDraftTable() {
     }
 }
 
+/**
+ * Restores a student from draft
+ * Reactivates the student status
+ */
 void AdminPanel::onRestoreStudent() {
     int row = m_draftStudentsTable->currentRow();
     if (row < 0) return;
@@ -1499,6 +1680,10 @@ void AdminPanel::onRestoreStudent() {
     }
 }
 
+/**
+ * Permanently deletes a student from the system
+ * Removes both student data and user account
+ */
 void AdminPanel::onHardDeleteStudent() {
     int row = m_draftStudentsTable->currentRow();
     if (row < 0) return;
@@ -1512,6 +1697,10 @@ void AdminPanel::onHardDeleteStudent() {
     }
 }
 
+/**
+ * Adds a new course
+ * Opens dialog to enter course details and creates it in the database
+ */
 void AdminPanel::onAddCourse() {
     QDialog dialog(this);
     dialog.setWindowTitle("New Academic Course");
@@ -1526,9 +1715,8 @@ void AdminPanel::onAddCourse() {
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) level->addItem(QString("Year %1").arg(l.levelNumber()), l.id());
     
     QComboBox* semester = new QComboBox();
-    for(const auto& s : m_semesterController.getAllSemesters()) {
-        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
-    }
+    semester->addItem("Semester 1", 1);
+    semester->addItem("Semester 2", 2);
 
      QComboBox* dept = new QComboBox();
      for(const auto& d : m_departmentController.getAllDepartments()) dept->addItem(d.name(), d.id());
@@ -1555,13 +1743,31 @@ void AdminPanel::onAddCourse() {
             QMessageBox::warning(this, "Input Error", "Course name cannot be empty.");
             return;
         }
+        
+        // Find or Create Semester ID
+        int targetSemNum = semester->currentData().toInt();
+        int finalSemId = 0;
+        
+        QSqlQuery semQ(DBConnection::instance().database());
+        semQ.prepare("SELECT id FROM semester WHERE semester = ? LIMIT 1");
+        semQ.addBindValue(targetSemNum);
+        if (semQ.exec() && semQ.next()) {
+            finalSemId = semQ.value(0).toInt();
+        } else {
+            // Create new generic semester
+            QSqlQuery createSem(DBConnection::instance().database());
+            createSem.prepare("INSERT INTO semester (year, semester) VALUES (NOW(), ?)");
+            createSem.addBindValue(targetSemNum);
+            if(createSem.exec()) finalSemId = createSem.lastInsertId().toInt();
+        }
+
         Course c; 
         c.setName(name->text()); 
         c.setCourseType(type->currentText()); 
         c.setMaxGrade(maxG->currentText().toInt()); 
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
-        c.setSemesterId(semester->currentData().toInt());
+        c.setSemesterId(finalSemId);
         c.setDepartmentId(dept->currentData().toInt());
 
         if (c.departmentId() <= 0) {
@@ -1587,6 +1793,10 @@ void AdminPanel::onAddCourse() {
     }
 }
 
+/**
+ * Edits an existing course
+ * Opens dialog to modify course details
+ */
 void AdminPanel::onEditCourse() {
     int row = m_coursesTable->currentRow();
     if (row < 0) return;
@@ -1616,12 +1826,14 @@ void AdminPanel::onEditCourse() {
     if (lvlIdx >= 0) level->setCurrentIndex(lvlIdx);
 
     QComboBox* semester = new QComboBox();
-    for(const auto& s : m_semesterController.getAllSemesters()) {
-        semester->addItem(QString("Year %1 - Sem %2").arg(QString::number(s.year().date().year())).arg(QString::number(s.semester())), s.id());
-    }
+    semester->addItem("Semester 1", 1);
+    semester->addItem("Semester 2", 2);
+    
     // Correctly set current index
-    int semIdx = semester->findData(c.semesterId());
-    if (semIdx >= 0) semester->setCurrentIndex(semIdx);
+    int currentSem = c.semesterNumber();
+    if (currentSem == 1) semester->setCurrentIndex(0);
+    else if (currentSem == 2) semester->setCurrentIndex(1);
+    else semester->setCurrentIndex(0); // Default
 
     QComboBox* dept = new QComboBox();
     for(const auto& d : m_departmentController.getAllDepartments()) {
@@ -1650,12 +1862,29 @@ void AdminPanel::onEditCourse() {
     connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
 
     if (dialog.exec() == QDialog::Accepted) {
+        // Find or Create Semester ID
+        int targetSemNum = semester->currentData().toInt();
+        int finalSemId = 0;
+        
+        QSqlQuery semQ(DBConnection::instance().database());
+        semQ.prepare("SELECT id FROM semester WHERE semester = ? LIMIT 1");
+        semQ.addBindValue(targetSemNum);
+        if (semQ.exec() && semQ.next()) {
+            finalSemId = semQ.value(0).toInt();
+        } else {
+            // Create new generic semester
+            QSqlQuery createSem(DBConnection::instance().database());
+            createSem.prepare("INSERT INTO semester (year, semester) VALUES (NOW(), ?)");
+            createSem.addBindValue(targetSemNum);
+            if(createSem.exec()) finalSemId = createSem.lastInsertId().toInt();
+        }
+    
         c.setName(name->text());
         c.setCourseType(type->currentText());
         c.setMaxGrade(maxG->currentText().toInt());
         c.setCreditHours(credits->value());
         c.setYearLevel(level->currentData().toInt());
-        c.setSemesterId(semester->currentData().toInt());
+        c.setSemesterId(finalSemId);
         c.setDepartmentId(dept->currentData().toInt());
 
         if (c.departmentId() <= 0) {
@@ -1675,6 +1904,10 @@ void AdminPanel::onEditCourse() {
     }
 }
 
+/**
+ * Deletes a course
+ * Removes the course from the database
+ */
 void AdminPanel::onDeleteCourse() {
     int row = m_coursesTable->currentRow();
     if (row < 0) return;
@@ -1689,6 +1922,10 @@ void AdminPanel::onDeleteCourse() {
     }
 }
 
+/**
+ * Adds a new room/facility
+ * Opens dialog to enter room details (Hall or Lab)
+ */
 void AdminPanel::onAddRoom() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add Hall/Lab");
@@ -1764,6 +2001,10 @@ void AdminPanel::onAddRoom() {
     }
 }
 
+/**
+ * Edits an existing room
+ * Opens dialog to modify room details
+ */
 void AdminPanel::onEditRoom() {
     if (!m_roomSubTabWidget) return;
     QTableWidget* table = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;
@@ -1835,6 +2076,10 @@ void AdminPanel::onEditRoom() {
     }
 }
 
+/**
+ * Deletes a room
+ * Removes the room from the database
+ */
 void AdminPanel::onDeleteRoom() {
     if (!m_roomSubTabWidget) return;
     QTableWidget* table = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;
@@ -1853,6 +2098,10 @@ void AdminPanel::onDeleteRoom() {
     }
 }
 
+/**
+ * Adds a new college
+ * Opens dialog to enter college details
+ */
 void AdminPanel::onAddCollege() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add College");
@@ -1885,6 +2134,10 @@ void AdminPanel::onAddCollege() {
     }
 }
 
+/**
+ * Edits an existing college
+ * Opens dialog to modify college details
+ */
 void AdminPanel::onEditCollege() {
     int row = m_collegesTable->currentRow();
     if (row < 0) return;
@@ -1922,6 +2175,10 @@ void AdminPanel::onEditCollege() {
     }
 }
 
+/**
+ * Deletes a college
+ * Removes the college from the database
+ */
 void AdminPanel::onDeleteCollege() {
     int row = m_collegesTable->currentRow();
     if (row < 0) return;
@@ -1934,6 +2191,10 @@ void AdminPanel::onDeleteCollege() {
     }
 }
 
+/**
+ * Exports data report
+ * Generates and saves a text file report of system data
+ */
 void AdminPanel::onPrintData() {
     QString content = "=== UNIMANAGE SYSTEM DATA EXPORT ===\n";
     content += "Generated on: " + QDateTime::currentDateTime().toString() + "\n\n";
@@ -1963,6 +2224,10 @@ void AdminPanel::onPrintData() {
     }
 }
 
+/**
+ * Edits an existing department
+ * Opens dialog to modify department details
+ */
 void AdminPanel::onEditDepartment() {
     int row = m_departmentsTable->currentRow();
     if (row < 0) return;
@@ -1994,6 +2259,10 @@ void AdminPanel::onEditDepartment() {
     }
 }
 
+/**
+ * Deletes a department
+ * Removes the department from the database
+ */
 void AdminPanel::onDeleteDepartment() {
     int row = m_departmentsTable->currentRow();
     if (row < 0) return;
@@ -2004,6 +2273,10 @@ void AdminPanel::onDeleteDepartment() {
     }
 }
 
+/**
+ * Adds a new department
+ * Opens dialog to enter department details
+ */
 void AdminPanel::onAddDepartment() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add Department");
@@ -2033,6 +2306,10 @@ void AdminPanel::onAddDepartment() {
     }
 }
 
+/**
+ * Adds a new academic level
+ * Opens dialog to add a new year level
+ */
 void AdminPanel::onAddLevel() {
     QDialog dialog(this);
     dialog.setWindowTitle("Add Level");
@@ -2059,6 +2336,10 @@ void AdminPanel::onAddLevel() {
     }
 }
 
+/**
+ * Registers a new professor
+ * Opens dialog to create professor account and profile
+ */
 void AdminPanel::onAddProfessor() {
     QDialog dialog(this);
     dialog.setWindowTitle("Register Professor");
@@ -2150,6 +2431,10 @@ void AdminPanel::onAddProfessor() {
     }
 }
 
+/**
+ * Edits an existing professor
+ * Opens dialog to modify professor details and login credentials
+ */
 void AdminPanel::onEditProfessor() {
     int row = m_professorsTable->currentRow();
     if (row < 0) return;
@@ -2220,6 +2505,10 @@ void AdminPanel::onEditProfessor() {
     }
 }
 
+/**
+ * Deletes a professor
+ * Removes the professor and associated user account
+ */
 void AdminPanel::onDeleteProfessor() {
     int row = m_professorsTable->currentRow();
     if (row < 0) return;
@@ -2234,6 +2523,10 @@ void AdminPanel::onDeleteProfessor() {
     }
 }
 
+/**
+ * Adds a new schedule assignment
+ * Opens dialog to create a new class schedule slot
+ */
 void AdminPanel::onAddSchedule() {
     QDialog dialog(this);
     dialog.setWindowTitle("New Schedule Slot");
@@ -2281,6 +2574,10 @@ void AdminPanel::onAddSchedule() {
         }
     }
 }
+/**
+ * Manages room specifications/equipment
+ * Opens dialog to add/view specific equipment in a room
+ */
 void AdminPanel::onManageRoomSpecs() {
     if (!m_roomSubTabWidget) return;
     QTableWidget* table_sel = (m_roomSubTabWidget->currentIndex() == 0) ? m_roomsTable : m_labsTable;

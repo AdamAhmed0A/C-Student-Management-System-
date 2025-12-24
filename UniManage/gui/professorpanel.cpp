@@ -20,8 +20,14 @@
 #include <algorithm>
 #include <QSqlQuery>
 #include <QSqlError>
-#include "../database/dbconnection.h"
+#include "database/dbconnection.h"
 
+/**
+ * Constructor for the ProfessorPanel class
+ * Initializes the professor panel with user data and UI components
+ * @param userId - The user ID of the logged-in professor
+ * @param parent - Parent widget (default nullptr)
+ */
 ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     : QWidget(parent), m_userId(userId), 
       m_tabWidget(nullptr), m_yearSelector(nullptr), m_courseSelector(nullptr),
@@ -42,12 +48,25 @@ ProfessorPanel::ProfessorPanel(int userId, QWidget *parent)
     resize(1200, 800);
 }
 
+/**
+ * Destructor for the ProfessorPanel class
+ * Cleans up resources when the professor panel is destroyed
+ */
 ProfessorPanel::~ProfessorPanel() {}
 
+/**
+ * Loads the professor's data from the database
+ * Retrieves professor information using the user ID
+ */
 void ProfessorPanel::loadProfessorData() {
     m_professor = m_professorController.getProfessorByUserId(m_userId);
 }
 
+/**
+ * Sets up the user interface for the professor panel
+ * Creates tabs for grading, attendance, courses, schedule, calendar, and profile
+ * Initializes filter controls for year and course selection
+ */
 void ProfessorPanel::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20,20,20,20);
@@ -116,6 +135,11 @@ void ProfessorPanel::setupUI() {
 }
 
 
+/**
+ * Creates the Assignment 1 grading tab
+ * Displays a table of students and their grades for Assignment 1
+ * @return Pointer to the Assignment 1 tab widget
+ */
 QWidget* ProfessorPanel::createAs1Tab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -138,6 +162,11 @@ QWidget* ProfessorPanel::createAs1Tab() {
     return tab;
 }
 
+/**
+ * Creates the Assignment 2 grading tab
+ * Displays a table of students and their grades for Assignment 2
+ * @return Pointer to the Assignment 2 tab widget
+ */
 QWidget* ProfessorPanel::createAs2Tab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -160,6 +189,11 @@ QWidget* ProfessorPanel::createAs2Tab() {
     return tab;
 }
 
+/**
+ * Creates the Coursework grading tab
+ * Displays a table of students and their grades for Coursework
+ * @return Pointer to the Coursework tab widget
+ */
 QWidget* ProfessorPanel::createCWTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -182,6 +216,11 @@ QWidget* ProfessorPanel::createCWTab() {
     return tab;
 }
 
+/**
+ * Creates the Final Exam grading tab
+ * Displays a table of students and their grades for Final Exam
+ * @return Pointer to the Final Exam tab widget
+ */
 QWidget* ProfessorPanel::createFinalTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -204,6 +243,11 @@ QWidget* ProfessorPanel::createFinalTab() {
     return tab;
 }
 
+/**
+ * Creates the Experience grading tab
+ * Displays a table of students and their experience/practical grades
+ * @return Pointer to the Experience tab widget
+ */
 QWidget* ProfessorPanel::createExpTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -226,6 +270,11 @@ QWidget* ProfessorPanel::createExpTab() {
     return tab;
 }
 
+/**
+ * Creates the Comprehensive Evaluation tab
+ * Displays a detailed table of students with all grade components and attendance stats
+ * @return Pointer to the Evaluation tab widget
+ */
 QWidget* ProfessorPanel::createEvaluationTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -267,6 +316,11 @@ QWidget* ProfessorPanel::createEvaluationTab() {
     return tab;
 }
 
+/**
+ * Creates the Attendance Management tab
+ * Allows professors to view and record daily attendance for courses
+ * @return Pointer to the Attendance tab widget
+ */
 QWidget* ProfessorPanel::createAttendanceTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -307,6 +361,11 @@ QWidget* ProfessorPanel::createAttendanceTab() {
 }
 
 
+/**
+ * Creates the Schedule View tab
+ * Displays the professor's weekly teaching schedule
+ * @return Pointer to the Schedule tab widget
+ */
 QWidget* ProfessorPanel::createScheduleTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -321,6 +380,11 @@ QWidget* ProfessorPanel::createScheduleTab() {
     return tab;
 }
 
+/**
+ * Creates the Courses List tab
+ * Displays all courses assigned to the professor with details
+ * @return Pointer to the Courses tab widget
+ */
 QWidget* ProfessorPanel::createCoursesTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -345,6 +409,11 @@ QWidget* ProfessorPanel::createCoursesTab() {
     return tab;
 }
 
+/**
+ * Creates the Profile Management tab
+ * Allows professors to update their specialization and personal info
+ * @return Pointer to the Profile tab widget
+ */
 QWidget* ProfessorPanel::createProfileTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -371,6 +440,11 @@ QWidget* ProfessorPanel::createProfileTab() {
     return tab;
 }
 
+/**
+ * Creates the Calendar & Events tab
+ * Allows professors to manage academic events and view the calendar
+ * @return Pointer to the Calendar tab widget
+ */
 QWidget* ProfessorPanel::createCalendarTab() {
     QWidget* tab = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(tab);
@@ -421,12 +495,20 @@ QWidget* ProfessorPanel::createCalendarTab() {
     return tab;
 }
 
+/**
+ * Handles the logout button click event
+ * Closes the professor panel and returns to the login screen
+ */
 void ProfessorPanel::onLogout() {
     LoginWindow* win = new LoginWindow();
     win->show();
     this->close();
 }
 
+/**
+ * Refreshes all data in the professor panel
+ * Reloads professor data, courses, schedule, calendar, and student lists
+ */
 void ProfessorPanel::onRefreshAll() {
     loadProfessorData();
     loadCourses(); 
@@ -436,6 +518,10 @@ void ProfessorPanel::onRefreshAll() {
     QMessageBox::information(this, "Refreshed", "All data reloaded from database.");
 }
 
+/**
+ * Loads the courses assigned to the professor
+ * Updates the course selection dropdown based on selected academic year
+ */
 void ProfessorPanel::loadCourses() {
     m_allProfessorCourses = m_courseController.getCoursesByProfessor(m_professor.id());
     
@@ -468,6 +554,11 @@ void ProfessorPanel::loadCourses() {
     }
 }
 
+/**
+ * Handles selection of an academic year/level
+ * Filters the course list to show only courses for the selected level
+ * @param index - Index of the selected year in the dropdown
+ */
 void ProfessorPanel::onYearSelected(int index) {
     if (index < 0) return;
     int selectedLevelId = m_yearSelector->currentData().toInt();
@@ -488,6 +579,10 @@ void ProfessorPanel::onYearSelected(int index) {
     onRefreshStudents();
 }
 
+/**
+ * Loads the professor's schedule
+ * Retreives schedule data and populates the schedule table
+ */
 void ProfessorPanel::loadSchedule() {
     m_scheduleTable->setRowCount(0);
     QList<Schedule> scheds = m_scheduleController.getScheduleByProfessor(m_professor.id());
@@ -502,6 +597,10 @@ void ProfessorPanel::loadSchedule() {
     }
 }
 
+/**
+ * Loads calendar events
+ * Retrieves all events and populates the calendar table
+ */
 void ProfessorPanel::loadCalendarEvents() {
     m_calendarTable->setRowCount(0);
     for(const auto& e : m_calendarController.getAllEvents()) {
@@ -516,10 +615,20 @@ void ProfessorPanel::loadCalendarEvents() {
     }
 }
 
+/**
+ * Handles selection of a course
+ * Triggers a refresh of student data for the selected course
+ * @param index - Index of the selected course in the dropdown
+ */
 void ProfessorPanel::onCourseSelected(int index) {
     onRefreshStudents();
 }
 
+/**
+ * Refreshes the list of students for the selected course
+ * Updates all grading tables and the attendance table with enrolled students
+ * Fetches current grades and attendance status
+ */
 void ProfessorPanel::onRefreshStudents() {
     if(m_courseSelector->count() == 0) {
         m_as1Table->setRowCount(0);
@@ -716,6 +825,10 @@ void ProfessorPanel::onRefreshStudents() {
     }
 }
 
+/**
+ * Submits attendance records for the selected course and date
+ * iteratest through the attendance table and saves the status for each student
+ */
 void ProfessorPanel::onSubmitAttendance() {
     if(m_courseSelector->count() == 0) return;
     if(!m_attendanceTable) return;
@@ -749,6 +862,10 @@ void ProfessorPanel::onSubmitAttendance() {
     }
 }
 
+/**
+ * Handles the click event for updating grades
+ * Identifies the active tab and selected student, then opens the grade entry form
+ */
 void ProfessorPanel::onUpdateClicked() {
     int tabIdx = m_tabWidget->currentIndex();
     QTableWidget* table = nullptr;
@@ -772,6 +889,11 @@ void ProfessorPanel::onUpdateClicked() {
     showGradeForm(eid, tabIdx);
 }
 
+/**
+ * Displays a dialog for entering/updating grades for a student
+ * @param enrollmentId - The enrollment ID of the student
+ * @param tabIndex - The index of the tab triggering the update (determines which fields are shown)
+ */
 void ProfessorPanel::showGradeForm(int enrollmentId, int tabIndex) {
     Enrollment e = m_enrollmentController.getEnrollmentById(enrollmentId);
     if(e.id() == 0) {
@@ -851,6 +973,10 @@ void ProfessorPanel::showGradeForm(int enrollmentId, int tabIndex) {
 }
 
 
+/**
+ * Opens a dialog to add a new calendar event
+ * Saves the new event to the database upon confirmation
+ */
 void ProfessorPanel::onAddCalendarEvent() {
     QDialog dlg(this);
     dlg.setWindowTitle("Add Event");
@@ -891,6 +1017,10 @@ void ProfessorPanel::onAddCalendarEvent() {
     }
 }
 
+/**
+ * Opens a dialog to edit an existing calendar event
+ * Updates the event in the database upon confirmation
+ */
 void ProfessorPanel::onEditCalendarEvent() {
     int cur = m_calendarTable->currentRow();
     if(cur < 0) return;
@@ -941,6 +1071,10 @@ void ProfessorPanel::onEditCalendarEvent() {
     }
 }
 
+/**
+ * Deletes the selected calendar event
+ * Removes the event from the database after user confirmation
+ */
 void ProfessorPanel::onDeleteCalendarEvent() {
     int cur = m_calendarTable->currentRow();
     if(cur < 0) return;
@@ -956,6 +1090,10 @@ void ProfessorPanel::onDeleteCalendarEvent() {
     }
 }
 
+/**
+ * Saves changes to the professor's profile
+ * Updates specialization and personal info in the database
+ */
 void ProfessorPanel::onSaveProfile() {
     m_professor.setSpecialization(m_profSpecializationEdit->text());
     m_professor.setPersonalInfo(m_profInfoEdit->toHtml());

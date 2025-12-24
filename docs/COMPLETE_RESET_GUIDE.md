@@ -3,6 +3,7 @@
 ## 🎯 This Will Fix Everything
 
 This guide will:
+
 1. ✅ Drop and recreate the database with correct schema
 2. ✅ Fix all student display issues
 3. ✅ Fix add/edit/delete functionality for students
@@ -14,18 +15,21 @@ This guide will:
 ### Step 1: Reset the Database
 
 **Run the SQL script:**
+
 ```batch
 mysql -u root -p < C:\Users\Adam\C-Student-Management-System-\reset_database.sql
 ```
 
 **Or in MySQL Workbench:**
+
 1. Open MySQL Workbench
 2. Connect to your MySQL server
-3. File → Open SQL Script
+3. File -> Open SQL Script
 4. Select `reset_database.sql`
 5. Execute (⚡ button or Ctrl+Shift+Enter)
 
 **What this does:**
+
 - Drops the old `university` database
 - Creates a fresh `university` database
 - Creates all tables with correct schema (NO phone column)
@@ -43,8 +47,9 @@ mingw32-make
 ```
 
 Or use Qt Creator:
+
 1. Open the project
-2. Build → Rebuild All
+2. Build -> Rebuild All
 3. Run
 
 ### Step 3: Test the Application
@@ -124,18 +129,21 @@ Or use Qt Creator:
 ## 🔧 What Was Fixed
 
 ### Database Schema Issues:
+
 - ❌ **Old**: Had `phone` column that didn't exist
 - ✅ **New**: Correct schema without phone column
 - ✅ **New**: Proper foreign keys and cascading deletes
 - ✅ **New**: Indexes for better performance
 
 ### Query Issues:
+
 - ❌ **Old**: Query tried to SELECT `sd.phone`
 - ✅ **New**: Query matches actual schema
 - ✅ **New**: Uses LEFT JOIN to show all students
 - ✅ **New**: Handles NULL values properly
 
 ### Functionality Issues:
+
 - ✅ **Student Add**: Creates user + profile in transaction
 - ✅ **Student Edit**: Updates profile data
 - ✅ **Student Delete**: Cascades to remove user
@@ -146,6 +154,7 @@ Or use Qt Creator:
 ## 📊 Database Structure
 
 ### Tables Created:
+
 1. `users` - All system users (admin, professors, students)
 2. `students_data` - Student profiles
 3. `professors` - Professor profiles
@@ -162,6 +171,7 @@ Or use Qt Creator:
 14. `payments` - Student payments
 
 ### Default Data:
+
 - ✅ 1 Admin user (admin/admin123)
 - ✅ 4 Academic levels (First-Fourth Year)
 - ✅ 1 Current semester
@@ -171,6 +181,7 @@ Or use Qt Creator:
 ## 🎯 Expected Behavior After Reset
 
 ### Students Tab:
+
 - **Empty initially** ✓
 - **Add button works** ✓
 - **Students appear after adding** ✓
@@ -179,6 +190,7 @@ Or use Qt Creator:
 - **Refresh updates the list** ✓
 
 ### Professors Tab:
+
 - **Empty initially** ✓
 - **Add button works** ✓
 - **Professors appear after adding** ✓
@@ -186,6 +198,7 @@ Or use Qt Creator:
 - **Delete button works** ✓
 
 ### Test Database Button:
+
 - **Shows connection status** ✓
 - **Shows accurate counts** ✓
 - **Query executes successfully** ✓
@@ -194,17 +207,20 @@ Or use Qt Creator:
 ## 🐛 Troubleshooting
 
 ### If students still don't show:
+
 1. Click "Test Database" button
 2. Check the query result
 3. Share the output with me
 
 ### If add fails:
+
 1. Check console for error messages
 2. Verify department and level are selected
 3. Ensure National ID is 14 digits
 4. Check that Student Code is unique
 
 ### If database connection fails:
+
 1. Verify MySQL is running
 2. Check .env file has correct credentials
 3. Ensure database name is `university`
@@ -212,6 +228,7 @@ Or use Qt Creator:
 ## ✅ Success Criteria
 
 After following these steps, you should have:
+
 - ✅ Fresh database with correct schema
 - ✅ Working student add/edit/delete
 - ✅ Working professor add/edit/delete
@@ -222,6 +239,7 @@ After following these steps, you should have:
 ## 🎉 You're Done!
 
 The application should now work perfectly. You can:
+
 - Add students and professors
 - Edit their information
 - Delete records

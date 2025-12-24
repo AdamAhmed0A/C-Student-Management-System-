@@ -5,8 +5,16 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the DepartmentController class
+ */
 DepartmentController::DepartmentController() {}
 
+/**
+ * Adds a new department to the database
+ * @param dept - The Department object containing details
+ * @return True if successful, otherwise false
+ */
 bool DepartmentController::addDepartment(const Department& dept)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -17,6 +25,11 @@ bool DepartmentController::addDepartment(const Department& dept)
     return query.exec();
 }
 
+/**
+ * Updates an existing department in the database
+ * @param dept - The Department object with updated details
+ * @return True if successful, otherwise false
+ */
 bool DepartmentController::updateDepartment(const Department& dept)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -28,6 +41,11 @@ bool DepartmentController::updateDepartment(const Department& dept)
     return query.exec();
 }
 
+/**
+ * Deletes a department from the database
+ * @param id - The ID of the department to delete
+ * @return True if successful, otherwise false
+ */
 bool DepartmentController::deleteDepartment(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -36,6 +54,11 @@ bool DepartmentController::deleteDepartment(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all departments from the database
+ * Also fetches the college name associated with each department
+ * @return A list of Department objects
+ */
 QList<Department> DepartmentController::getAllDepartments()
 {
     QList<Department> list;
@@ -53,6 +76,11 @@ QList<Department> DepartmentController::getAllDepartments()
     return list;
 }
 
+/**
+ * Retrieves a department by its ID
+ * @param id - The ID of the department to retrieve
+ * @return The Department object if found, otherwise an empty object
+ */
 Department DepartmentController::getDepartmentById(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -67,6 +95,11 @@ Department DepartmentController::getDepartmentById(int id)
     return Department();
 }
 
+/**
+ * Retrieves all departments associated with a specific college
+ * @param collegeId - The ID of the college
+ * @return A list of Department objects for that college
+ */
 QList<Department> DepartmentController::getDepartmentsByCollege(int collegeId)
 {
     QList<Department> list;

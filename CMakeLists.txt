@@ -1,61 +1,28 @@
-cmake_minimum_required(VERSION 3.20)
-project(UniManage LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+project(SIS-Project)
 
-# Use C++17 (adjust if needed)
+# Set global settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Enable Qt automoc/autouic/autorcc
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
 
-# Find Qt6 modules you need
-find_package(Qt6 COMPONENTS Core Widgets Sql REQUIRED)
+# Compiler-specific options
+if(MSVC)
+    add_compile_options(/W4 /permissive-)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-# Only scan YOUR project
-file(GLOB_RECURSE UM_SOURCES
-  "${CMAKE_SOURCE_DIR}/UniManage/*.cpp"
-  "${CMAKE_SOURCE_DIR}/UniManage/gui/*.cpp"
-  "${CMAKE_SOURCE_DIR}/UniManage/controllers/*.cpp"
-  "${CMAKE_SOURCE_DIR}/UniManage/models/*.cpp"
-  "${CMAKE_SOURCE_DIR}/UniManage/database/*.cpp"
-)
+# Copy .env file and CSV files to the build directory
+if(EXISTS ${CMAKE_SOURCE_DIR}/.env)
+    file(COPY ${CMAKE_SOURCE_DIR}/.env DESTINATION ${CMAKE_BINARY_DIR})
+    file(COPY ${CMAKE_SOURCE_DIR}/.env DESTINATION ${CMAKE_BINARY_DIR}/UniManage)
+    file(COPY ${CMAKE_SOURCE_DIR}/.env DESTINATION ${CMAKE_BINARY_DIR}/UniManageCli)
+endif()
+file(COPY ${CMAKE_SOURCE_DIR}/UniManageCli/FileDB DESTINATION ${CMAKE_BINARY_DIR}/UniManageCli)
 
-file(GLOB_RECURSE UM_HEADERS
-  "${CMAKE_SOURCE_DIR}/UniManage/*.h"
-  "${CMAKE_SOURCE_DIR}/UniManage/gui/*.h"
-  "${CMAKE_SOURCE_DIR}/UniManage/controllers/*.h"
-  "${CMAKE_SOURCE_DIR}/UniManage/models/*.h"
-  "${CMAKE_SOURCE_DIR}/UniManage/database/*.h"
-)
-
-add_executable(UniManage
-  ${UM_SOURCES}
-  ${UM_HEADERS}
-)
-
-# Add include dirs to match your source include style (adjust paths if needed)
-target_include_directories(UniManage PRIVATE
-  "${CMAKE_SOURCE_DIR}/UniManage"
-  "${CMAKE_SOURCE_DIR}/UniManage/gui"
-  "${CMAKE_SOURCE_DIR}/UniManage/controllers"
-  "${CMAKE_SOURCE_DIR}/UniManage/models"
-  "${CMAKE_SOURCE_DIR}/UniManage/database"
-)
-
-# Link Qt libraries
-target_link_libraries(UniManage PRIVATE
-  Qt6::Core
-  Qt6::Widgets
-  Qt6::Sql
-)
-
-# # Deployment: set RPATH on Linux builds if needed (optional)
-# if(UNIX AND NOT APPLE)
-#   set_target_properties(UniManage PROPERTIES
-#     BUILD_WITH_INSTALL_RPATH ON
-#     INSTALL_RPATH "$ORIGIN/../lib"
-#   )
-# endif()
+# Add subdirectories for core library, GUI, and CLI
+add_subdirectory(UniManage)
+add_subdirectory(UniManageCli)
