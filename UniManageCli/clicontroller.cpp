@@ -14,7 +14,7 @@ CliController::CliController()
         User admin;
         admin.setFullName("Administrator");
         admin.setUsername("admin");
-        admin.setPassword("admin123");
+        admin.setPassword("12345678901234"); // Example 14-digit National ID
         admin.setRole("admin");
         m_userDAO->insert(admin);
     }
@@ -76,6 +76,11 @@ bool CliController::deleteStudent(int id)
     return m_studentDAO->softDelete(id); // or remove, but soft delete to match GUI
 }
 
+StudentData CliController::getStudentByUserId(int userId)
+{
+    return m_studentDAO->getByUserId(userId);
+}
+
 // --- Course Functions ---
 
 QList<Course> CliController::getAllCourses()
@@ -128,4 +133,9 @@ bool CliController::updateProfessor(const Professor& professor)
 bool CliController::deleteProfessor(int id)
 {
     return m_professorDAO->remove(id);
+}
+
+Professor CliController::getProfessorByUserId(int userId)
+{
+    return m_professorDAO->getByUserId(userId);
 }

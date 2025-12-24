@@ -14,6 +14,9 @@ public:
 
 private:
     void displayMainMenu();
+    void displayStudentDashboard();
+    void displayProfessorDashboard();
+    void displayAdminMenu();
     void displayStudentMenu();
     void displayCourseMenu();
     void displayProfessorMenu();
@@ -46,6 +49,7 @@ private:
     void deleteUser();
 
     CliController m_controller;
+    User m_currentUser;
 };
 
 #endif // CLI_H

@@ -17,12 +17,7 @@ int main(int argc, char *argv[])
     // }
 
     Cli cli;
-    if (cli.login()) {
-        cli.run();
-    } else {
-        std::cout << "Authentication failed. Exiting." << std::endl;
-        exit(1);
-    }
+    cli.run();
 
     return a.exec();
 }

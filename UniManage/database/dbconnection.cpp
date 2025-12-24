@@ -42,7 +42,7 @@ void DBConnection::loadEnvFile()
         m_host = "127.0.0.1";
         m_port = 3306;
         m_user = "root";
-        m_password = "";
+        m_password = "root";
         m_dbName = "university";
         return;
     }

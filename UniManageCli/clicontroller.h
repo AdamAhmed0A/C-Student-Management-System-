@@ -38,6 +38,7 @@ public:
     bool addStudent(StudentData& student);
     bool updateStudent(const StudentData& student);
     bool deleteStudent(int id);
+    StudentData getStudentByUserId(int userId);
 
     // Course functions
     QList<Course> getAllCourses();
@@ -52,6 +53,7 @@ public:
     bool addProfessor(Professor& professor);
     bool updateProfessor(const Professor& professor);
     bool deleteProfessor(int id);
+    Professor getProfessorByUserId(int userId);
 
 private:
     std::unique_ptr<CsvUserDAO> m_userDAO;

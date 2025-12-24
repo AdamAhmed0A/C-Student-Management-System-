@@ -8,80 +8,202 @@ Cli::Cli(QObject *parent) : QObject(parent)
 {
 }
 
+// --- Authentication and Role Handling ---
+
 bool Cli::login() {
     QTextStream qtin(stdin);
-    std::cout << "--- UniManage CLI Login ---" << std::endl;
-    std::cout << "Username: ";
+    std::cout << "\n-----------------------------------" << std::endl;
+    std::cout << "      UniManage CLI Login" << std::endl;
+    std::cout << "-----------------------------------" << std::endl;
+    std::cout << "Code (Username): ";
     QString username = qtin.readLine().trimmed();
-    std::cout << "Password: ";
+    std::cout << "National ID (Password): ";
     QString password = qtin.readLine().trimmed();
 
-    User user = m_controller.authenticate(username, password);
+    m_currentUser = m_controller.authenticate(username, password);
 
-    if (user.id() != 0) {
-        if (user.role().toLower() == "admin") {
-            std::cout << "Login successful. Welcome, " << user.fullName().toStdString() << "!" << std::endl;
-            return true;
-        } else {
-            std::cout << "Login failed: You must be an admin to use the CLI." << std::endl;
-            return false;
-        }
+    if (m_currentUser.id() != 0) {
+        std::cout << "\n[SUCCESS] Login successful! Welcome, " << m_currentUser.fullName().toStdString() << "." << std::endl;
+        std::cout << "Role: " << m_currentUser.role().toUpper().toStdString() << std::endl;
+        return true;
     }
-    std::cout << "Login failed: Invalid username or password." << std::endl;
+    
+    std::cout << "\n[ERROR] Login failed: Invalid Code or National ID." << std::endl;
     return false;
 }
 
 void Cli::run()
 {
-    QTextStream qtin(stdin);
-    bool running = true;
+    while (true) {
+        if (!login()) {
+            std::cout << "Would you like to try again? (y/n): ";
+            QTextStream qtin(stdin);
+            QString retry = qtin.readLine().trimmed().toLower();
+            if (retry == "y") {
+                continue;
+            } else {
+                std::cout << "Exiting application. Goodbye!" << std::endl;
+                QCoreApplication::exit(0);
+                exit(0);
+            }
+        }
 
-    while(running) {
-        displayMainMenu();
+        // Logic branching based on user role
+        QString role = m_currentUser.role().toLower();
+        if (role == "admin") {
+            displayAdminMenu();
+        } else if (role == "student") {
+            displayStudentDashboard();
+        } else if (role == "professor") {
+            displayProfessorDashboard();
+        } else {
+            std::cout << "[ERROR] Unknown user role. Logging out for safety." << std::endl;
+        }
+    }
+}
+
+// --- Dashboard and Menu Displays ---
+
+void Cli::displayAdminMenu()
+{
+    QTextStream qtin(stdin);
+    bool loggedIn = true;
+
+    while(loggedIn) {
+        std::cout << "\n===============================" << std::endl;
+        std::cout << "      ADMIN CONTROL PANEL" << std::endl;
+        std::cout << "===============================" << std::endl;
+        std::cout << "1. Student Management" << std::endl;
+        std::cout << "2. Course Management" << std::endl;
+        std::cout << "3. Professor Management" << std::endl;
+        std::cout << "4. User Management" << std::endl;
+        std::cout << "5. Logout" << std::endl;
+        std::cout << "6. Exit" << std::endl;
+        std::cout << "-------------------------------" << std::endl;
         std::cout << "Enter your choice: ";
+
         QString input = qtin.readLine().trimmed();
         bool ok;
         int choice = input.toInt(&ok);
 
         if (!ok) {
-            std::cout << "Invalid input. Please enter a number." << std::endl;
+            std::cout << "[!] Invalid input. Please enter a number." << std::endl;
             continue;
         }
 
         switch (choice) {
-            case 1:
-                displayStudentMenu();
-                break;
-            case 2:
-                displayCourseMenu();
-                break;
-            case 3:
-                displayProfessorMenu();
-                break;
-            case 4:
-                displayUserMenu();
-                break;
+            case 1: displayStudentMenu(); break;
+            case 2: displayCourseMenu(); break;
+            case 3: displayProfessorMenu(); break;
+            case 4: displayUserMenu(); break;
             case 5:
-                running = false;
+                std::cout << "Logging out administrator..." << std::endl;
+                loggedIn = false;
                 break;
+            case 6:
+                std::cout << "Exiting. Goodbye!" << std::endl;
+                QCoreApplication::exit(0);
+                exit(0);
             default:
-                std::cout << "Invalid choice. Please try again." << std::endl;
+                std::cout << "[!] Invalid choice. Please try again." << std::endl;
                 break;
         }
     }
-    std::cout << "Exiting." << std::endl;
-    QCoreApplication::exit(0);
-    exit(0);
 }
 
-void Cli::displayMainMenu()
+void Cli::displayStudentDashboard()
 {
-    std::cout << "\n--- UniManage CLI ---" << std::endl;
-    std::cout << "1. Student Management" << std::endl;
-    std::cout << "2. Course Management" << std::endl;
-    std::cout << "3. Professor Management" << std::endl;
-    std::cout << "4. User Management" << std::endl;
-    std::cout << "5. Exit" << std::endl;
+    QTextStream qtin(stdin);
+    bool loggedIn = true;
+
+    // Fetch student-specific details from data layer
+    StudentData student = m_controller.getStudentByUserId(m_currentUser.id());
+
+    while(loggedIn) {
+        std::cout << "\n===============================" << std::endl;
+        std::cout << "       STUDENT DASHBOARD" << std::endl;
+        std::cout << "===============================" << std::endl;
+        std::cout << "Welcome, " << m_currentUser.fullName().toStdString() << "!" << std::endl;
+        std::cout << "1. View Profile Details" << std::endl;
+        std::cout << "2. Logout" << std::endl;
+        std::cout << "3. Exit" << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+        std::cout << "Enter your choice: ";
+
+        QString input = qtin.readLine().trimmed();
+        bool ok;
+        int choice = input.toInt(&ok);
+
+        if (!ok) continue;
+
+        if (choice == 1) {
+            if (student.id() == 0) {
+                std::cout << "[!] No professional details found for this student account." << std::endl;
+            } else {
+                std::cout << "\n--- Profile Details ---" << std::endl;
+                std::cout << "Name:       " << m_currentUser.fullName().toStdString() << std::endl;
+                std::cout << "Student Code: " << student.studentNumber().toStdString() << std::endl;
+                std::cout << "National ID:  " << student.idNumber().toStdString() << std::endl;
+                std::cout << "Department:   " << student.department().toStdString() << std::endl;
+                std::cout << "Join Date:    " << m_currentUser.createdAt().toString("yyyy-MM-dd").toStdString() << std::endl;
+                std::cout << "Status:       " << student.status().toStdString() << std::endl;
+                std::cout << "-----------------------" << std::endl;
+            }
+        } else if (choice == 2) {
+            std::cout << "Logging out student..." << std::endl;
+            loggedIn = false;
+        } else if (choice == 3) {
+            QCoreApplication::exit(0);
+            exit(0);
+        }
+    }
+}
+
+void Cli::displayProfessorDashboard()
+{
+    QTextStream qtin(stdin);
+    bool loggedIn = true;
+
+    // Fetch professor-specific details from data layer
+    Professor prof = m_controller.getProfessorByUserId(m_currentUser.id());
+
+    while(loggedIn) {
+        std::cout << "\n===============================" << std::endl;
+        std::cout << "      PROFESSOR DASHBOARD" << std::endl;
+        std::cout << "===============================" << std::endl;
+        std::cout << "Welcome, " << m_currentUser.fullName().toStdString() << "!" << std::endl;
+        std::cout << "1. View Profile Details" << std::endl;
+        std::cout << "2. Logout" << std::endl;
+        std::cout << "3. Exit" << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+        std::cout << "Enter your choice: ";
+
+        QString input = qtin.readLine().trimmed();
+        bool ok;
+        int choice = input.toInt(&ok);
+
+        if (!ok) continue;
+
+        if (choice == 1) {
+            if (prof.id() == 0) {
+                std::cout << "[!] No professional details found for this professor account." << std::endl;
+            } else {
+                std::cout << "\n--- Profile Details ---" << std::endl;
+                std::cout << "Name:           " << m_currentUser.fullName().toStdString() << std::endl;
+                std::cout << "Title:          " << prof.title().toStdString() << std::endl;
+                std::cout << "Specialization: " << prof.specialization().toStdString() << std::endl;
+                std::cout << "ID Number:      " << prof.idNumber().toStdString() << std::endl;
+                std::cout << "Hired Date:     " << m_currentUser.createdAt().toString("yyyy-MM-dd").toStdString() << std::endl;
+                std::cout << "-----------------------" << std::endl;
+            }
+        } else if (choice == 2) {
+            std::cout << "Logging out professor..." << std::endl;
+            loggedIn = false;
+        } else if (choice == 3) {
+            QCoreApplication::exit(0);
+            exit(0);
+        }
+    }
 }
 
 void Cli::displayStudentMenu()
@@ -332,14 +454,32 @@ void Cli::addStudent()
     StudentData student;
 
     std::cout << "--- Add New Student ---" << std::endl;
-    std::cout << "User ID: ";
-    student.setUserId(qtin.readLine().trimmed().toInt());
+    
+    std::cout << "Full Name: ";
+    QString fullName = qtin.readLine().trimmed();
 
     std::cout << "Student Code (8-digit number): ";
-    student.setStudentNumber(qtin.readLine().trimmed());
+    QString code = qtin.readLine().trimmed();
+    student.setStudentNumber(code);
 
     std::cout << "National ID Number (14 digits): ";
-    student.setIdNumber(qtin.readLine().trimmed());
+    QString nationalId = qtin.readLine().trimmed();
+    student.setIdNumber(nationalId);
+
+    // Create associated User first
+    User user;
+    user.setFullName(fullName);
+    user.setUsername(code);
+    user.setPassword(nationalId);
+    user.setRole("student");
+
+    if (m_controller.addUser(user)) {
+         student.setUserId(user.id());
+         std::cout << "User created with ID: " << user.id() << std::endl;
+    } else {
+         std::cout << "Error: Could not create user for student." << std::endl;
+         return;
+    }
 
     std::cout << "Date of Birth (YYYY-MM-DD): ";
     student.setDob(QDateTime::fromString(qtin.readLine().trimmed(), "yyyy-MM-dd"));
@@ -666,11 +806,32 @@ void Cli::addProfessor()
     Professor professor;
 
     std::cout << "--- Add New Professor ---" << std::endl;
-    std::cout << "User ID: ";
-    professor.setUserId(qtin.readLine().trimmed().toInt());
 
     std::cout << "Full Name: ";
-    professor.setFullName(qtin.readLine().trimmed());
+    QString fullName = qtin.readLine().trimmed();
+    professor.setFullName(fullName);
+
+    std::cout << "Code: ";
+    QString code = qtin.readLine().trimmed();
+
+    std::cout << "National ID: ";
+    QString nationalId = qtin.readLine().trimmed();
+    professor.setIdNumber(nationalId);
+
+    // Create associated User first
+    User user;
+    user.setFullName(fullName);
+    user.setUsername(code);
+    user.setPassword(nationalId);
+    user.setRole("professor");
+
+    if (m_controller.addUser(user)) {
+         professor.setUserId(user.id());
+         std::cout << "User created with ID: " << user.id() << std::endl;
+    } else {
+         std::cout << "Error: Could not create user for professor." << std::endl;
+         return;
+    }
 
     std::cout << "Title (e.g., Prof, Dr): ";
     professor.setTitle(qtin.readLine().trimmed());
@@ -680,9 +841,6 @@ void Cli::addProfessor()
 
     std::cout << "Personal Info: ";
     professor.setPersonalInfo(qtin.readLine().trimmed());
-
-    std::cout << "ID Number: ";
-    professor.setIdNumber(qtin.readLine().trimmed());
 
     if (m_controller.addProfessor(professor)) {
         std::cout << "Professor added successfully with ID: " << professor.id() << "!" << std::endl;
@@ -798,10 +956,10 @@ void Cli::addUser()
     std::cout << "Full Name: ";
     user.setFullName(qtin.readLine().trimmed());
 
-    std::cout << "Username: ";
+    std::cout << "Code: ";
     user.setUsername(qtin.readLine().trimmed());
 
-    std::cout << "Password: ";
+    std::cout << "National ID: ";
     user.setPassword(qtin.readLine().trimmed());
 
     std::cout << "Role (admin/student/professor): ";
