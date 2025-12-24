@@ -5,9 +5,17 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the SemesterController class
+ */
 SemesterController::SemesterController() {}
 
 //function to add semester
+/**
+ * Adds a new semester to the database
+ * @param semester - The Semester object containing details
+ * @return True if successful, otherwise false
+ */
 bool SemesterController::addSemester(const Semester& semester)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -22,6 +30,11 @@ bool SemesterController::addSemester(const Semester& semester)
 }
 
 //function to update semester
+/**
+ * Updates an existing semester in the database
+ * @param semester - The Semester object with updated details
+ * @return True if successful, otherwise false
+ */
 bool SemesterController::updateSemester(const Semester& semester)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -37,6 +50,11 @@ bool SemesterController::updateSemester(const Semester& semester)
 }
 
 //function to delete semester
+/**
+ * Deletes a semester from the database
+ * @param id - The ID of the semester to delete
+ * @return True if successful, otherwise false
+ */
 bool SemesterController::deleteSemester(int id)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -50,6 +68,10 @@ bool SemesterController::deleteSemester(int id)
 }
 
 //function to get all semesters
+/**
+ * Retrieves all semesters from the database
+ * @return A list of Semester objects
+ */
 QList<Semester> SemesterController::getAllSemesters()
 {
 	QList<Semester> semesters;

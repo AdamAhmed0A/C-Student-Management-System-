@@ -5,9 +5,18 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the SectionController class
+ */
 SectionController::SectionController() {}
 
 //function to add section
+/**
+ * Adds a new student section/group to the database
+ * Handles optional bindings for course, semester, and academic level
+ * @param section - The Section object containing details
+ * @return True if successful, otherwise false
+ */
 bool SectionController::addSection(const Section& section)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -36,6 +45,11 @@ bool SectionController::addSection(const Section& section)
 }
 
 //function to update section
+/**
+ * Updates an existing section in the database
+ * @param section - The Section object with updated details
+ * @return True if successful, otherwise false
+ */
 bool SectionController::updateSection(const Section& section)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -54,7 +68,7 @@ bool SectionController::updateSection(const Section& section)
     else query.addBindValue(QVariant());
 
     query.addBindValue(section.id());
-    if (!query.exec()) { // Fixed missing !query.exec() check logic structure if needed, but here it matches originals
+    if (!query.exec()) { 
         qDebug() << "Error updating section:" << query.lastError().text();
         return false;
 	}
@@ -62,6 +76,11 @@ bool SectionController::updateSection(const Section& section)
 }
 
 //function to delete section
+/**
+ * Deletes a section from the database
+ * @param id - The ID of the section to delete
+ * @return True if successful, otherwise false
+ */
 bool SectionController::deleteSection(int id)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -75,6 +94,10 @@ bool SectionController::deleteSection(int id)
 }
 
 //function to get all sections
+/**
+ * Retrieves all sections from the database
+ * @return A list of Section objects
+ */
 QList<Section> SectionController::getAllSections()
 {
 	QList<Section> sections;
@@ -103,6 +126,11 @@ QList<Section> SectionController::getAllSections()
 }
 
 //function to get sections by course id
+/**
+ * Retrieves sections associated with a specific course
+ * @param courseId - The ID of the course
+ * @return A list of Section objects
+ */
 QList<Section> SectionController::getSectionsByCourse(int courseId)
 {
 	QList<Section> sections;
@@ -130,6 +158,11 @@ QList<Section> SectionController::getSectionsByCourse(int courseId)
 }
 
 //function to get section by id
+/**
+ * Retrieves a section by its ID
+ * @param id - The ID of the section
+ * @return The Section object if found, otherwise an empty object
+ */
 Section SectionController::getSectionById(int id)
 {
     Section section;

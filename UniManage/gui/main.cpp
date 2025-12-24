@@ -5,7 +5,13 @@
 #include <QSqlDatabase>
 #include <QProcessEnvironment>
 #include <QDebug>
-// University Student Information System
+/**
+ * Main entry point for the University Student Information System
+ * Initializes the Qt application, sets up database connection, and displays the login window
+ * @param argc - Number of command line arguments
+ * @param argv - Array of command line argument strings
+ * @return Application exit code (0 for success, 1 for database error)
+ */
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

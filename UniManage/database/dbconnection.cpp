@@ -8,6 +8,11 @@
 #include <QSqlDatabase>
 #include <QProcessEnvironment>
 
+/**
+ * Constructor for the DBConnection class
+ * Initializes database path and reads MySQL connection parameters from environment variables
+ * Sets up default values for host, port, user, password, and database name
+ */
 DBConnection::DBConnection()
 {
     QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -28,6 +33,10 @@ DBConnection::DBConnection()
     qDebug() << "DB host:" << m_host << "port:" << m_port << "user:" << m_user << "db:" << m_dbName;
 }
 
+/**
+ * Destructor for the DBConnection class
+ * Closes the database connection if it's open
+ */
 DBConnection::~DBConnection()
 {
     if (m_database.isOpen()) {
@@ -35,12 +44,23 @@ DBConnection::~DBConnection()
     }
 }
 
+/**
+ * Returns the singleton instance of DBConnection
+ * Ensures only one database connection exists throughout the application
+ * @return Reference to the singleton DBConnection instance
+ */
 DBConnection& DBConnection::instance()
 {
     static DBConnection instance;
     return instance;
 }
 
+/**
+ * Initializes the database connection and creates necessary tables
+ * Attempts to connect to MySQL server, creates the database if it doesn't exist,
+ * creates all required tables, and inserts default data if needed
+ * @return true if initialization successful, false otherwise
+ */
 bool DBConnection::initialize()
 {
     // Try to use MySQL
@@ -151,11 +171,23 @@ bool DBConnection::initialize()
     return true;
 }
 
+/**
+ * Returns a reference to the active database connection
+ * @return Reference to the QSqlDatabase object
+ */
 QSqlDatabase& DBConnection::database()
 {
     return m_database;
 }
 
+/**
+ * Creates all database tables required for the university management system
+ * Creates tables for users, colleges, departments, academic levels, semesters,
+ * courses, sections, students, enrollments, payments, rooms, professors,
+ * schedules, news, attendance logs, and calendar events
+ * Also performs migrations to add missing columns to existing tables
+ * @return true if all tables created successfully, false otherwise
+ */
 bool DBConnection::createTables()
 {
     QSqlQuery query(m_database);
@@ -443,6 +475,12 @@ bool DBConnection::createTables()
     return true;
 }
 
+/**
+ * Inserts default data into the database
+ * Creates default admin accounts and a default semester
+ * Admin accounts: "admin" (password: admin123) and "30605040603080" (password: 12345)
+ * @return true if default data inserted successfully
+ */
 bool DBConnection::insertDefaultData()
 {
     QSqlQuery query(m_database);
@@ -498,6 +536,10 @@ bool DBConnection::insertDefaultData()
     return true;
 }
 
+/**
+ * Returns the last error message from database operations
+ * @return String containing the last error message
+ */
 QString DBConnection::getLastError() const
 {
     return m_lastError;

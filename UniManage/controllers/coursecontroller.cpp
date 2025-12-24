@@ -7,8 +7,17 @@
 #include <QDateTime>
 #include "../database/persistence.h"
 
+/**
+ * Constructor for the CourseController class
+ */
 CourseController::CourseController() {}
 
+/**
+ * Adds a new course to the database
+ * Logs the creation event after successful insertion
+ * @param course - The Course object containing the details
+ * @return True if successful, otherwise false
+ */
 bool CourseController::addCourse(const Course& course)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -31,6 +40,12 @@ bool CourseController::addCourse(const Course& course)
     return true;
 }
 
+/**
+ * Updates an existing course in the database
+ * Logs the update event after successful execution
+ * @param course - The Course object with updated details
+ * @return True if successful, otherwise false
+ */
 bool CourseController::updateCourse(const Course& course)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -54,6 +69,13 @@ bool CourseController::updateCourse(const Course& course)
     return true;
 }
 
+/**
+ * Deletes a course from the database
+ * Also removes associated schedules, sections, and enrollments to maintain integrity
+ * Logs the deletion event
+ * @param id - The ID of the course to delete
+ * @return True if successful, otherwise false
+ */
 bool CourseController::deleteCourse(int id)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -98,6 +120,11 @@ bool CourseController::deleteCourse(int id)
     return true;
 }
 
+/**
+ * Retrieves all courses from the database
+ * Populates Course objects with detailed information including semester, department, and professor assignments
+ * @return A list of Course objects
+ */
 QList<Course> CourseController::getAllCourses()
 {
     QList<Course> list;
@@ -158,6 +185,11 @@ QList<Course> CourseController::getAllCourses()
     return list;
 }
 
+/**
+ * Retrieves courses associated with a specific semester
+ * @param semesterId - The ID of the semester
+ * @return A list of Course objects for that semester
+ */
 QList<Course> CourseController::getCoursesBySemester(int semesterId)
 {
     QList<Course> list;
@@ -202,6 +234,11 @@ QList<Course> CourseController::getCoursesBySemester(int semesterId)
     return list;
 }
 
+/**
+ * Retrieves a course by its ID
+ * @param id - The ID of the course to retrieve
+ * @return The Course object with full details if found, otherwise an empty object
+ */
 Course CourseController::getCourseById(int id)
 {
     Course c;
@@ -250,6 +287,11 @@ Course CourseController::getCourseById(int id)
     return c;
 }
 
+/**
+ * Retrieves courses taught by a specific professor
+ * @param professorId - The ID of the professor
+ * @return A list of Course objects assigned to the professor
+ */
 QList<Course> CourseController::getCoursesByProfessor(int professorId)
 {
     QList<Course> list;

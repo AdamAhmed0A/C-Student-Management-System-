@@ -7,9 +7,19 @@
 #include <QDateTime>
 #include <QCryptographicHash>
 
+/**
+ * Constructor for the UserController class
+ */
 UserController::UserController() {}
 
 // function to add user
+/**
+ * Adds a new user to the system (student, professor, or admin)
+ * Hashes the password using SHA-256 before storing
+ * @param user - The User object containing details
+ * @param error - Optional string pointer to store error messages
+ * @return True if successful, otherwise false
+ */
 bool UserController::addUser(const User& user, QString* error)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -32,6 +42,12 @@ bool UserController::addUser(const User& user, QString* error)
 }
 
 // function to update user
+/**
+ * Updates an already existing user's details
+ * Note: Password updates should be handled carefully (hashing if changed)
+ * @param user - The User object with updated details
+ * @return True if successful, otherwise false
+ */
 bool UserController::updateUser(const User& user)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -48,6 +64,11 @@ bool UserController::updateUser(const User& user)
 }
 
 //  function to delete user
+/**
+ * Deletes a user account from the database
+ * @param id - The ID of the user to delete
+ * @return True if successful, otherwise false
+ */
 bool UserController::deleteUser(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -61,6 +82,10 @@ bool UserController::deleteUser(int id)
 }
 
 //function to get all users
+/**
+ * Retrieves all user accounts from the database
+ * @return A list of User objects
+ */
 QList<User> UserController::getAllUsers()
 {
     QList<User> users;
@@ -84,6 +109,11 @@ QList<User> UserController::getAllUsers()
 }
 
 //function to get user by username
+/**
+ * Retrieves a user account by their username
+ * @param username - The username to search for
+ * @return The User object if found, otherwise an empty object
+ */
 User UserController::getUserByUsername(const QString& username)
 {
 	User user;
@@ -107,6 +137,11 @@ User UserController::getUserByUsername(const QString& username)
 }
 
 //function to get user by id
+/**
+ * Retrieves a user account by their ID
+ * @param id - The ID of the user
+ * @return The User object if found, otherwise an empty object
+ */
 User UserController::getUserById(int id)
 {
     User user;
@@ -130,6 +165,15 @@ User UserController::getUserById(int id)
 }
 
 //function to authenticate user using username and password
+/**
+ * Authenticates a user by checking their username and hashed password
+ * Note: The input password should be pre-hashed or hashed here before comparison
+ * In this implementation, it assumes 'password' acts as the hash if it matches stored.
+ * (Ideally, you should hash the input password here before comparison if the DB stores hashes)
+ * @param username - The username
+ * @param password - The password string (or hash, depending on usage context)
+ * @return The authenticated User object if successful, otherwise an empty object
+ */
 User UserController::authenticateUsingUsername(const QString& username, const QString& password)
 {
     User u = getUserByUsername(username);

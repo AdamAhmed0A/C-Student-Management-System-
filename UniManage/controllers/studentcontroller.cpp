@@ -7,9 +7,20 @@
 #include <QDateTime>
 #include "../database/persistence.h"
 
+/**
+ * Constructor for the StudentController class
+ */
 StudentController::StudentController() {}
 
 //function to add student data
+/**
+ * Adds a new student profile to the database
+ * Also handles auto-enrollment in courses based on the academic level
+ * Logs the creation event after successful insertion
+ * @param student - The StudentData object containing details
+ * @param error - Optional string pointer to store error messages
+ * @return True if successful, otherwise false
+ */
 bool StudentController::addStudent(const StudentData& student, QString* error)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -58,6 +69,12 @@ bool StudentController::addStudent(const StudentData& student, QString* error)
 }
 
 //function to update student data
+/**
+ * Updates an existing student profile in the database
+ * Logs the update event after successful execution
+ * @param student - The StudentData object with updated details
+ * @return True if successful, otherwise false
+ */
 bool StudentController::updateStudent(const StudentData& student)
 {
 	QSqlQuery query(DBConnection::instance().database());
@@ -88,6 +105,12 @@ bool StudentController::updateStudent(const StudentData& student)
 }
 
 //function to delete student data (Soft Delete)
+/**
+ * Soft deletes a student by moving them to a "deleted/draft" state
+ * Does not remove data permanently, just hides it from active views
+ * @param id - The ID of the student to soft delete
+ * @return True if successful, otherwise false
+ */
 bool StudentController::deleteStudent(int id)
 {
    QSqlQuery query(DBConnection::instance().database());
@@ -102,6 +125,11 @@ bool StudentController::deleteStudent(int id)
 }
 
 // Restore student from draft
+/**
+ * Restores a student from the "deleted/draft" state back to active
+ * @param id - The ID of the student to restore
+ * @return True if successful, otherwise false
+ */
 bool StudentController::restoreStudent(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -116,6 +144,12 @@ bool StudentController::restoreStudent(int id)
 }
 
 // Permanent delete (incl. user account)
+/**
+ * Permanently deletes a student and all associated data
+ * Cascades to payments, attendance, enrollments, and user account
+ * @param id - The ID of the student to permanently delete
+ * @return True if successful, otherwise false
+ */
 bool StudentController::hardDeleteStudent(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -164,6 +198,11 @@ bool StudentController::hardDeleteStudent(int id)
 }
 
 //function to get all students data
+/**
+ * Retrieves all active students from the database
+ * Joins with multiple tables to provide comprehensive details
+ * @return A list of StudentData objects
+ */
 QList<StudentData> StudentController::getAllStudents()
 {
 	QList<StudentData> students;
@@ -218,6 +257,10 @@ QList<StudentData> StudentController::getAllStudents()
 }
 
 // Get students in draft/trash
+/**
+ * Retrieves deleted students (students in the "Trash" or "Draft" state)
+ * @return A list of StudentData objects
+ */
 QList<StudentData> StudentController::getDeletedStudents()
 {
     QList<StudentData> students;
@@ -263,6 +306,11 @@ QList<StudentData> StudentController::getDeletedStudents()
 }
 
 //function to get student data by id
+/**
+ * Retrieves a student profile by their unique student data ID
+ * @param id - The ID of the student data
+ * @return The StudentData object if found, otherwise an empty object
+ */
 StudentData StudentController::getStudentById(int id)
 {
 	StudentData student;
@@ -304,6 +352,11 @@ StudentData StudentController::getStudentById(int id)
 }
 
 //function to get student data by user id
+/**
+ * Retrieves a student profile by their user ID
+ * @param userId - The ID of the user
+ * @return The StudentData object if found, otherwise an empty object
+ */
 StudentData StudentController::getStudentByUserId(int userId)
 {
 	StudentData student;
@@ -345,6 +398,11 @@ StudentData StudentController::getStudentByUserId(int userId)
 }
 
 //function to get student data by id number
+/**
+ * Retrieves a student profile by their unique student number
+ * @param IdNumber - The student number (as integer)
+ * @return The StudentData object if found, otherwise an empty object
+ */
 StudentData StudentController::getStudentByIdNumber(int IdNumber)
 {
     StudentData student;
@@ -385,6 +443,12 @@ StudentData StudentController::getStudentByIdNumber(int IdNumber)
     return student;
 }
 
+/**
+ * Automatically enrolls a student in all courses associated with their academic level
+ * @param studentId - The ID of the student
+ * @param levelId - The ID of the academic level
+ * @return True if successful, otherwise false
+ */
 bool StudentController::enrollStudentInLevelCourses(int studentId, int levelId) {
     if (studentId <= 0 || levelId <= 0) return false;
     

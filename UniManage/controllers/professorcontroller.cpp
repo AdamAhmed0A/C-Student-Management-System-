@@ -5,8 +5,16 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the ProfessorController class
+ */
 ProfessorController::ProfessorController() {}
 
+/**
+ * Adds a new professor profile to the database
+ * @param prof - The Professor object containing details
+ * @return True if successful, otherwise false
+ */
 bool ProfessorController::addProfessor(const Professor& prof)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -19,6 +27,11 @@ bool ProfessorController::addProfessor(const Professor& prof)
     return query.exec();
 }
 
+/**
+ * Updates an existing professor profile in the database
+ * @param prof - The Professor object with updated details
+ * @return True if successful, otherwise false
+ */
 bool ProfessorController::updateProfessor(const Professor& prof)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -31,6 +44,11 @@ bool ProfessorController::updateProfessor(const Professor& prof)
     return query.exec();
 }
 
+/**
+ * Deletes a professor profile from the database
+ * @param id - The ID of the professor to delete
+ * @return True if successful, otherwise false
+ */
 bool ProfessorController::deleteProfessor(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -39,6 +57,11 @@ bool ProfessorController::deleteProfessor(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all professors from the database
+ * Joins with the users table to get full names
+ * @return A list of Professor objects
+ */
 QList<Professor> ProfessorController::getAllProfessors()
 {
     QList<Professor> list;
@@ -59,6 +82,11 @@ QList<Professor> ProfessorController::getAllProfessors()
     return list;
 }
 
+/**
+ * Retrieves a professor by their user ID
+ * @param userId - The user ID from the users table
+ * @return The Professor object if found, otherwise an empty object
+ */
 Professor ProfessorController::getProfessorByUserId(int userId)
 {
     Professor p;
@@ -77,6 +105,11 @@ Professor ProfessorController::getProfessorByUserId(int userId)
     return p;
 }
 
+/**
+ * Retrieves a professor by their unique professor ID
+ * @param id - The ID of the professor
+ * @return The Professor object if found, otherwise an empty object
+ */
 Professor ProfessorController::getProfessorById(int id)
 {
     Professor p;

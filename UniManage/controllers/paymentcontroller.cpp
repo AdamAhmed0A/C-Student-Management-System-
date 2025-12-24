@@ -6,8 +6,16 @@
 #include <QDebug>
 #include <QDateTime>
 
+/**
+ * Constructor for the PaymentController class
+ */
 PaymentController::PaymentController() {}
 
+/**
+ * adds a new payment record to the database
+ * @param payment - The Payment object containing details
+ * @return True if successful, otherwise false
+ */
 bool PaymentController::addPayment(const Payment& payment)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -28,6 +36,11 @@ bool PaymentController::addPayment(const Payment& payment)
     return true;
 }
 
+/**
+ * Updates an existing payment record in the database
+ * @param payment - The Payment object with updated details
+ * @return True if successful, otherwise false
+ */
 bool PaymentController::updatePayment(const Payment& payment)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -46,6 +59,11 @@ bool PaymentController::updatePayment(const Payment& payment)
     return true;
 }
 
+/**
+ * Deletes a payment record from the database
+ * @param id - The ID of the payment to delete
+ * @return True if successful, otherwise false
+ */
 bool PaymentController::deletePayment(int id)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -60,6 +78,10 @@ bool PaymentController::deletePayment(int id)
     return true;
 }
 
+/**
+ * Retrieves all payment records from the database
+ * @return A list of Payment objects
+ */
 QList<Payment> PaymentController::getAllPayments()
 {
     QList<Payment> list;
@@ -97,6 +119,11 @@ QList<Payment> PaymentController::getAllPayments()
     return list;
 }
 
+/**
+ * Retrieves payment records for a specific student
+ * @param studentId - The ID of the student
+ * @return A list of Payment objects
+ */
 QList<Payment> PaymentController::getPaymentsByStudent(int studentId)
 {
     QList<Payment> list;

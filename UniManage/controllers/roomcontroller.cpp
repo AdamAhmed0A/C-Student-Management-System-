@@ -6,8 +6,17 @@
 #include <QDebug>
 #include "../database/persistence.h"
 
+/**
+ * Constructor for the RoomController class
+ */
 RoomController::RoomController() {}
 
+/**
+ * Adds a new room/facility to the database
+ * Logs the creation event after successful insertion
+ * @param room - The Room object containing details
+ * @return True if successful, otherwise false
+ */
 bool RoomController::addRoom(const Room& room)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -29,6 +38,12 @@ bool RoomController::addRoom(const Room& room)
     return false;
 }
 
+/**
+ * Updates an existing room/facility in the database
+ * Logs the update event after successful execution
+ * @param room - The Room object with updated details
+ * @return True if successful, otherwise false
+ */
 bool RoomController::updateRoom(const Room& room)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -51,6 +66,12 @@ bool RoomController::updateRoom(const Room& room)
     return false;
 }
 
+/**
+ * Deletes a room/facility from the database
+ * Logs the deletion event after successful execution
+ * @param id - The ID of the room to delete
+ * @return True if successful, otherwise false
+ */
 bool RoomController::deleteRoom(int id)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -64,6 +85,10 @@ bool RoomController::deleteRoom(int id)
     return false;
 }
 
+/**
+ * Retrieves all rooms/facilities from the database
+ * @return A list of Room objects
+ */
 QList<Room> RoomController::getAllRooms()
 {
     QList<Room> list;
@@ -87,6 +112,14 @@ QList<Room> RoomController::getAllRooms()
     return list;
 }
 
+/**
+ * Adds a specification/equipment item to a room
+ * @param roomId - The ID of the room
+ * @param prodId - Product/Item unique code
+ * @param name - Name of the equipment
+ * @param desc - Description of the equipment
+ * @return True if successful, otherwise false
+ */
 bool RoomController::addRoomSpec(int roomId, const QString& prodId, const QString& name, const QString& desc)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -98,6 +131,11 @@ bool RoomController::addRoomSpec(int roomId, const QString& prodId, const QStrin
     return query.exec();
 }
 
+/**
+ * Retrieves all specifications/equipment for a specific room
+ * @param roomId - The ID of the room
+ * @return A list of RoomSpec objects
+ */
 QList<RoomSpec> RoomController::getRoomSpecs(int roomId)
 {
     QList<RoomSpec> list;
@@ -118,6 +156,11 @@ QList<RoomSpec> RoomController::getRoomSpecs(int roomId)
     return list;
 }
 
+/**
+ * Deletes all specifications/equipment for a specific room
+ * @param roomId - The ID of the room
+ * @return True if successful, otherwise false
+ */
 bool RoomController::deleteRoomSpecs(int roomId)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -126,6 +169,11 @@ bool RoomController::deleteRoomSpecs(int roomId)
     return query.exec();
 }
 
+/**
+ * Retrieves a room/facility by its ID
+ * @param id - The ID of the room
+ * @return The Room object if found, otherwise an empty object
+ */
 Room RoomController::getRoomById(int id)
 {
     Room r;

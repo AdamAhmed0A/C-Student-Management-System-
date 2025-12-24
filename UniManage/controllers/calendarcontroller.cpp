@@ -5,8 +5,16 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the CalendarController class
+ */
 CalendarController::CalendarController() {}
 
+/**
+ * Adds a new calendar event to the database
+ * @param event - The CalendarEvent object containing the event details
+ * @return True if the operation was successful, otherwise false
+ */
 bool CalendarController::addEvent(const CalendarEvent& event)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -24,6 +32,11 @@ bool CalendarController::addEvent(const CalendarEvent& event)
     return true;
 }
 
+/**
+ * Updates an existing calendar event in the database
+ * @param event - The CalendarEvent object with updated details
+ * @return True if the operation was successful, otherwise false
+ */
 bool CalendarController::updateEvent(const CalendarEvent& event)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -42,6 +55,11 @@ bool CalendarController::updateEvent(const CalendarEvent& event)
     return true;
 }
 
+/**
+ * Deletes a calendar event from the database
+ * @param id - The ID of the event to delete
+ * @return True if the operation was successful, otherwise false
+ */
 bool CalendarController::deleteEvent(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -55,6 +73,10 @@ bool CalendarController::deleteEvent(int id)
     return true;
 }
 
+/**
+ * Retrieves all calendar events from the database
+ * @return A list of CalendarEvent objects
+ */
 QList<CalendarEvent> CalendarController::getAllEvents()
 {
     QList<CalendarEvent> list;
@@ -78,6 +100,12 @@ QList<CalendarEvent> CalendarController::getAllEvents()
     return list;
 }
 
+/**
+ * Retrieves calendar events falling within a specific date range
+ * @param start - The start date of the range
+ * @param end - The end date of the range
+ * @return A list of CalendarEvent objects within the specified range
+ */
 QList<CalendarEvent> CalendarController::getEventsByRange(const QDate& start, const QDate& end)
 {
     QList<CalendarEvent> list;

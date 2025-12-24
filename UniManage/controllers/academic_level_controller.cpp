@@ -5,8 +5,16 @@
 #include <QSqlError>
 #include <QDebug>
 
+/**
+ * Constructor for the AcademicLevelController class
+ */
 AcademicLevelController::AcademicLevelController() {}
 
+/**
+ * Adds a new academic level to the database
+ * @param level - The AcademicLevel object containing the data to insert
+ * @return True if the operation was successful, otherwise false
+ */
 bool AcademicLevelController::addAcademicLevel(const AcademicLevel& level)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -16,6 +24,11 @@ bool AcademicLevelController::addAcademicLevel(const AcademicLevel& level)
     return query.exec();
 }
 
+/**
+ * Updates an existing academic level in the database
+ * @param level - The AcademicLevel object with updated data
+ * @return True if the operation was successful, otherwise false
+ */
 bool AcademicLevelController::updateAcademicLevel(const AcademicLevel& level)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -26,6 +39,11 @@ bool AcademicLevelController::updateAcademicLevel(const AcademicLevel& level)
     return query.exec();
 }
 
+/**
+ * Deletes an academic level from the database
+ * @param id - The ID of the academic level to delete
+ * @return True if the operation was successful, otherwise false
+ */
 bool AcademicLevelController::deleteAcademicLevel(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -34,6 +52,10 @@ bool AcademicLevelController::deleteAcademicLevel(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all academic levels from the database
+ * @return A list of AcademicLevel objects
+ */
 QList<AcademicLevel> AcademicLevelController::getAllAcademicLevels()
 {
     QList<AcademicLevel> list;
@@ -48,6 +70,11 @@ QList<AcademicLevel> AcademicLevelController::getAllAcademicLevels()
     return list;
 }
 
+/**
+ * Retrieves an academic level by its ID
+ * @param id - The ID of the academic level to retrieve
+ * @return The AcademicLevel object if found, otherwise an empty object
+ */
 AcademicLevel AcademicLevelController::getAcademicLevelById(int id)
 {
     AcademicLevel level;

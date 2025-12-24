@@ -6,8 +6,17 @@
 #include <QDebug>
 #include "../database/persistence.h"
 
+/**
+ * Constructor for the CollegeController class
+ */
 CollegeController::CollegeController() {}
 
+/**
+ * Adds a new college/faculty to the database
+ * Logs the creation event after successful insertion
+ * @param college - The College object containing the details
+ * @return True if successful, otherwise false
+ */
 bool CollegeController::addCollege(const College& college)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -22,6 +31,12 @@ bool CollegeController::addCollege(const College& college)
     return false;
 }
 
+/**
+ * Updates an existing college in the database
+ * Logs the update event after successful execution
+ * @param college - The College object with updated details
+ * @return True if successful, otherwise false
+ */
 bool CollegeController::updateCollege(const College& college)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -37,6 +52,12 @@ bool CollegeController::updateCollege(const College& college)
     return false;
 }
 
+/**
+ * Deletes a college from the database
+ * Logs the deletion event after successful execution
+ * @param id - The ID of the college to delete
+ * @return True if successful, otherwise false
+ */
 bool CollegeController::deleteCollege(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -49,6 +70,10 @@ bool CollegeController::deleteCollege(int id)
     return false;
 }
 
+/**
+ * Retrieves all colleges from the database
+ * @return A list of College objects
+ */
 QList<College> CollegeController::getAllColleges()
 {
     QList<College> list;
@@ -64,6 +89,11 @@ QList<College> CollegeController::getAllColleges()
     return list;
 }
 
+/**
+ * Retrieves a college by its ID
+ * @param id - The ID of the college to retrieve
+ * @return The College object if found, otherwise an empty object
+ */
 College CollegeController::getCollegeById(int id)
 {
     QSqlQuery query(DBConnection::instance().database());

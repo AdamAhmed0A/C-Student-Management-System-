@@ -6,8 +6,16 @@
 #include <QDebug>
 #include <QTime>
 
+/**
+ * Constructor for the ScheduleController class
+ */
 ScheduleController::ScheduleController() {}
 
+/**
+ * Retrieves the schedule for a specific professor
+ * @param professorId - The ID of the professor
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByProfessor(int professorId)
 {
     QList<Schedule> list;
@@ -36,6 +44,13 @@ QList<Schedule> ScheduleController::getScheduleByProfessor(int professorId)
     return list;
 }
 
+/**
+ * Assigns a professor to a course, effectively creating or updating a schedule slot
+ * If no schedule exists, it creates one with default timing and a default/virtual room
+ * @param courseId - The ID of the course
+ * @param professorId - The ID of the professor
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
 {
     QSqlDatabase& db = DBConnection::instance().database();
@@ -100,6 +115,11 @@ bool ScheduleController::assignProfessorToCourse(int courseId, int professorId)
     }
 }
 
+/**
+ * Adds a new schedule slot to the database
+ * @param s - The Schedule object containing details
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::addSchedule(const Schedule& s)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -113,6 +133,11 @@ bool ScheduleController::addSchedule(const Schedule& s)
     return query.exec();
 }
 
+/**
+ * Updates an existing schedule slot in the database
+ * @param s - The Schedule object with updated details
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::updateSchedule(const Schedule& s)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -127,6 +152,11 @@ bool ScheduleController::updateSchedule(const Schedule& s)
     return query.exec();
 }
 
+/**
+ * Deletes a schedule slot from the database
+ * @param id - The ID of the schedule to delete
+ * @return True if successful, otherwise false
+ */
 bool ScheduleController::deleteSchedule(int id)
 {
     QSqlQuery query(DBConnection::instance().database());
@@ -135,6 +165,10 @@ bool ScheduleController::deleteSchedule(int id)
     return query.exec();
 }
 
+/**
+ * Retrieves all schedule slots from the database
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getAllSchedules()
 {
     QList<Schedule> list;
@@ -158,6 +192,11 @@ QList<Schedule> ScheduleController::getAllSchedules()
     return list;
 }
 
+/**
+ * Retrieves schedule slots for a specific course
+ * @param courseId - The ID of the course
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByCourse(int courseId)
 {
     QList<Schedule> list;
@@ -183,6 +222,11 @@ QList<Schedule> ScheduleController::getScheduleByCourse(int courseId)
     return list;
 }
 
+/**
+ * Retrieves schedule slots for a specific academic level/year
+ * @param levelId - The ID of the academic level
+ * @return A list of Schedule objects
+ */
 QList<Schedule> ScheduleController::getScheduleByLevel(int levelId)
 {
     QList<Schedule> list;
