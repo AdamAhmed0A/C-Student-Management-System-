@@ -73,7 +73,12 @@ QList<StudentData> CliController::getAllStudents()
 
 StudentData CliController::getStudentById(int id)
 {
-    return m_studentDAO->getById(id);
+    StudentData student = m_studentDAO->getById(id);
+    if (student.id() != 0) {
+        User user = getUserById(student.userId());
+        student.setFullName(user.fullName());
+    }
+    return student;
 }
 
 bool CliController::addStudent(StudentData& student)
@@ -93,12 +98,22 @@ bool CliController::deleteStudent(int id)
 
 StudentData CliController::getStudentByUserId(int userId)
 {
-    return m_studentDAO->getByUserId(userId);
+    StudentData student = m_studentDAO->getByUserId(userId);
+    if (student.id() != 0) {
+        User user = getUserById(student.userId());
+        student.setFullName(user.fullName());
+    }
+    return student;
 }
 
 StudentData CliController::getStudentByStudentNumber(const QString& studentNumber)
 {
-    return m_studentDAO->getByStudentNumber(studentNumber);
+    StudentData student = m_studentDAO->getByStudentNumber(studentNumber);
+    if (student.id() != 0) {
+        User user = getUserById(student.userId());
+        student.setFullName(user.fullName());
+    }
+    return student;
 }
 
 // --- Course Functions ---

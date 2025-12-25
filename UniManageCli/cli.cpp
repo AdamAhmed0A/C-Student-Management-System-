@@ -32,7 +32,7 @@ bool Cli::login() {
         std::cout << "Role: " << m_currentUser.role().toUpper().toStdString() << std::endl;
         return true;
     }
-    
+
     std::cout << "\n[ERROR] Login failed: Invalid Code or National ID." << std::endl;
     return false;
 }
@@ -452,7 +452,7 @@ void Cli::addStudent()
     StudentData student;
 
     std::cout << "--- Add New Student ---" << std::endl;
-    
+
     std::cout << "Full Name: ";
     QString fullName = qtin.readLine().trimmed();
 
@@ -519,7 +519,7 @@ void Cli::updateStudent()
     std::cout << "--- Updating Student: " << student.studentNumber().toStdString() << " ---" << std::endl;
     std::cout << "Enter new information or press Enter to keep current value." << std::endl;
 
-    std::cout << "Student Number [" << student.studentNumber().toStdString() << "]: ";
+    std::cout << "Student Code [" << student.studentNumber().toStdString() << "]: ";
     QString newStudentNum = qtin.readLine().trimmed();
     if (!newStudentNum.isEmpty()) student.setStudentNumber(newStudentNum);
 
