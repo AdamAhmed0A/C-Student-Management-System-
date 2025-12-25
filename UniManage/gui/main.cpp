@@ -20,14 +20,6 @@ int main(int argc, char *argv[])
     app.setApplicationName("University-SIS");
     app.setOrganizationName("University");
     
-    // Debug: print available SQL drivers and DB env vars
-    qDebug() << "Available SQL drivers:" << QSqlDatabase::drivers();
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    qDebug() << "DB_HOST=" << env.value("DB_HOST")
-             << "DB_PORT=" << env.value("DB_PORT")
-             << "DB_USER=" << env.value("DB_USER")
-             << "DB_NAME=" << env.value("DB_NAME")
-             << "(DB_PASSWORD hidden)";
 
     // Show login window
     LoginWindow loginWindow;

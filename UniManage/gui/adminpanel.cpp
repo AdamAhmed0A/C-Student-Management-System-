@@ -755,7 +755,6 @@ void AdminPanel::onTestDatabase() {
     connect(closeBtn, &QPushButton::clicked, dialog, &QDialog::accept);
     layout->addWidget(closeBtn);
     
-    qDebug() << report;
     dialog->exec();
 }
 
@@ -1120,11 +1119,9 @@ void AdminPanel::onLogout() {
  * Fetches latest student data and populates the table
  */
 void AdminPanel::refreshStudentsTable() {
-    qDebug() << "=== REFRESHING STUDENTS TABLE ===";
     m_studentsTable->setRowCount(0);
     
     QList<StudentData> allStudents = m_studentController.getAllStudents();
-    qDebug() << "Received" << allStudents.size() << "students from controller";
     
     QMap<int, QString> levelMap;
     for(const auto& l : m_academicLevelController.getAllAcademicLevels()) 
@@ -1161,13 +1158,7 @@ void AdminPanel::refreshStudentsTable() {
             }
         }
         
-        if (r < 3) {
-            qDebug() << "Row" << r << ":" << s.fullName() << "| Student#:" << s.studentNumber() << "| Role:" << s.role();
-        }
     }
-    
-    qDebug() << "Students table now has" << m_studentsTable->rowCount() << "rows";
-    qDebug() << "=== END REFRESH STUDENTS TABLE ===";
 }
 
 /**

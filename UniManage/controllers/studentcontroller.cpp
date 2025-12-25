@@ -207,16 +207,12 @@ QList<StudentData> StudentController::getAllStudents()
 {
 	QList<StudentData> students;
 	QSqlQuery query(DBConnection::instance().database());
-    
-    qDebug() << "=== EXECUTING STUDENT QUERY ===";
-    qDebug() << "Query:" << Queries::SELECT_ALL_STUDENTS_DATA;
-    
+
     if (!query.exec(Queries::SELECT_ALL_STUDENTS_DATA)) {
         qDebug() << "Error retrieving students data:" << query.lastError().text();
         return students;
     }
-    
-    qDebug() << "Query executed successfully!";
+
     int count = 0;
     
     while (query.next()) {
