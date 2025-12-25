@@ -10,6 +10,11 @@ Cli::Cli(QObject *parent) : QObject(parent)
 
 // --- Authentication and Role Handling ---
 
+/**
+ * Handles user login by prompting for username and password,
+ * authenticates the user, and displays a welcome message on success.
+ * @return true if login successful, false otherwise
+ */
 bool Cli::login() {
     QTextStream qtin(stdin);
     std::cout << "\n-----------------------------------" << std::endl;
@@ -190,7 +195,6 @@ void Cli::displayProfessorDashboard()
             } else {
                 std::cout << "\n--- Profile Details ---" << std::endl;
                 std::cout << "Name:           " << m_currentUser.fullName().toStdString() << std::endl;
-                std::cout << "Title:          " << prof.title().toStdString() << std::endl;
                 std::cout << "Specialization: " << prof.specialization().toStdString() << std::endl;
                 std::cout << "ID Number:      " << prof.idNumber().toStdString() << std::endl;
                 std::cout << "Hired Date:     " << m_currentUser.createdAt().toString("yyyy-MM-dd").toStdString() << std::endl;
@@ -410,39 +414,33 @@ void Cli::listAllStudents()
     }
 
     std::cout << "\n--- All Students ---" << std::endl;
-    printf("%-5s | %-15s | %-20s | %-15s\n", "ID", "Student Number", "ID Number", "Department");
-    printf("------|-----------------|----------------------|-----------------\n");
+    printf("%-25s | %-5s | %-15s | %-20s\n", "Name", "ID", "Code", "National ID");
+    printf("--------------------------|-------|-----------------|----------------------\n");
     for (const auto &student : students) {
-        printf("%-5d | %-15s | %-20s | %-15s\n",
+        printf("%-25s | %-5d | %-15s | %-20s\n",
+                student.fullName().toStdString().c_str(),
                 student.id(),
                 student.studentNumber().toStdString().c_str(),
-                student.idNumber().toStdString().c_str(),
-                student.department().toStdString().c_str());
+                student.idNumber().toStdString().c_str());
     }
 }
 
 void Cli::findStudentById()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter student ID: ";
-    QString studentIdStr = qtin.readLine().trimmed();
-    bool ok;
-    int studentId = studentIdStr.toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID. Please enter a numeric ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter student code: ";
+    QString studentCode = qtin.readLine().trimmed();
 
-    StudentData student = m_controller.getStudentById(studentId);
+    StudentData student = m_controller.getStudentByStudentNumber(studentCode);
 
     if (student.id() == 0) {
-        std::cout << "Student with ID " << studentId << " not found." << std::endl;
+        std::cout << "Student with code " << studentCode.toStdString() << " not found." << std::endl;
     } else {
         std::cout << "\n--- Student Details ---" << std::endl;
         std::cout << "ID: " << student.id() << std::endl;
-        std::cout << "Student Number: " << student.studentNumber().toStdString() << std::endl;
+        std::cout << "Student Name: " << student.fullName().toStdString().c_str() << std::endl;
+        std::cout << "Student Code: " << student.studentNumber().toStdString() << std::endl;
         std::cout << "ID Number: " << student.idNumber().toStdString() << std::endl;
-        std::cout << "Date of Birth: " << student.dob().toString("yyyy-MM-dd").toStdString() << std::endl;
         std::cout << "Department: " << student.department().toStdString() << std::endl;
         std::cout << "Status: " << student.status().toStdString() << std::endl;
     }
@@ -508,18 +506,13 @@ void Cli::addStudent()
 void Cli::updateStudent()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter ID of student to update: ";
-    bool ok;
-    int studentId = qtin.readLine().trimmed().toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter code of student to update: ";
+    QString studentCode = qtin.readLine().trimmed();
 
-    StudentData student = m_controller.getStudentById(studentId);
+    StudentData student = m_controller.getStudentByStudentNumber(studentCode);
 
     if (student.id() == 0) {
-        std::cout << "Student not found." << std::endl;
+        std::cout << "Student with code " << studentCode.toStdString() << " not found." << std::endl;
         return;
     }
 
@@ -546,6 +539,15 @@ void Cli::updateStudent()
     QString newStatus = qtin.readLine().trimmed();
     if (!newStatus.isEmpty()) student.setStatus(newStatus);
 
+    // Update full name in User
+    User user = m_controller.getUserById(student.userId());
+    std::cout << "Full Name [" << user.fullName().toStdString() << "]: ";
+    QString newFullName = qtin.readLine().trimmed();
+    if (!newFullName.isEmpty()) {
+        user.setFullName(newFullName);
+        m_controller.updateUser(user);
+    }
+
     if (m_controller.updateStudent(student)) {
         std::cout << "Student updated successfully!" << std::endl;
     } else {
@@ -556,17 +558,12 @@ void Cli::updateStudent()
 void Cli::deleteStudent()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter ID of student to delete: ";
-    bool ok;
-    int studentId = qtin.readLine().trimmed().toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter code of student to delete: ";
+    QString studentCode = qtin.readLine().trimmed();
 
-    StudentData student = m_controller.getStudentById(studentId);
+    StudentData student = m_controller.getStudentByStudentNumber(studentCode);
     if (student.id() == 0) {
-        std::cout << "Student not found." << std::endl;
+        std::cout << "Student with code " << studentCode.toStdString() << " not found." << std::endl;
         return;
     }
 
@@ -575,6 +572,7 @@ void Cli::deleteStudent()
 
     if (confirm == "y") {
         if (m_controller.deleteStudent(student.id())) {
+            m_controller.deleteUser(student.userId());
             std::cout << "Student deleted successfully." << std::endl;
         } else {
             std::cout << "Error: Could not delete student." << std::endl;
@@ -596,8 +594,8 @@ void Cli::listAllCourses()
     }
 
     std::cout << "\n--- All Courses ---" << std::endl;
-    printf("%-5s | %-20s | %-30s | %-5s\n", "ID", "Name", "Description", "Credits");
-    printf("------|----------------------|--------------------------------|-------\n");
+    printf("%-5s | %-20s | %-30s | %-5s\n", "ID", "Name", "Description", "Credit Hours");
+    printf("------|----------------------|--------------------------------|-------------\n");
     for (const auto &course : courses) {
         printf("%-5d | %-20s | %-30s | %-5d\n",
                 course.id(),
@@ -763,13 +761,14 @@ void Cli::listAllProfessors()
     }
 
     std::cout << "\n--- All Professors ---" << std::endl;
-    printf("%-5s | %-25s | %-20s | %-15s\n", "ID", "Full Name", "Title", "Specialization");
-    printf("------|---------------------------|----------------------|-----------------\n");
+    printf("%-5s | %-25s | %-15s | %-20s | %-20s\n", "ID", "Name", "Code", "National ID", "Specialization");
+    printf("------|---------------------------|-----------------|----------------------|----------------------\n");
     for (const auto &prof : professors) {
-        printf("%-5d | %-25s | %-20s | %-15s\n",
+        printf("%-5d | %-25s | %-15s | %-20s | %-20s\n",
                 prof.id(),
                 prof.fullName().toStdString().c_str(),
-                prof.title().toStdString().c_str(),
+                prof.username().toStdString().c_str(),
+                prof.idNumber().toStdString().c_str(),
                 prof.specialization().toStdString().c_str());
     }
 }
@@ -777,25 +776,19 @@ void Cli::listAllProfessors()
 void Cli::findProfessorById()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter professor ID: ";
-    QString profIdStr = qtin.readLine().trimmed();
-    bool ok;
-    int profId = profIdStr.toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID. Please enter a numeric ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter professor code: ";
+    QString profCode = qtin.readLine().trimmed();
 
-    Professor professor = m_controller.getProfessorById(profId);
+    Professor professor = m_controller.getProfessorByUsername(profCode);
 
     if (professor.id() == 0) {
-        std::cout << "Professor with ID " << profId << " not found." << std::endl;
+        std::cout << "Professor with code " << profCode.toStdString() << " not found." << std::endl;
     } else {
         std::cout << "\n--- Professor Details ---" << std::endl;
         std::cout << "ID: " << professor.id() << std::endl;
         std::cout << "Full Name: " << professor.fullName().toStdString() << std::endl;
-        std::cout << "Title: " << professor.title().toStdString() << std::endl;
         std::cout << "Specialization: " << professor.specialization().toStdString() << std::endl;
+        std::cout << "Code: " << professor.username().toStdString() << std::endl;
         std::cout << "ID Number: " << professor.idNumber().toStdString() << std::endl;
     }
 }
@@ -833,9 +826,6 @@ void Cli::addProfessor()
          return;
     }
 
-    std::cout << "Title (e.g., Prof, Dr): ";
-    professor.setTitle(qtin.readLine().trimmed());
-
     std::cout << "Specialization: ";
     professor.setSpecialization(qtin.readLine().trimmed());
 
@@ -852,18 +842,13 @@ void Cli::addProfessor()
 void Cli::updateProfessor()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter ID of professor to update: ";
-    bool ok;
-    int profId = qtin.readLine().trimmed().toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter code of professor to update: ";
+    QString profCode = qtin.readLine().trimmed();
 
-    Professor professor = m_controller.getProfessorById(profId);
+    Professor professor = m_controller.getProfessorByUsername(profCode);
 
     if (professor.id() == 0) {
-        std::cout << "Professor not found." << std::endl;
+        std::cout << "Professor with code " << profCode.toStdString() << " not found." << std::endl;
         return;
     }
 
@@ -874,9 +859,12 @@ void Cli::updateProfessor()
     QString newName = qtin.readLine().trimmed();
     if (!newName.isEmpty()) professor.setFullName(newName);
 
-    std::cout << "Title [" << professor.title().toStdString() << "]: ";
-    QString newTitle = qtin.readLine().trimmed();
-    if (!newTitle.isEmpty()) professor.setTitle(newTitle);
+    // Update full name in User
+    User user = m_controller.getUserById(professor.userId());
+    if (!newName.isEmpty()) {
+        user.setFullName(newName);
+        m_controller.updateUser(user);
+    }
 
     std::cout << "Specialization [" << professor.specialization().toStdString() << "]: ";
     QString newSpec = qtin.readLine().trimmed();
@@ -896,17 +884,12 @@ void Cli::updateProfessor()
 void Cli::deleteProfessor()
 {
     QTextStream qtin(stdin);
-    std::cout << "Enter ID of professor to delete: ";
-    bool ok;
-    int profId = qtin.readLine().trimmed().toInt(&ok);
-    if (!ok) {
-        std::cout << "Invalid ID." << std::endl;
-        return;
-    }
+    std::cout << "Enter code of professor to delete: ";
+    QString profCode = qtin.readLine().trimmed();
 
-    Professor professor = m_controller.getProfessorById(profId);
+    Professor professor = m_controller.getProfessorByUsername(profCode);
     if (professor.id() == 0) {
-        std::cout << "Professor not found." << std::endl;
+        std::cout << "Professor with code " << profCode.toStdString() << " not found." << std::endl;
         return;
     }
 
@@ -915,6 +898,7 @@ void Cli::deleteProfessor()
 
     if (confirm == "y") {
         if (m_controller.deleteProfessor(professor.id())) {
+            m_controller.deleteUser(professor.userId());
             std::cout << "Professor deleted successfully." << std::endl;
         } else {
             std::cout << "Error: Could not delete professor." << std::endl;

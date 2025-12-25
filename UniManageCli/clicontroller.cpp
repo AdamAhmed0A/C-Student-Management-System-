@@ -34,6 +34,11 @@ bool CliController::addUser(User& user)
     return m_userDAO->insert(user);
 }
 
+bool CliController::updateUser(const User& user)
+{
+    return m_userDAO->update(user);
+}
+
 bool CliController::deleteUser(int id)
 {
     return m_userDAO->remove(id);
@@ -49,11 +54,21 @@ User CliController::getUserById(int id)
     return m_userDAO->getById(id);
 }
 
+User CliController::getUserByUsername(const QString& username)
+{
+    return m_userDAO->getByUsername(username);
+}
+
 // --- Student Functions ---
 
 QList<StudentData> CliController::getAllStudents()
 {
-    return m_studentDAO->getAll();
+    QList<StudentData> students = m_studentDAO->getAll();
+    for (auto& student : students) {
+        User user = getUserById(student.userId());
+        student.setFullName(user.fullName());
+    }
+    return students;
 }
 
 StudentData CliController::getStudentById(int id)
@@ -79,6 +94,11 @@ bool CliController::deleteStudent(int id)
 StudentData CliController::getStudentByUserId(int userId)
 {
     return m_studentDAO->getByUserId(userId);
+}
+
+StudentData CliController::getStudentByStudentNumber(const QString& studentNumber)
+{
+    return m_studentDAO->getByStudentNumber(studentNumber);
 }
 
 // --- Course Functions ---
@@ -112,7 +132,13 @@ bool CliController::deleteCourse(int id)
 
 QList<Professor> CliController::getAllProfessors()
 {
-    return m_professorDAO->getAll();
+    QList<Professor> professors = m_professorDAO->getAll();
+    for (auto& prof : professors) {
+        User user = getUserById(prof.userId());
+        prof.setFullName(user.fullName());
+        prof.setUsername(user.username());
+    }
+    return professors;
 }
 
 Professor CliController::getProfessorById(int id)
@@ -138,4 +164,14 @@ bool CliController::deleteProfessor(int id)
 Professor CliController::getProfessorByUserId(int userId)
 {
     return m_professorDAO->getByUserId(userId);
+}
+
+Professor CliController::getProfessorByUsername(const QString& username)
+{
+    User u = getUserByUsername(username);
+    if (u.id() == 0) return Professor();
+    Professor p = getProfessorByUserId(u.id());
+    p.setFullName(u.fullName());
+    p.setUsername(u.username());
+    return p;
 }

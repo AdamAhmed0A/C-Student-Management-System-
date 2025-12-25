@@ -118,6 +118,16 @@ StudentData CsvStudentDAO::getByIdNumber(const QString& idNumber)
     return StudentData();
 }
 
+StudentData CsvStudentDAO::getByStudentNumber(const QString& studentNumber)
+{
+    for (const auto& s : m_students) {
+        if (s.studentNumber() == studentNumber) {
+            return s;
+        }
+    }
+    return StudentData();
+}
+
 void CsvStudentDAO::loadData()
 {
     m_students.clear();

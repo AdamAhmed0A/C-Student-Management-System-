@@ -92,3 +92,7 @@ QString Professor::fullName() const { return m_fullName; }
  * @param name - The full name
  */
 void Professor::setFullName(const QString& name) { m_fullName = name; }
+
+QString Professor::username() const { return m_username; }
+
+void Professor::setUsername(const QString& username) { m_username = username; }

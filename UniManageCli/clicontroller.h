@@ -28,9 +28,11 @@ public:
     // User functions
     User authenticate(const QString& username, const QString& password);
     bool addUser(User& user);
+    bool updateUser(const User& user);
     bool deleteUser(int id);
     QList<User> getAllUsers();
     User getUserById(int id);
+    User getUserByUsername(const QString& username);
 
     // Student functions
     QList<StudentData> getAllStudents();
@@ -39,6 +41,7 @@ public:
     bool updateStudent(const StudentData& student);
     bool deleteStudent(int id);
     StudentData getStudentByUserId(int userId);
+    StudentData getStudentByStudentNumber(const QString& studentNumber);
 
     // Course functions
     QList<Course> getAllCourses();
@@ -54,6 +57,7 @@ public:
     bool updateProfessor(const Professor& professor);
     bool deleteProfessor(int id);
     Professor getProfessorByUserId(int userId);
+    Professor getProfessorByUsername(const QString& username);
 
 private:
     std::unique_ptr<CsvUserDAO> m_userDAO;

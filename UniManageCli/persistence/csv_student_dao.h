@@ -26,6 +26,7 @@ public:
     StudentData getById(int id) override;
     StudentData getByUserId(int userId) override;
     StudentData getByIdNumber(const QString& idNumber) override;
+    StudentData getByStudentNumber(const QString& studentNumber) override;
 
 private:
     QString m_filePath;

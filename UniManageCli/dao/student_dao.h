@@ -20,6 +20,7 @@ public:
     virtual StudentData getById(int id) = 0;
     virtual StudentData getByUserId(int userId) = 0;
     virtual StudentData getByIdNumber(const QString& idNumber) = 0;
+    virtual StudentData getByStudentNumber(const QString& studentNumber) = 0;
 };
 
 #endif // STUDENT_DAO_H

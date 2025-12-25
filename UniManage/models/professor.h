@@ -31,6 +31,9 @@ public:
     QString fullName() const;
     void setFullName(const QString& name);
 
+    QString username() const;
+    void setUsername(const QString& username);
+
 private:
     int m_id;
     int m_userId;
@@ -39,6 +42,7 @@ private:
     QString m_personalInfo;
     QString m_idNumber;
     QString m_fullName;
+    QString m_username;
 };
 
 #endif // PROFESSOR_H
